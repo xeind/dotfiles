@@ -1,0 +1,27 @@
+theme = Kanagawa Wave
+background-opacity = .92
+background-blur-radius = 18
+
+font-family = TX-02
+font-family = BerkeleyMono Nerd Font
+font-size = 16
+font-feature= ss01
+
+window-height = 24
+window-width = 90
+window-padding-color = extend-always
+window-title-font-family = TX-02
+
+macos-icon = official
+macos-titlebar-style = hidden
+macos-titlebar-proxy-icon = hidden
+#macos-non-native-fullscreen = true
+title = " "
+
+macos-option-as-alt = left
+
+alpha-blending = linear
+cursor-invert-fg-bg = true
+mouse-hide-while-typing = true
+
+shell-integration = zsh
