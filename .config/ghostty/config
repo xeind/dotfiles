@@ -25,3 +25,6 @@ cursor-invert-fg-bg = true
 mouse-hide-while-typing = true
 
 shell-integration = zsh
+# cursor-style = block
+cursor-style-blink = false
+shell-integration-features = no-cursor
