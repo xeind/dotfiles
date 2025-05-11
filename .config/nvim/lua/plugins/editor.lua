@@ -3,7 +3,7 @@ return {
 		"ibhagwan/fzf-lua",
 		cmd = "FzfLua",
 		event = "VeryLazy",
-		dependencies = { "echasnovski/mini.icons" },
+		dependencies = { "nvim-tree/nvim-web-devicons" },
 		keys = {
 			{ "<c-j>", "<c-j>", ft = "fzf", mode = "t", nowait = true },
 			{ "<c-k>", "<c-k>", ft = "fzf", mode = "t", nowait = true },
@@ -137,6 +137,7 @@ return {
 			formatters_by_ft = {
 				lua = { "stylua" },
 				json = { "jq", "prettierd" },
+				tex = { "vimtex" },
 				-- Conform will run multiple formatters sequentially
 				-- python = { "isort", "black" },
 				-- You can customize some of the format options for the filetype (:help conform.format)
@@ -160,8 +161,8 @@ return {
 						lsp_format = "fallback",
 					})
 				end,
-				-- { desc = "Format current file" },
-				{ desc = "Format on save" },
+				mode = { "n", "v" },
+				desc = "Format on save",
 			},
 		},
 	},
@@ -210,6 +211,22 @@ return {
 			require("nvim-surround").setup({
 				-- Configuration here, or leave empty to use defaults
 			})
+		end,
+	},
+	{
+		"windwp/nvim-autopairs",
+		event = "InsertEnter",
+		opts = {},
+	},
+	{
+		"lervag/vimtex",
+		lazy = false, -- we don't want to lazy load VimTeX
+		-- tag = "v2.15", -- uncomment to pin to a specific release
+		init = function()
+			-- VimTeX configuration goes here, e.g.
+			vim.g.vimtex_view_method = "skim"
+			vim.g.context_pdf_viewer = "skim"
+			vim.g.vimtex_compiler_method = "latexmk"
 		end,
 	},
 }

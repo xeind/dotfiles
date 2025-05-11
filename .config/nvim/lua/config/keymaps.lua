@@ -3,11 +3,15 @@ local opts = { noremap = true, silent = true }
 
 key.set("n", "x", '"_x', { desc = "Disable yank with X" })
 
+-- Tmux cant use C-i
+key.set("n", "<A-i>", "<C-i>", { desc = "Jumplist Forward" })
+key.set("n", "<A-o>", "<C-o>", { desc = "Jumplist Backward" })
+
 -- Center page when Scrolling
 key.set("n", "<C-d>", "<C-d>zz", { desc = "Half Page Down and Center" })
 key.set("n", "<C-u>", "<C-u>zz", { desc = "Half Page Up and Center" })
 
--- Delete word
+-- Delete word backswards
 key.set("n", "dw", 'vb"_d')
 
 -- Select all
@@ -22,12 +26,6 @@ key.set("n", "<s-tab>", ":tabprev<Return>", opts)
 key.set("n", "ss", ":split<Return>", opts)
 key.set("n", "sv", ":vsplit<Return>", opts)
 
--- Move window
-key.set("n", "sh", "<C-w>h")
-key.set("n", "sk", "<C-w>k")
-key.set("n", "sj", "<C-w>j")
-key.set("n", "sl", "<C-w>l")
-
 -- Resize window
 key.set("n", "<C-w><left>", "<C-w><")
 key.set("n", "<C-w><right>", "<C-w>>")
@@ -37,10 +35,6 @@ key.set("n", "<C-w><down>", "<C-w>-")
 -- Save
 key.set({ "x", "n", "s" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "Save file" })
 
-key.set("n", "gl", function()
-	vim.diagnostic.open_float()
-end, { desc = "Open Diagnostics in Float" })
-
 -- Don't yank whitespace with dd
 key.set("n", "dd", function()
 	if vim.fn.getline("."):match("^%s*$") then
@@ -49,3 +43,13 @@ key.set("n", "dd", function()
 		vim.cmd("normal! dd")
 	end
 end)
+
+key.set("n", "<leader>uw", function()
+	vim.o.wrap = not vim.o.wrap
+end, { desc = "Toggle line wrap" })
+
+-- Move window
+-- key.set("n", "sh", "<C-w>h")
+-- key.set("n", "sk", "<C-w>k")
+-- key.set("n", "sj", "<C-w>j")
+-- key.set("n", "sl", "<C-w>l")

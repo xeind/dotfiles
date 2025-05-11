@@ -34,7 +34,7 @@ return {
 			delete_to_trash = true,
 		},
 		-- Optional dependencies
-		dependencies = { { "echasnovski/mini.icons", opts = {} } },
+		dependencies = { { "nvim-tree/nvim-web-devicons", opts = {} } },
 		view_options = {
 			natural_order = "fast",
 			show_hidden = true,
@@ -89,18 +89,6 @@ return {
 		},
 	},
 	{
-		"echasnovski/mini.nvim",
-		config = function()
-			-- mini.pairs
-			local pairs = require("mini.pairs")
-			pairs.setup({})
-
-			-- mini.icons
-			local icons = require("mini.icons")
-			icons.setup({})
-		end,
-	},
-	{
 		"kevinhwang91/nvim-ufo",
 		lazy = false,
 		event = "BufRead",
@@ -151,7 +139,7 @@ return {
 				table.insert(newVirtText, { suffix, "MoreMsg" })
 				return newVirtText
 			end
-			vim.deprecate = function() end
+			-- vim.deprecate = function() end
 
 			require("ufo").setup({
 				fold_virt_text_handler = handler,

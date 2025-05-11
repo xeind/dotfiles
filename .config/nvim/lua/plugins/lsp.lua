@@ -104,6 +104,15 @@ return {
 					--  For example, in C this would take you to the header.
 					map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
 
+					map("<leader>lk", vim.diagnostic.open_float, "Open Diagnostics in Float")
+
+					map("<leader>ln", function()
+						vim.diagnostic.jump({ count = 1, float = true })
+					end, "Go to next diagnostic")
+					map("<leader>lp", function()
+						vim.diagnostic.jump({ count = -1, float = true })
+					end, "Go to previous diagnostic")
+
 					-- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
 					---@param client vim.lsp.Client
 					---@param method vim.lsp.protocol.Method
@@ -131,8 +140,7 @@ return {
 							event.buf
 						)
 					then
-						local highlight_augroup =
-							vim.api.nvim_create_augroup("kickstart-lsp-highlight", { clear = false })
+						local highlight_augroup = vim.api.nvim_create_augroup("lsp-highlight", { clear = false })
 						vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
 							buffer = event.buf,
 							group = highlight_augroup,
@@ -146,7 +154,7 @@ return {
 						})
 
 						vim.api.nvim_create_autocmd("LspDetach", {
-							group = vim.api.nvim_create_augroup("kickstart-lsp-detach", { clear = true }),
+							group = vim.api.nvim_create_augroup("lsp-detach", { clear = true }),
 							callback = function(event2)
 								vim.lsp.buf.clear_references()
 								vim.api.nvim_clear_autocmds({ group = "kickstart-lsp-highlight", buffer = event2.buf })

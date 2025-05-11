@@ -29,8 +29,9 @@ require("lazy").setup({
 		version = false,
 	},
 
-	install = { colorscheme = { "kanagawa" } },
+	install = { colorscheme = { "kanagawa-wave" } },
 	checker = { enabled = true, notify = false },
 })
 
 require("config.keymaps")
+vim.opt.guicursor = ""
