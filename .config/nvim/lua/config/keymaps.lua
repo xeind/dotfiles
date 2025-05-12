@@ -35,18 +35,42 @@ key.set("n", "<C-w><down>", "<C-w>-")
 -- Save
 key.set({ "x", "n", "s" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "Save file" })
 
--- Don't yank whitespace with dd
-key.set("n", "dd", function()
+vim.keymap.set("n", "dd", function()
+	local count = vim.v.count1
 	if vim.fn.getline("."):match("^%s*$") then
-		vim.api.nvim_feedkeys('"_dd', "n", false)
+		vim.cmd('normal! "' .. "_" .. count .. "dd")
 	else
-		vim.cmd("normal! dd")
+		-- Delete 'count' lines normally
+		vim.cmd("normal! " .. count .. "dd")
 	end
-end)
+end, { desc = "Delete line (black hole if empty)" }) -- Added description for clarity
 
 key.set("n", "<leader>uw", function()
 	vim.o.wrap = not vim.o.wrap
 end, { desc = "Toggle line wrap" })
+
+local virtual_text_enabled = false
+
+key.set("n", "<leader>uv", function()
+	-- Toggle the virtual_text_enabled state
+	virtual_text_enabled = not virtual_text_enabled
+
+	-- Apply the configuration based on the state
+	vim.diagnostic.config({
+		virtual_text = virtual_text_enabled and {
+			severity = { max = "WARN" },
+			source = "if_many",
+			spacing = 4,
+			prefix = "• ",
+		} or false,
+	})
+	-- Notify user about the status
+	if virtual_text_enabled then
+		print("Virtual text enabled on hover")
+	else
+		print("Virtual text disabled")
+	end
+end, { desc = "Toggle virtual text diagnostics on hover" })
 
 -- Move window
 -- key.set("n", "sh", "<C-w>h")

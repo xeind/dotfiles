@@ -138,6 +138,7 @@ return {
 				lua = { "stylua" },
 				json = { "jq", "prettierd" },
 				tex = { "vimtex" },
+				python = { "ruff" },
 				-- Conform will run multiple formatters sequentially
 				-- python = { "isort", "black" },
 				-- You can customize some of the format options for the filetype (:help conform.format)
@@ -148,9 +149,8 @@ return {
 				typescriptreact = { "prettierd", "prettier", stop_after_first = true },
 			},
 			format_on_save = {
-				-- These options will be passed to conform.format()
+				lsp_format = "false",
 				timeout_ms = 400,
-				lsp_format = "fallback",
 			},
 		},
 		keys = {

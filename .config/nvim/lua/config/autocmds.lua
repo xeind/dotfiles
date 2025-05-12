@@ -101,13 +101,13 @@ api.nvim_create_autocmd({ "InsertEnter", "WinLeave" }, {
 })
 
 -- Format on save
-api.nvim_create_autocmd("BufWritePre", {
-	group = augroup("autoformat"),
-	pattern = "*",
-	callback = function(args)
-		require("conform").format({ bufnr = args.buf })
-	end,
-})
+-- api.nvim_create_autocmd("BufWritePre", {
+-- 	group = augroup("autoformat"),
+-- 	pattern = "*",
+-- 	callback = function(args)
+-- 		require("conform").format({ bufnr = args.buf })
+-- 	end,
+-- })
 
 -- Check if we need to reload the file when it changed
 api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
