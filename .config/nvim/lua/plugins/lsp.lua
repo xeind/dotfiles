@@ -210,7 +210,7 @@ return {
 
 			local default_diagnostic_config = {
 				update_in_insert = false,
-				virtual_lines = def_virtual_lines.isTrue,
+				virtual_lines = def_virtual_lines.isFalse,
 				virtual_text = def_virtual_text.isTrue,
 				underline = true,
 				severity_sort = true,
@@ -244,25 +244,17 @@ return {
 
 			vim.diagnostic.config(default_diagnostic_config)
 
+			-- Toggle virtual lines with <leader>uv
+			local virtual_lines_enabled = false
+
 			vim.keymap.set("n", "<leader>uv", function()
-				-- Toggle the current_line setting
+				-- Toggle the virtual_lines_enabled state
 				virtual_lines_enabled = not virtual_lines_enabled
 
-				-- Update virtual_lines configuration
 				vim.diagnostic.config({
-					virtual_lines = virtual_lines_enabled
-							and {
-								current_line = true, -- Enable current line highlighting
-								severity = { min = "ERROR" }, -- Only show for severity min ERROR
-								format = function(diagnostic)
-									local max_length = 80
-									return "✖ " .. truncate_message(diagnostic.message, max_length)
-								end,
-							}
-						or false, -- Disable virtual lines when toggled off
+					virtual_lines = virtual_lines_enabled and def_virtual_lines.isTrue or def_virtual_lines.isFalse,
 				})
 
-				-- Provide feedback to the user
 				if virtual_lines_enabled then
 					print("Virtual lines enabled (current line highlighting on)")
 				else

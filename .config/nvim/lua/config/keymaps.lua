@@ -35,7 +35,7 @@ key.set("n", "<C-w><down>", "<C-w>-")
 -- Save
 key.set({ "x", "n", "s" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "Save file" })
 
-vim.keymap.set("n", "dd", function()
+key.set("n", "dd", function()
 	local count = vim.v.count1
 	if vim.fn.getline("."):match("^%s*$") then
 		vim.cmd('normal! "' .. "_" .. count .. "dd")
@@ -48,29 +48,6 @@ end, { desc = "Delete line (black hole if empty)" }) -- Added description for cl
 key.set("n", "<leader>uw", function()
 	vim.o.wrap = not vim.o.wrap
 end, { desc = "Toggle line wrap" })
-
-local virtual_text_enabled = false
-
-key.set("n", "<leader>uv", function()
-	-- Toggle the virtual_text_enabled state
-	virtual_text_enabled = not virtual_text_enabled
-
-	-- Apply the configuration based on the state
-	vim.diagnostic.config({
-		virtual_text = virtual_text_enabled and {
-			severity = { max = "WARN" },
-			source = "if_many",
-			spacing = 4,
-			prefix = "• ",
-		} or false,
-	})
-	-- Notify user about the status
-	if virtual_text_enabled then
-		print("Virtual text enabled on hover")
-	else
-		print("Virtual text disabled")
-	end
-end, { desc = "Toggle virtual text diagnostics on hover" })
 
 -- Move window
 -- key.set("n", "sh", "<C-w>h")
