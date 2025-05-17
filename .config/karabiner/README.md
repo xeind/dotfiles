@@ -2,13 +2,13 @@
 Based on @maxstbr's Karabiner setup, I built a personal system optimized around mnemonic layers, window navigation, productivty workflows, and minimal hand movement.
 
 The *Hyper Key*, or `Ctrl+Opt+Shift+Cmd`, acts as a universal layer key, unlocking submaps for:
-- *V*im-style Movement 
-- *W*indow Control
-- *O*pening Applications
-- *B*rowser Sites
-- *C*lipboard Actions 
-- *S*ystem Settings
-- *R*aycast Actions
+- **V**im-style Movement 
+- **W**indow Control
+- **O**pening Applications
+- **B**rowser Sites
+- **C**lipboard Actions 
+- **S**ystem Settings
+- **R**aycast Actions
 
 ## Controls
 
