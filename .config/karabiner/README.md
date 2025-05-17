@@ -1,49 +1,123 @@
-# @mxstbr's Karabiner Elements configuration
+# Karabiner Hyper Key Layer Map
+Based on @maxstbr's Karabiner setup, I built a personal system optimized around mnemonic layers, window navigation, productivty workflows, and minimal hand movement.
 
-If you like TypeScript and want your Karabiner configuration maintainable & type-safe, you probably want to use the custom configuration DSL / generator I created in `rules.ts` and `utils.ts`!
+The *Hyper Key*, or `Ctrl+Opt+Shift+Cmd`, acts as a universal layer key, unlocking submaps for:
+- *V*im-style Movement 
+- *W*indow Control
+- *O*pening Applications
+- *B*rowser Sites
+- *C*lipboard Actions 
+- *S*ystem Settings
+- *R*aycast Actions
 
-> “This repo is incredible - thanks so much for putting it together! I always avoided Karabiner mostly because of its complicated configuration. **Your project makes it so much easier to work with and so much more powerful. I'm geeking out on how much faster I'm going to be now.**”
->
-> — @jhanstra ([source](https://github.com/mxstbr/karabiner/pull/4))
+## Controls
 
-Watch the video about this repo:
+# Hyper + V (Vim-style)
+| Key        | Action             | Mapping                                  |
+|------------|--------------------|------------------------------------------|
+| h          | Move Left          | ←                                        |
+| j          | Move Down          | ↓                                        |
+| k          | Move Up            | ↑                                        |
+| l          | Move Right         | →                                        |
+| u          | Page Down          | PageDown                                 |
+| i          | Page Up            | PageUp                                   |
+| q          | Mouse Button 1     | Left Click                               |
+| e          | Mouse Button 2     | Right Click                              |
+| spacebar   | [ Homerow ](https://homerow.app) Clicking  | Ctrl+Cmd+F1      |
+| s          | [ Homerow ](https://homerow.app) Scroll   | Ctrl+Cmd+F2       |
+| f          | [ Homerow ](https://homerow.app) Find     | Ctrl+Cmd+F3    |
 
-[<img width="772" alt="CleanShot 2024-04-17 at 17 47 16@2x" src="https://github.com/mxstbr/karabiner/assets/7525670/c8565c48-10ad-4479-b690-ddc35d1ca8ce">](https://www.youtube.com/watch?v=j4b_uQX3Vu0)
+# Hyper + B (Browser)
+| Key | Destination            | URL                                           |
+|-----|------------------------|-----------------------------------------------|
+| x   | Open X (Twitter)       | https://x.com                                 |
+| y   | Open YouTube           | https://youtube.com                           |
+| f   | Open Facebook          | https://facebook.com                          |
+| g   | Open GitHub            | https://github.com                            |
+| r   | Open Reddit            | https://reddit.com                            |
+| c   | Open ChatGPT           | https://chatgpt.com                           |
+| d   | Open DeepSeek Chat     | https://chat.deepseek.com                     |
+| t   | Open Monkeytype        | https://monkeytype.com                        |
+| m   | Open Gmail             | https://mail.google.com/mail/u/0/#inbox       |
+| p   | Open Google Photos     | https://photos.google.com/u/3/                |
+| k   | Open Keybr             | https://keybr.com                             |
 
-Watch my interview with Raycast for a deeper dive into how I connect this with Raycast as my personal productivity system:
+# Hyper + O (Open)
+| Key | Application           | Function                     |
+|-----|------------------------|------------------------------|
+| 1   | Bitwarden             | Open password manager        |
+| c   | Google Chrome         | Launch Chrome browser        |
+| b   | Firefox               | Launch Firefox browser       |
+| z   | Zen Browser           | Launch Zen                   |
+| v   | VS Code               | Launch code editor           |
+| d   | Discord               | Launch Discord client        |
+| t   | Ghostty               | Open terminal emulator       |
+| m   | Obsidian              | Launch knowledge base        |
+| f   | Finder                | Open file manager            |
 
-[![](https://github.com/mxstbr/karabiner/assets/7525670/f974cee3-ac92-4f80-8bf7-9efdf81f78b5)](https://www.youtube.com/watch?v=m5MDv9qwhU8)
+# Hyper + W (Window)
+| Key             | Action                   | Description                                 |
+|------------------|--------------------------|---------------------------------------------|
+| 1               | Top-Left Sixth           | Snap window to top-left sixth               |
+| 3               | Top-Right Sixth          | Snap window to top-right sixth              |
+| y               | Previous Display         | Move to previous monitor                    |
+| o               | Next Display             | Move to next monitor                        |
+| k               | Top Half                 | Top half of screen                          |
+| j               | Bottom Half              | Bottom half of screen                       |
+| h               | Left Half                | Snap to left                                |
+| l               | Right Half               | Snap to right                               |
+| f               | Maximize                 | Fullscreen window                           |
+| e               | Top-Right Quarter        | Snap to top-right quarter                   |
+| q               | Top-Left Quarter         | Snap to top-left quarter                    |
+| a               | Bottom-Left Quarter      | Snap to bottom-left quarter                 |
+| d               | Bottom-Right Quarter     | Snap to bottom-right quarter                |
+| s               | Reasonable Size          | Resizes to ideal central bounds             |
+| up_arrow        | Move Up                  | Move window up                              |
+| down_arrow      | Move Down                | Move window down                            |
+| right_arrow     | Move Right               | Move window right                           |
+| left_arrow      | Move Left                | Move window left                            |
+| z               | Bottom-Left Sixth        | Snap to bottom-left sixth                   |
+| c               | Bottom-Right Sixth       | Snap to bottom-right sixth                  |
+| return_or_enter | Almost Maximize          | Large but not full screen                   |
+| delete_or_backspace | Restore              | Undo size/location changes                  |
+| equal_sign      | Make Larger              | Increase window size                        |
+| hyphen          | Make Smaller             | Decrease window size                        |
+| ; (semicolon)   | Hide Window              | Send Cmd+H to hide                          |
+| u               | Previous Tab             | Cmd+Ctrl+Shift+Tab                          |
+| i               | Next Tab                 | Cmd+Ctrl+Tab                                |
+| n               | Next Window              | Cmd+Tilde (~)                               |
+| b               | Back Navigation          | Cmd+[                                       |
+| m               | Forward Navigation       | Cmd+]                                       |
 
-You probably don't want to use my exact configuration, as it's optimized for my personal style & usage. Best way to go about using this if you want to? Probably delete all the sublayers in `rules.ts` and add your own based on your own needs!
+# Hyper + C (Clipboard/CleanShot X)
+| Key                   | Action                  | Mapping                                      |
+|------------------------|-------------------------|----------------------------------------------|
+| a                    | Screenshot (All-Purpose) | Ctrl+Cmd+F12                                 |
+| w                    | Screenshot Area          | Ctrl+Cmd+F11                                 |
+| e                    | Screenshot Window        | Ctrl+Cmd+F10                                 |
+| q                    | Screenshot Screen        | Ctrl+Cmd+F9                                  |
+| d                    | Scrollshot               | Ctrl+Cmd+F8                                  |
+| s                    | OCR Text                 | Ctrl+Cmd+F7                                  |
+| k                    | Open Clipboard           | Ctrl+Cmd+F6                                  |
+| z                    | Close Overlays           | Ctrl+Cmd+F5                                  |
+| delete_or_backspace  | Clipboard History        | Ctrl+Cmd+F4                                  |
 
-## Installation
+# Hyper + S (System)
+| Key | Action                     | Mapping / Command                                         |
+|-----|-----------------------------|------------------------------------------------------------|
+| u   | Volume Up                 | `volume_increment`                                        |
+| j   | Volume Down               | `volume_decrement`                                        |
+| i   | Brightness Up             | `display_brightness_increment`                            |
+| k   | Brightness Down           | `display_brightness_decrement`                            |
+| l   | Lock MacBook              | Cmd+Ctrl+Q                                                 |
+| d   | Toggle DND                | Raycast Do-Not-Disturb extension                          |
+| c   | Open Camera               | Raycast System → Camera                                   |
+| r   | Recording Mode On         | `raycast://script-commands/recording-mode`                |
+| t   | Recording Mode Off        | `raycast://script-commands/undo-recording-mode`           |
 
-1. Install & start [Karabiner Elements](https://karabiner-elements.pqrs.org/)
-1. Clone this repository
-1. Delete the default `~/.config/karabiner` folder
-1. Create a symlink with `ln -s ~/github/mxstbr/karabiner ~/.config` (where `~/github/mxstbr/karabiner` is your local path to where you cloned the repository)
-1. [Restart karabiner_console_user_server](https://karabiner-elements.pqrs.org/docs/manual/misc/configuration-file-path/) with `` launchctl kickstart -k gui/`id -u`/org.pqrs.karabiner.karabiner_console_user_server ``
-
-## Development
-
-```
-yarn install
-```
-
-to install the dependencies. (one-time only)
-
-```
-yarn run build
-```
-
-builds the `karabiner.json` from the `rules.ts`.
-
-```
-yarn run watch
-```
-
-watches the TypeScript files and rebuilds whenever they change.
-
-## License
-
-Copyright (c) 2022 Maximilian Stoiber, licensed under the [MIT license](./LICENSE.md).
+# Hyper + R (Raycast)
+| Key | Action            | Command                                                      |
+|-----|-------------------|--------------------------------------------------------------|
+| c   | Color Picker      | Raycast: Color Picker Extension                              |
+| j   | Dismiss All       | Raycast Script Command: Dismiss Notifications                |
+| e   | Emoji Picker      | Raycast: Emoji & Symbols Extension                           |
