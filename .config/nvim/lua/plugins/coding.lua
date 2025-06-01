@@ -17,6 +17,7 @@ return {
 					"javascript",
 					"html",
 					"json5",
+					"python",
 				},
 				auto_install = true,
 				sync_install = false,

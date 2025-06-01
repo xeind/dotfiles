@@ -29,7 +29,7 @@ require("lazy").setup({
 		version = false,
 	},
 
-	install = { colorscheme = { "kanagawa-wave" } },
+	install = { colorscheme = { "kanagawa-dragon" } },
 	checker = { enabled = true, notify = false },
 })
 

@@ -1,12 +1,5 @@
 vim.g.lsp_servers = {
 	-- Copied from github/rijulkap
-	ruff = { init_options = {
-		settings = {
-			format = {
-				tabWidth = 4,
-			},
-		},
-	} },
 	lua_ls = {
 		settings = {
 			Lua = {
@@ -31,6 +24,17 @@ vim.g.lsp_servers = {
 				checkThirdParty = false,
 			},
 		},
+	},
+
+	svelte = {
+		on_attach = function(client, bufnr)
+			vim.api.nvim_create_autocmd("BufWritePost", {
+				pattern = { "*.js", "*.ts" },
+				callback = function(ctx)
+					client.notify("$/onDidChangeTsOrJsFile", { uri = ctx.match })
+				end,
+			})
+		end,
 	},
 }
 

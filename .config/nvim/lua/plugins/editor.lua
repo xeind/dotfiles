@@ -149,7 +149,7 @@ return {
 				typescriptreact = { "prettierd", "prettier", stop_after_first = true },
 			},
 			format_on_save = {
-				lsp_format = "false",
+				lsp_format = true,
 				timeout_ms = 400,
 			},
 		},

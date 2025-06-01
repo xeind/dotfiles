@@ -40,7 +40,6 @@ key.set("n", "dd", function()
 	if vim.fn.getline("."):match("^%s*$") then
 		vim.cmd('normal! "' .. "_" .. count .. "dd")
 	else
-		-- Delete 'count' lines normally
 		vim.cmd("normal! " .. count .. "dd")
 	end
 end, { desc = "Delete line (black hole if empty)" }) -- Added description for clarity

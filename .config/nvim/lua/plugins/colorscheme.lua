@@ -8,7 +8,7 @@ return {
 
 				overrides = function(colors)
 					return {
-						SpellBad = { undercurl = true, sp = colors.palette.dragonRed },
+						SpellBad = { undercurl = true, sp = colors.palette.dragonAsh },
 						["@markup.link.url.markdown_inline"] = { link = "Special" }, -- (url)
 						["@markup.link.label.markdown_inline"] = { link = "WarningMsg" }, -- [label]
 						["@markup.italic.markdown_inline"] = { link = "Exception" }, -- *italic*
@@ -19,7 +19,7 @@ return {
 					}
 				end,
 			})
-			vim.cmd("colorscheme kanagawa-wave")
+			vim.cmd("colorscheme kanagawa-dragon")
 		end,
 		build = function()
 			vim.cmd("KanagawaCompile")
