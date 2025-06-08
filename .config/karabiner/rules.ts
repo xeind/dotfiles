@@ -283,11 +283,12 @@ const rules: KarabinerRules[] = [
           },
         ],
       },
+      p: open("x-apple.systempreferences:com.apple.preference"),
       d: open(
-        `raycast://extensions/yakitrak/do-not-disturb/toggle?launchType=background`
+        "raycast://extensions/yakitrak/do-not-disturb/toggle?launchType=background"
       ),
       c: open("raycast://extensions/raycast/system/open-camera"),
-      r: open(`raycast://script-commands/recording-mode`),
+      r: open("raycast://script-commands/recording-mode"),
       t: open("raycast://script-commands/undo-recording-mode"),
     },
 
