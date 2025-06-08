@@ -766,25 +766,9 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: center",
-                                "from": {
-                                    "key_code": "s",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/center" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "hyper_sublayer_w",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
                                 "description": "Window Management: reasonable-size",
                                 "from": {
-                                    "key_code": "x",
+                                    "key_code": "s",
                                     "modifiers": { "optional": ["any"] }
                                 },
                                 "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/reasonable-size" }],
