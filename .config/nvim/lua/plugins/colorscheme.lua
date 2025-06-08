@@ -3,12 +3,16 @@ return {
 		"rebelot/kanagawa.nvim",
 		config = function()
 			require("kanagawa").setup({
+				enabled = true,
 				compile = true,
 				transparent = true,
 
 				overrides = function(colors)
 					return {
+						-- Diagnostics
 						SpellBad = { undercurl = true, sp = colors.palette.dragonAsh },
+
+						-- Markdown
 						["@markup.link.url.markdown_inline"] = { link = "Special" }, -- (url)
 						["@markup.link.label.markdown_inline"] = { link = "WarningMsg" }, -- [label]
 						["@markup.italic.markdown_inline"] = { link = "Exception" }, -- *italic*

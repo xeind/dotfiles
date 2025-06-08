@@ -12,10 +12,10 @@ key.set("n", "<C-d>", "<C-d>zz", { desc = "Half Page Down and Center" })
 key.set("n", "<C-u>", "<C-u>zz", { desc = "Half Page Up and Center" })
 
 -- Delete word backswards
-key.set("n", "dw", 'vb"_d')
+key.set("n", "dw", 'vb"_d', { desc = "Delete word backwards" })
 
 -- Select all
-key.set("n", "<C-a>", "gg<S-v>G")
+key.set("n", "<C-a>", "gg<S-v>G", { desc = "Select all" })
 
 -- New tab
 key.set("n", "te", ":tabedit")

@@ -20,7 +20,9 @@ vim.g.lsp_servers = {
 						vim.fn.expand("~/.config/nvim/lua"),
 					},
 				},
-				hint = { enable = true },
+				hint = {
+					-- enable = true,
+				},
 				checkThirdParty = false,
 			},
 		},
