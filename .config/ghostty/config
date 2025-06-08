@@ -1,9 +1,9 @@
-theme = Kanagawa Wave
-background-opacity = .92
-background-blur-radius = 18
+theme = Kanagawa Dragon
+background-opacity = .96
+background-blur-radius = 22
 
+#font-family = BerkeleyMono Nerd Font
 font-family = TX-02
-font-family = BerkeleyMono Nerd Font
 font-size = 16
 font-feature= ss01
 
