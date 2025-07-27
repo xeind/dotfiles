@@ -11,7 +11,7 @@ vim.g.lsp_servers = {
 				},
 				-- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
 				diagnostics = {
-					globals = { "vim" },
+					globals = { "vim", "require", "os" },
 					disable = { "missing-fields", "undefined-doc-name" },
 				},
 				workspace = {
@@ -37,6 +37,27 @@ vim.g.lsp_servers = {
 				end,
 			})
 		end,
+	},
+
+	clangd = {
+		cmd = { "clangd", "--compile-commands-dir=.", "--background-index", "--all-scopes-completion" },
+	},
+
+	emmet_ls = {
+		filetypes = {
+			"html",
+			"css",
+			"javascript",
+			"javascriptreact",
+			"typescriptreact",
+		},
+		init_options = {
+			html = {
+				options = {
+					["bem.enabled"] = true,
+				},
+			},
+		},
 	},
 }
 

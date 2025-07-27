@@ -1,6 +1,6 @@
 return {
 	{
-		"nvim-treesitter/nvim-treesitter",
+		"nvim-treesitte/nvim-treesitter",
 		build = ":TSupdate",
 		config = function()
 			local configs = require("nvim-treesitter.configs")
@@ -123,7 +123,7 @@ return {
 	},
 	{
 		"saghen/blink.compat",
-		enabled = false,
+		enabled = true,
 		-- use the latest release, via version = '*', if you also use the latest release for blink.cmp
 		version = "*",
 		-- lazy.nvim will automatically load the plugin when it's required by blink.cmp

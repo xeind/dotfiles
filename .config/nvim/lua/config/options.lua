@@ -22,7 +22,11 @@ opt.swapfile = false
 opt.timeoutlen = 400
 opt.updatetime = 400
 
-opt.listchars = { tab = "▏ ", trail = "·", eol = "¬" }
+opt.listchars = {
+	tab = "▏ ",
+	trail = "·",
+	eol = "¬",
+}
 
 opt.list = true
 opt.ignorecase = true

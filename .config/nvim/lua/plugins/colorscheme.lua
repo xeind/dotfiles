@@ -3,7 +3,7 @@ return {
 		"rebelot/kanagawa.nvim",
 		config = function()
 			require("kanagawa").setup({
-				enabled = true,
+				enabled = false,
 				compile = true,
 				transparent = true,
 

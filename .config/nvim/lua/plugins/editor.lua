@@ -147,6 +147,9 @@ return {
 				javascript = { "prettierd", "prettier", stop_after_first = true },
 				typescript = { "prettierd", "prettier", stop_after_first = true },
 				typescriptreact = { "typescript_tool", "prettier", stop_after_first = true },
+				typst = { "typstyle" },
+				markdown = { "prettierd", "prettier", stop_after_first = true },
+				cpp = { "clangd" },
 			},
 			format_on_save = {
 				lsp_format = true,
