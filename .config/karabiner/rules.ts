@@ -1,13 +1,6 @@
 import fs from "fs";
 import { KarabinerRules } from "./types";
-import {
-  createHyperSubLayers,
-  app,
-  open,
-  rectangle,
-  shell,
-  raycastWindow,
-} from "./utils";
+import { createHyperSubLayers, app, open, raycastWindow } from "./utils";
 
 const rules: KarabinerRules[] = [
   // Define the Hyper key itself
@@ -62,6 +55,7 @@ const rules: KarabinerRules[] = [
       m: open("https://mail.google.com/mail/u/0/#inbox"),
       p: open("https://photos.google.com/u/3/"),
       k: open("https://keybr.com"),
+      l: open("https://linkedin.com"),
     },
 
     // o = "Open" applications
@@ -75,10 +69,12 @@ const rules: KarabinerRules[] = [
       t: app("Ghostty"),
       m: app("Obsidian"),
       f: app("Finder"),
+      n: app("Things3"),
     },
 
     // w = "Window" via raycast.app
     w: {
+      spacebar: open("-b com.apple.exposelauncher"),
       1: raycastWindow("top-left-sixth"),
       3: raycastWindow("top-right-sixth"),
       y: raycastWindow("previous-display"),
