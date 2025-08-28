@@ -6,21 +6,17 @@ opt.wrap = false
 opt.cursorline = true
 opt.signcolumn = "yes"
 opt.showmode = false
+opt.winborder = "rounded"
 
 opt.tabstop = 4
 -- opt.softtabstop = 4
 -- opt.shiftwidth = 4
 -- opt.expandtab = true
 
-opt.smartindent = true
-opt.autoindent = true
-
 opt.undofile = true
 opt.clipboard = "unnamedplus"
 opt.autochdir = false
 opt.swapfile = false
-opt.timeoutlen = 400
-opt.updatetime = 400
 
 opt.listchars = {
 	tab = "▏ ",

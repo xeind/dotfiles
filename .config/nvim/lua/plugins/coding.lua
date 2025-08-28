@@ -2,6 +2,8 @@ return {
 	{
 		"nvim-treesitter/nvim-treesitter",
 		build = ":TSupdate",
+		-- lazy = false,
+		event = { "BufReadPre", "BufNewFile" },
 		config = function()
 			local configs = require("nvim-treesitter.configs")
 
@@ -18,31 +20,39 @@ return {
 					"html",
 					"json5",
 					"python",
+					"markdown",
+					"dockerfile",
 				},
 				auto_install = true,
 				sync_install = false,
-				highlight = { enable = true },
+				highlight = {
+					enable = true,
+					additional_vim_regex_highlighting = false,
+				},
 				indent = { enable = true },
 
-				-- -- Select through <CR>
-				-- incremental_selection = {
-				-- 	enable = true,
-				-- 	keymaps = {
-				-- 		init_selection = "<enter>",
-				-- 		node_incremental = "<enter>",
-				-- 		scope_incremental = false,
-				-- 		node_decremental = "<backspace>",
-				-- 	},
-				-- },
+				-- Select through <CR>
+				incremental_selection = {
+					enable = true,
+					keymaps = {
+						init_selection = "<enter>",
+						node_incremental = "<enter>",
+						scope_incremental = false,
+						node_decremental = "<backspace>",
+					},
+				},
 			})
 		end,
 	},
 	{
 		"nvim-treesitter/nvim-treesitter-textobjects",
+		enabled = true,
 		dependencies = {
 			"nvim-treesitter/nvim-treesitter",
 		},
-		init = function()
+		event = { "BufReadPost", "BufNewFile" },
+
+		config = function()
 			local config = require("nvim-treesitter.configs")
 			config.setup({
 				textobjects = {
@@ -62,6 +72,8 @@ return {
 							["ic"] = { query = "@class.inner", desc = "select inner part of a class region" },
 							-- you can also use captures from other query groups like `locals.scm`
 							["as"] = { query = "@local.scope", query_group = "locals", desc = "select language scope" },
+							["ab"] = "@block.outer",
+							["ib"] = "@block.inner",
 						},
 						-- you can choose the select mode (default is charwise 'v')
 						--
@@ -101,6 +113,7 @@ return {
 	},
 	{
 		"MagicDuck/grug-far.nvim",
+		enabled = false,
 		opts = { headerMaxWidth = 80 },
 		cmd = "GrugFar",
 		keys = {

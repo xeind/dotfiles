@@ -43,6 +43,14 @@ vim.g.lsp_servers = {
 		cmd = { "clangd", "--compile-commands-dir=.", "--background-index", "--all-scopes-completion" },
 	},
 
+	tailwindcss = {
+		settings = {
+			editors = {
+				tabSize = 2,
+			},
+		},
+	},
+
 	emmet_ls = {
 		filetypes = {
 			"html",
@@ -85,7 +93,7 @@ return {
 			-- Tailwind
 			"jcha0713/cmp-tw2css",
 		},
-		event = { "VeryLazy", "BufReadPre", "BufNewFile" },
+		event = { "BufReadPre", "BufNewFile" },
 		config = function(_)
 			local mr = require("mason-registry")
 			mr.refresh(function()
@@ -159,7 +167,7 @@ return {
 					map("gI", require("fzf-lua").lsp_implementations, "[G]oto [I]mplementation")
 					map("<leader>D", require("fzf-lua").lsp_typedefs, "Type [D]efinition")
 					map("<leader>ds", require("fzf-lua").lsp_document_symbols, "[D]ocument [S]ymbols")
-					map("<leader>ws", require("fzf-lua").lsp_live_workspace_symbols, "[W]orkspace [S]ymbols")
+					map("<leader>sw", require("fzf-lua").lsp_live_workspace_symbols, "[W]orkspace [S]ymbols")
 					map("<leader>cr", vim.lsp.buf.rename, "[R]e[n]ame")
 					map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction")
 					map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
@@ -292,6 +300,13 @@ return {
 			-- Completion in command mode
 			local cmp = require("cmp")
 
+			-- cmp.setup({
+			-- 	window = {
+			-- 		completion = cmp.config.window.bordered(),
+			-- 		documentation = cmp.config.window.bordered(),
+			-- 	},
+			-- })
+
 			cmp.setup.cmdline("/", {
 				mapping = cmp.mapping.preset.cmdline(),
 				sources = {
@@ -334,8 +349,10 @@ return {
 
 	{
 		"saghen/blink.cmp",
-		dependencies = { "rafamadriz/friendly-snippets" },
-		version = "1.*",
+		event = "InsertEnter",
+		-- dependencies = { "rafamadriz/friendly-snippets" },
+		-- version = "1.*",
+		build = "cargo build --release",
 
 		---@module 'blink.cmp'
 		---@type blink.cmp.Config
@@ -381,7 +398,7 @@ return {
 				},
 				documentation = {
 					auto_show = true,
-					auto_show_delay_ms = 400,
+					auto_show_delay_ms = 250,
 				},
 			},
 			sources = {
@@ -401,6 +418,7 @@ return {
 	{
 		"pmizio/typescript-tools.nvim",
 		dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+		event = { "BufReadPre *.ts", "BufReadPre *.tsx", "BufReadPre *.js", "BufReadPre *.jsx" },
 		opts = {},
 	},
 }

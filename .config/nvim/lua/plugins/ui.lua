@@ -23,6 +23,7 @@ return {
 	},
 	{
 		"lewis6991/gitsigns.nvim",
+		event = { "BufReadPre", "BufNewFile" },
 		config = function()
 			require("gitsigns").setup({
 				on_attach = function(bufnr)
@@ -96,35 +97,17 @@ return {
 	},
 	{
 		"stevearc/oil.nvim",
-		---@module 'oil'
-		---@type oil.SetupOpts
-		opts = {
-			columns = {
-				"icon",
-				"size",
-				"mtime",
-			},
-			delete_to_trash = true,
-		},
-		-- Optional dependencies
-		dependencies = { { "nvim-tree/nvim-web-devicons", opts = {} } },
-		view_options = {
-			natural_order = "fast",
-			show_hidden = true,
-			sort = {
-				{ "type", "asc" },
-				{ "name", "asc" },
-			},
-		},
+		event = "VeryLazy",
+		cmd = { "Oil " },
 		keys = {
 			{
 				"-",
 				function()
 					require("oil").open_float(nil, {
 						preview = {
-							vertical = true, -- For vertical split preview
-							-- horizontal = true, -- For horizontal split preview
-							-- split = "belowright" -- Control the split position
+							vertical = true,
+							-- horizontal = true,
+							-- split = "belowright",
 						},
 					})
 				end,
@@ -140,9 +123,27 @@ return {
 				mode = "n",
 			},
 		},
-		-- dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if you prefer nvim-web-devicons
-		-- Lazy loading is not recommended because it is very tricky to make it work correctly in all situations.
-		lazy = false,
+		---@module 'oil'
+		---@type oil.SetupOpts
+		opts = {
+			columns = {
+				"icon",
+				"size",
+				"mtime",
+			},
+			delete_to_trash = true,
+			view_options = {
+				natural_order = "fast",
+				show_hidden = true,
+				sort = {
+					{ "type", "asc" },
+					{ "name", "asc" },
+				},
+			},
+		},
+		dependencies = {
+			{ "nvim-tree/nvim-web-devicons" },
+		},
 	},
 
 	{
@@ -164,8 +165,7 @@ return {
 	},
 	{
 		"kevinhwang91/nvim-ufo",
-		lazy = false,
-		event = "BufRead",
+		event = "BufReadPost",
 		keys = {
 			{
 				"K",
@@ -220,219 +220,11 @@ return {
 			})
 		end,
 	},
-	{
-		"nvim-lualine/lualine.nvim",
-		enabled = true,
-		event = "VeryLazy",
-		opts = function()
-			local fn = vim.fn
 
-			local git_status_cache = {}
-
-			local on_exit_fetch = function(result)
-				if result.code == 0 then
-					git_status_cache.fetch_success = true
-				end
-			end
-
-			local function handle_numeric_result(cache_key)
-				return function(result)
-					if result.code == 0 then
-						git_status_cache[cache_key] = tonumber(result.stdout:match("(%d+)")) or 0
-					end
-				end
-			end
-
-			local async_cmd = function(cmd_str, on_exit)
-				local cmd = vim.tbl_filter(function(element)
-					return element ~= ""
-				end, vim.split(cmd_str, " "))
-
-				vim.system(cmd, { text = true }, on_exit)
-			end
-
-			local async_git_status_update = function()
-				async_cmd("git fetch origin", on_exit_fetch)
-				if not git_status_cache.fetch_success then
-					return
-				end
-
-				async_cmd("git rev-list --count HEAD..@{upstream}", handle_numeric_result("behind_count"))
-				async_cmd("git rev-list --count @{upstream}..HEAD", handle_numeric_result("ahead_count"))
-			end
-
-			local function get_git_ahead_behind_info()
-				async_git_status_update()
-				local status = git_status_cache
-				if not status then
-					return ""
-				end
-
-				local msg = ""
-				if type(status.ahead_count) == "number" and status.ahead_count > 0 then
-					msg = msg .. string.format("↑[%d] ", status.ahead_count)
-				end
-				if type(status.behind_count) == "number" and status.behind_count > 0 then
-					msg = msg .. string.format("↓[%d] ", status.behind_count)
-				end
-				return msg
-			end
-
-			local function spell()
-				return vim.o.spell and "[SPELL]" or ""
-			end
-
-			local function ime_state()
-				if vim.g.is_mac then
-					local layout = fn.libcall(vim.g.XkbSwitchLib, "Xkb_Switch_getXkbLayout", "")
-					if fn.match(layout, [[\v(Squirrel\.Rime|SCIM.ITABC)]]) ~= -1 then
-						return "[CN]"
-					end
-				end
-				return ""
-			end
-
-			local function trailing_space()
-				if not vim.o.modifiable then
-					return ""
-				end
-				for i = 1, fn.line("$") do
-					if fn.match(fn.getline(i), [[\v\s+$]]) ~= -1 then
-						return string.format("[%d]trailing", i)
-					end
-				end
-				return ""
-			end
-
-			local function mixed_indent()
-				if not vim.o.modifiable then
-					return ""
-				end
-				local space_pat, tab_pat = [[\v^ +]], [[\v^\t+]]
-				local space_indent, tab_indent = fn.search(space_pat, "nwc"), fn.search(tab_pat, "nwc")
-				local mixed = space_indent > 0 and tab_indent > 0
-				local mixed_same_line = fn.search([[\v^(\t+ | +\t)]], "nwc")
-				if mixed_same_line > 0 then
-					return "MI:" .. mixed_same_line
-				end
-				if mixed then
-					return space_indent > tab_indent and "MI:" .. tab_indent or "MI:" .. space_indent
-				end
-				return ""
-			end
-
-			local diff = function()
-				local git_status = vim.b.gitsigns_status_dict
-				return git_status
-					and { added = git_status.added, modified = git_status.changed, removed = git_status.removed }
-			end
-
-			local virtual_env = function()
-				if vim.bo.filetype ~= "python" then
-					return ""
-				end
-				local conda_env, venv_path = os.getenv("CONDA_DEFAULT_ENV"), os.getenv("VIRTUAL_ENV")
-				if venv_path then
-					return string.format("  %s (venv)", vim.fn.fnamemodify(venv_path, ":t"))
-				elseif conda_env then
-					return string.format("  %s (conda)", conda_env)
-				end
-				return ""
-			end
-
-			local get_active_lsp = function()
-				local clients = vim.lsp.get_clients({ bufnr = 0 })
-				if not next(clients) then
-					return "󰜺"
-				end
-				local buf_ft = vim.api.nvim_get_option_value("filetype", {})
-				for _, client in ipairs(clients) do
-					if client.config.filetypes and vim.fn.index(client.config.filetypes, buf_ft) ~= -1 then
-						return client.name
-					end
-				end
-				return "󰜺"
-			end
-
-			return {
-				options = {
-					icons_enabled = true,
-					theme = "auto",
-					component_separators = { left = "⏐", right = "⏐" },
-					section_separators = "",
-					disabled_filetypes = {},
-					always_divide_middle = true,
-					refresh = { statusline = 200 },
-				},
-				sections = {
-					lualine_a = {
-						{
-							function()
-								local cwd = vim.fn.fnamemodify(vim.fn.getcwd(), ":t") -- Folder name
-								local filename = vim.fn.expand("%:t") -- Current file
-								return string.format("%s/%s", cwd, filename) -- "FolderName/filename"
-							end,
-							symbols = { readonly = "[]" },
-						},
-					},
-					lualine_b = {
-						{
-							"branch",
-							fmt = function(name)
-								return string.sub(name, 1, 20)
-							end,
-							color = { gui = "italic,bold" },
-						},
-						{ get_git_ahead_behind_info, color = { fg = "#E0C479" } },
-						{ "diff", source = diff },
-						{ virtual_env, color = { fg = "black", bg = "#F1CA81" } },
-					},
-					lualine_c = {
-						{ "%S", color = { gui = "bold", fg = "cyan" } },
-						{ spell, color = { fg = "black", bg = "#a7c080" } },
-					},
-					lualine_x = {
-						{ get_active_lsp, icon = "" },
-						{
-							"diagnostics",
-							sources = { "nvim_diagnostic" },
-							symbols = { error = " ", warn = " ", info = " ", hint = " " },
-						},
-						{ trailing_space, color = "WarningMsg" },
-						{ mixed_indent, color = "WarningMsg" },
-					},
-					lualine_y = {
-						{ "encoding", fmt = string.upper },
-						{ "fileformat", symbols = { unix = "unix", dos = "win", mac = "mac" } },
-						"filetype",
-						{ ime_state, color = { fg = "black", bg = "#f46868" } },
-					},
-					lualine_z = {
-						"location",
-						-- "progress",
-					},
-				},
-				inactive_sections = {
-					lualine_a = {},
-					lualine_b = {},
-					lualine_c = { "filename" },
-					lualine_x = { "location" },
-					lualine_y = {},
-					lualine_z = {},
-				},
-				tabline = {},
-				extensions = { "quickfix", "fugitive", "nvim-tree" },
-			}
-		end,
-	},
-	{
-		"stevearc/dressing.nvim",
-		event = "VeryLazy",
-		opts = {},
-	},
 	{
 		"mikavilpas/yazi.nvim",
 		event = "VeryLazy",
+		enabled = false,
 		keys = {
 			-- 👇 in this section, choose your own keymappings!
 			{
@@ -466,6 +258,7 @@ return {
 		-- example: include a flavor
 		"BennyOe/onedark.yazi",
 		lazy = true,
+		enabled = false,
 		build = function(plugin)
 			require("yazi.plugin").build_flavor(plugin)
 		end,
@@ -482,5 +275,273 @@ return {
 	},
 	{
 		"tpope/vim-sleuth",
+	},
+	{
+		"dmtrKovalenko/fff.nvim",
+		lazy = true,
+		enabled = true,
+		build = "cargo build --release",
+		-- or if you are using nixos
+		-- build = "nix run .#release",
+		opts = {
+			-- pass here all the options
+		},
+		keys = {
+			{
+				"<localleader>ff",
+				function()
+					require("fff").find_files()
+				end,
+				desc = "Open file picker",
+			},
+			{
+				"<localleader>fg",
+				function()
+					require("fff").find_in_git_root()
+				end,
+				desc = "Find files in the Git directory",
+			},
+			{
+				"<localleader>rf",
+				function()
+					require("fff").scan_files()()
+				end,
+				desc = "Rescan of files in the current directory",
+			},
+			{
+				"<localleader>rg",
+				function()
+					require("fff").refresh_git_status()()
+				end,
+				desc = "Refresh Git Status for current file",
+			},
+		},
+	},
+	{
+		"nvim-tree/nvim-web-devicons",
+		lazy = true,
+		opts = { default = true },
+	},
+	{
+		"nvim-lualine/lualine.nvim",
+		enabled = true,
+		event = "VeryLazy",
+		opts = function()
+			local fn = vim.fn
+			local git_status_cache = { ahead_count = 0, behind_count = 0 }
+			local last_git_check = 0
+			local git_check_interval = 5 -- seconds
+
+			-- Async helpers
+			local function async_cmd(cmd_str, on_exit)
+				local cmd = vim.tbl_filter(function(e)
+					return e ~= ""
+				end, vim.split(cmd_str, " "))
+				vim.system(cmd, { text = true }, on_exit)
+			end
+
+			local function handle_numeric_result(key)
+				return function(result)
+					if result.code == 0 then
+						git_status_cache[key] = tonumber(result.stdout:match("(%d+)")) or 0
+					end
+				end
+			end
+
+			local function update_git_status()
+				async_cmd("git rev-list --count HEAD..@{upstream}", handle_numeric_result("behind_count"))
+				async_cmd("git rev-list --count @{upstream}..HEAD", handle_numeric_result("ahead_count"))
+			end
+
+			local function get_git_ahead_behind_info()
+				local now = os.time()
+				if now - last_git_check > git_check_interval then
+					last_git_check = now
+					update_git_status()
+				end
+				local msg = ""
+				if git_status_cache.ahead_count > 0 then
+					msg = msg .. string.format("↑[%d] ", git_status_cache.ahead_count)
+				end
+				if git_status_cache.behind_count > 0 then
+					msg = msg .. string.format("↓[%d] ", git_status_cache.behind_count)
+				end
+				return msg
+			end
+
+			-- Cache for buffer checks
+			local trailing_cache, mixed_cache = "", ""
+			local function update_trailing_space()
+				if not vim.o.modifiable then
+					return ""
+				end
+				for i = 1, fn.line("$") do
+					if fn.match(fn.getline(i), [[\v\s+$]]) ~= -1 then
+						trailing_cache = string.format("[%d]trailing", i)
+						return
+					end
+				end
+				trailing_cache = ""
+			end
+
+			local function update_mixed_indent()
+				if not vim.o.modifiable then
+					return ""
+				end
+				local space_pat, tab_pat = [[\v^ +]], [[\v^\t+]]
+				local space_indent, tab_indent = fn.search(space_pat, "nwc"), fn.search(tab_pat, "nwc")
+				local mixed_same_line = fn.search([[\v^(\t+ | +\t)]], "nwc")
+				if mixed_same_line > 0 then
+					mixed_cache = "MI:" .. mixed_same_line
+				elseif space_indent > 0 and tab_indent > 0 then
+					mixed_cache = space_indent > tab_indent and "MI:" .. tab_indent or "MI:" .. space_indent
+				else
+					mixed_cache = ""
+				end
+			end
+
+			-- Autocmds to update caches only when needed
+			vim.api.nvim_create_autocmd({ "BufWritePost", "TextChanged", "TextChangedI" }, {
+				callback = function()
+					update_trailing_space()
+					update_mixed_indent()
+				end,
+			})
+
+			local diff = function()
+				local git_status = vim.b.gitsigns_status_dict
+				return git_status
+					and { added = git_status.added, modified = git_status.changed, removed = git_status.removed }
+			end
+
+			local virtual_env = function()
+				if vim.bo.filetype ~= "python" then
+					return ""
+				end
+				local conda_env, venv_path = os.getenv("CONDA_DEFAULT_ENV"), os.getenv("VIRTUAL_ENV")
+				if venv_path then
+					return string.format("  %s (venv)", fn.fnamemodify(venv_path, ":t"))
+				elseif conda_env then
+					return string.format("  %s (conda)", conda_env)
+				end
+				return ""
+			end
+
+			local get_active_lsp = function()
+				local clients = vim.lsp.get_clients({ bufnr = 0 })
+				if not next(clients) then
+					return "󰜺"
+				end
+				local buf_ft = vim.api.nvim_get_option_value("filetype", {})
+				for _, client in ipairs(clients) do
+					if client.config.filetypes and fn.index(client.config.filetypes, buf_ft) ~= -1 then
+						return client.name
+					end
+				end
+				return "󰜺"
+			end
+
+			local monotone_theme = {
+				normal = {
+					a = { bg = "#4B4B4B", fg = "#FFFFFF", gui = "bold" },
+					b = { bg = "#2E2E2E", fg = "#C0C0C0" },
+					c = { bg = "NONE", fg = "#A0A0A0" },
+				},
+				insert = {
+					a = { bg = "#AFAFAF", fg = "#1E1E1E", gui = "bold" },
+					b = { bg = "#C0C0C0", fg = "#2E2E2E" },
+					c = { bg = "NONE", fg = "#A0A0A0" },
+				},
+				visual = {
+					a = { bg = "#7F7F7F", fg = "#1E1E1E", gui = "bold" },
+					b = { bg = "#4B4B4B", fg = "#FFFFFF" },
+					c = { bg = "NONE", fg = "#C0C0C0" },
+				},
+				replace = {
+					a = { bg = "#2E2E2E", fg = "#FF8888", gui = "bold" },
+					b = { bg = "#1E1E1E", fg = "#FFAAAA" },
+					c = { bg = "NONE", fg = "#FFCCCC" },
+				},
+				command = {
+					a = { bg = "#C0C0C0", fg = "#1E1E1E", gui = "bold" },
+					b = { bg = "#808080", fg = "#1E1E1E" },
+					c = { bg = "NONE", fg = "#A0A0A0" },
+				},
+				inactive = {
+					a = { bg = "NONE", fg = "#808080", gui = "bold" },
+					b = { bg = "NONE", fg = "#606060" },
+					c = { bg = "NONE", fg = "#505050" },
+				},
+			}
+
+			return {
+				options = {
+					globalstatus = true,
+					icons_enabled = true,
+					theme = monotone_theme,
+					component_separators = { left = "⏐", right = "⏐" },
+					section_separators = "",
+					always_divide_middle = true,
+					refresh = { statusline = 1000 },
+				},
+				sections = {
+					lualine_a = {
+						function()
+							local cwd = fn.fnamemodify(fn.getcwd(), ":t")
+							local filename = fn.expand("%:t")
+							return string.format("%s/%s", cwd, filename)
+						end,
+					},
+					lualine_b = {
+						{
+							"branch",
+							fmt = function(n)
+								return string.sub(n, 1, 20)
+							end,
+							color = { gui = "italic,bold" },
+						},
+						{ get_git_ahead_behind_info, color = { fg = "#E0C479" } },
+						{ "diff", source = diff },
+						{ virtual_env, color = { fg = "black", bg = "#F1CA81" } },
+					},
+					lualine_c = {},
+					lualine_x = {
+						{ get_active_lsp },
+						{ "diagnostics", sources = { "nvim_diagnostic" } },
+						{
+							function()
+								return trailing_cache
+							end,
+							color = "WarningMsg",
+						},
+						{
+							function()
+								return mixed_cache
+							end,
+							color = "WarningMsg",
+						},
+					},
+					lualine_y = {
+						{
+							"filetype",
+							fmt = function(ft)
+								return ({
+									typescriptreact = "tsx",
+									javascriptreact = "jsx",
+									typescript = "ts",
+									javascript = "js",
+									python = "py",
+									markdown = "md",
+									json = "json",
+									lua = "lua",
+								})[ft] or ft
+							end,
+						},
+					},
+					lualine_z = { "location" },
+				},
+				extensions = { "quickfix", "fugitive", "nvim-tree" },
+			}
+		end,
 	},
 }

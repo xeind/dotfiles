@@ -6,22 +6,22 @@ local function augroup(name)
 end
 
 -- Re-apply highlights when colorscheme loads
-api.nvim_create_autocmd("ColorScheme", {
-	group = augroup("custom_highlights"),
-	callback = function()
-		api.nvim_set_hl(0, "Search", {
-			bg = "#E6C384",
-			fg = "#333333",
-			italic = true,
-		})
-		api.nvim_set_hl(0, "IncSearch", {
-			bg = "#E6C384",
-			fg = "#333333",
-			bold = true,
-			italic = true,
-		})
-	end,
-})
+-- api.nvim_create_autocmd("ColorScheme", {
+-- 	group = augroup("custom_highlights"),
+-- 	callback = function()
+-- 		api.nvim_set_hl(0, "Search", {
+-- 			bg = "#E6C384",
+-- 			fg = "#333333",
+-- 			italic = true,
+-- 		})
+-- 		api.nvim_set_hl(0, "IncSearch", {
+-- 			bg = "#E6C384",
+-- 			fg = "#333333",
+-- 			bold = true,
+-- 			italic = true,
+-- 		})
+-- 	end,
+-- })
 
 -- Highlight yank using IncSearch
 api.nvim_create_autocmd("TextYankPost", {

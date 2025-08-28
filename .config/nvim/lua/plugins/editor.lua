@@ -2,8 +2,10 @@ return {
 	{
 		"ibhagwan/fzf-lua",
 		cmd = "FzfLua",
-		event = "VeryLazy",
-		dependencies = { "nvim-tree/nvim-web-devicons" },
+		-- event = "VeryLazy",
+		dependencies = {
+			{ "nvim-tree/nvim-web-devicons" },
+		},
 		keys = {
 			{ "<c-j>", "<c-j>", ft = "fzf", mode = "t", nowait = true },
 			{ "<c-k>", "<c-k>", ft = "fzf", mode = "t", nowait = true },
@@ -109,7 +111,61 @@ return {
 				desc = "Open Git Branches",
 			},
 		},
-		opts = {},
+		opts = {
+			files = {
+				fd_opts = table.concat({
+					"--hidden",
+					"--exclude .git",
+					"--exclude node_modules",
+					"--exclude dist",
+					"--exclude build",
+					"--exclude .next",
+					"--exclude .nuxt",
+					"--exclude .vercel",
+					"--exclude .cache",
+					"--exclude coverage",
+					"--exclude venv",
+					"--exclude .venv",
+					"--exclude vendor",
+				}, " "),
+				rg_opts = table.concat({
+					"--hidden",
+					"--glob '!node_modules/*'",
+					"--glob '!.git/*'",
+					"--glob '!dist/*'",
+					"--glob '!build/*'",
+					"--glob '!.next/*'",
+					"--glob '!.nuxt/*'",
+					"--glob '!.vercel/*'",
+					"--glob '!.cache/*'",
+					"--glob '!coverage/*'",
+					"--glob '!venv/*'",
+					"--glob '!.venv/*'",
+					"--glob '!.vendor/*'",
+				}, " "),
+			},
+			grep = {
+				rg_opts = table.concat({
+					"--hidden",
+					"--glob '!node_modules/*'",
+					"--glob '!.git/*'",
+					"--glob '!dist/*'",
+					"--glob '!build/*'",
+					"--glob '!.next/*'",
+					"--glob '!.nuxt/*'",
+					"--glob '!.vercel/*'",
+					"--glob '!.cache/*'",
+					"--glob '!coverage/*'",
+					"--glob '!venv/*'",
+					"--glob '!.venv/*'",
+					"--column",
+					"--line-number",
+					"--no-heading",
+					"--color=always",
+					"--smart-case",
+				}, " "),
+			},
+		},
 	},
 	{
 		"folke/flash.nvim",
@@ -139,20 +195,24 @@ return {
 				json = { "jq", "prettierd" },
 				tex = { "vimtex" },
 				python = { "ruff" },
-				-- Conform will run multiple formatters sequentially
-				-- python = { "isort", "black" },
-				-- You can customize some of the format options for the filetype (:help conform.format)
-				-- rust = { "rustfmt", lsp_format = "fallback" },
-				-- Conform will run the first available formatter
-				javascript = { "prettierd", "prettier", stop_after_first = true },
-				typescript = { "prettierd", "prettier", stop_after_first = true },
-				typescriptreact = { "typescript_tool", "prettier", stop_after_first = true },
+				javascript = { "prettierd", "prettier" },
+				typescript = { "prettierd", "prettier" },
+				--	typescriptreact = { "typescript_tool", "prettier" },
+				typescriptreact = { "prettierd", "prettier" },
 				typst = { "typstyle" },
-				markdown = { "prettierd", "prettier", stop_after_first = true },
+				markdown = { "prettierd", "prettier" },
 				cpp = { "clangd" },
 			},
+			-- Place this outside the table, in the `opts`
+			-- format_opts = {
+			-- 	javascript = { stop_after_first = true },
+			-- 	typescript = { stop_after_first = true },
+			-- 	typescriptreact = { stop_after_first = true },
+			-- 	markdown = { stop_after_first = true },
+			-- },
 			format_on_save = {
-				lsp_format = true,
+				-- lsp_format = true,
+				lsp_fallback = true,
 				timeout_ms = 400,
 			},
 		},
@@ -231,5 +291,12 @@ return {
 			vim.g.context_pdf_viewer = "skim"
 			vim.g.vimtex_compiler_method = "latexmk"
 		end,
+	},
+	{
+		"chomosuke/typst-preview.nvim",
+		lazy = false, -- or ft = 'typst'
+		version = "1.*",
+		opts = {}, -- lazy.nvim will implicitly calls `setup {}`
+		config = function() end,
 	},
 }

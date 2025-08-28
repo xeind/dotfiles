@@ -26,10 +26,31 @@ require("lazy").setup({
 		{ import = "plugins" },
 	},
 	defaults = {},
+	performance = {
+		rtp = {
+			disabled_plugins = {
+				"gzip",
+				"tarPlugin",
+				"tohtml",
+				"tutor",
+				"zipPlugin",
+				"netrwPlugin",
+			},
+		},
+	},
+	ui = {
+		border = "rounded",
+		size = {
+			width = 0.8,
+			height = 0.8,
+		},
+	},
 
 	install = { colorscheme = { "kanagawa-dragon" } },
 	checker = { enabled = true, notify = false },
 })
 
 require("config.keymaps")
+
+vim.cmd([[hi StatusLine guibg=NONE]])
 vim.opt.guicursor = ""

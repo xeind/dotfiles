@@ -32,17 +32,24 @@ key.set("n", "<C-w><right>", "<C-w>>")
 key.set("n", "<C-w><up>", "<C-w>+")
 key.set("n", "<C-w><down>", "<C-w>-")
 
--- Save
-key.set({ "x", "n", "s" }, "<C-s>", "<cmd>w<cr><esc>", { desc = "Save file" })
+--
+key.set("n", "<leader>o", ":update<CR> :source<CR>", { desc = "Source File" })
+key.set("n", "<leader>w", ":write<CR>", { desc = "Write File" })
+key.set("n", "<leader>q", ":quit<CR>", { desc = "Quit File" })
+-- key.set("n", "<leader>Q", ":quit!<CR>", { desc = "Force Quit File" })
 
-key.set("n", "dd", function()
+-- Blackhole delete only for empty lines, otherwise normal delete
+vim.keymap.set("n", "dd", function()
 	local count = vim.v.count1
-	if vim.fn.getline("."):match("^%s*$") then
-		vim.cmd('normal! "' .. "_" .. count .. "dd")
+	local line_empty = vim.fn.getline("."):match("^%s*$")
+	if line_empty then
+		-- Use blackhole register for empty lines
+		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('"_' .. count .. "dd", true, false, true), "n", false)
 	else
-		vim.cmd("normal! " .. count .. "dd")
+		-- Normal delete
+		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(count .. "dd", true, false, true), "n", false)
 	end
-end, { desc = "Delete line (black hole if empty)" }) -- Added description for clarity
+end, { desc = "Delete line (black hole if empty)", noremap = true, silent = true })
 
 key.set("n", "<leader>uw", function()
 	vim.o.wrap = not vim.o.wrap
