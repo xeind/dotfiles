@@ -1,0 +1,151 @@
+{
+    // UI
+    "terminal.integrated.stickyScroll.maxLineCount": 6,
+    "workbench.list.smoothScrolling": true,
+    "workbench.startupEditor": "none",
+    "workbench.tree.indent": 12,
+    "workbench.editor.focusRecentEditorAfterClose": false,
+    "workbench.activityBar.location": "top",
+    "workbench.layoutControl.enabled": false,
+    "workbench.hover.delay": 600,
+    "workbench.sideBar.location": "right",
+    "workbench.tree.enableStickyScroll": true,
+    "workbench.tree.stickyScrollMaxItemCount": 6,
+    "workbench.tree.renderIndentGuides": "always",
+    "explorer.confirmDragAndDrop": false,
+    "explorer.confirmDelete": false,
+    // EDITOR
+    "editor.bracketPairColorization.enabled": true,
+    "editor.cursorBlinking": "solid",
+    "editor.cursorSmoothCaretAnimation": "off",
+    "editor.cursorWidth": 10,
+    "editor.detectIndentation": false,
+    "editor.formatOnSave": true,
+    "editor.guides.bracketPairs": "active",
+    "editor.lineHeight": 0,
+    "editor.linkedEditing": true,
+    "editor.stickyScroll.maxLineCount": 6,
+    "editor.minimap.renderCharacters": false,
+    "editor.minimap.enabled": false,
+    "editor.multiCursorModifier": "ctrlCmd",
+    "editor.scrollBeyondLastLine": true,
+    // "editor.smoothScrolling": true,
+    "editor.stickyScroll.enabled": true,
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    "editor.suggest.preview": false,
+    "editor.scrollbar.verticalScrollbarSize": 8,
+    "workbench.editor.empty.hint": "hidden",
+    "diffEditor.hideUnchangedRegions.enabled": true,
+    "workbench.editor.decorations.badges": true,
+    "editor.acceptSuggestionOnCommitCharacter": false,
+    "editor.acceptSuggestionOnEnter": "off",
+    "notebook.output.fontFamily": "JetBrains Mono",
+    "editor.lineNumbers": "relative",
+    "workbench.colorCustomizations": {
+        "editorCursor.foreground": "#d5e2f280"
+    },
+    // TERMINAL
+    // "terminal.integrated.cursorBlinking": true,
+    "terminal.integrated.cursorStyle": "block",
+    "terminal.integrated.fontFamily": "TX-02",
+    "terminal.integrated.fontSize": 16,
+    "terminal.integrated.cursorWidth": 10,
+    "terminal.integrated.fontWeight": "normal",
+    "terminal.integrated.fontWeightBold": "bold",
+    "terminal.integrated.scrollback": -1,
+    "terminal.integrated.fontLigatures.enabled": true,
+    "terminal.integrated.fontLigatures.featureSettings": "\"ss03\", \"ss06\"",
+    // FONTS
+    "editor.fontFamily": "TX-02",
+    "editor.fontLigatures": "'ss01', 'ss05'",
+    "editor.fontSize": 16,
+    "editor.fontWeight": "normal",
+    "markdown.preview.fontSize": 22,
+    "markdown.preview.lineHeight": 1.4,
+    // FORMATTING
+    "github.copilot.editor.enableCodeActions": false,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "files.trimTrailingWhitespace": true,
+    // Python
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.inlayHints.functionReturnTypes": true,
+    // SETTINGS
+    ".ignoredExtensions": [],
+    "files.exclude": {
+        "**/__pycache__": true
+    },
+    "cmake.showOptionsMovedNotification": false,
+    "liveServer.settings.donotVerifyTags": true,
+    // GIT
+    "git.useEditorAsCommitInput": false,
+    // EXTENSIONS
+    "c-cpp-compile-run.run-in-external-terminal": true,
+    "code-runner.runInTerminal": true,
+    "code-runner.saveAllFilesBeforeRun": true,
+    "code-runner.saveFileBeforeRun": true,
+    "code-runner.ignoreSelection": true,
+    "liveServer.settings.CustomBrowser": "chrome",
+    "liveServer.settings.donotShowInfoMsg": true,
+    "emmet.includeLanguages": {
+        "django-html": "html",
+        "jinja-html": "html",
+        "javascript": "javascriptreact",
+    },
+    "auto-rename-tag.activationOnLanguage": [
+        "django-html",
+        "jinja-html",
+        "markdown"
+    ],
+    // LANGUAGE
+    "[html]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.tabSize": 2
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.tabSize": 2
+    },
+    "[ruby]": {
+        "editor.tabSize": 2
+    },
+    "[markdown]": {
+        "editor.tabSize": 2
+    },
+    "[python]": {
+        "editor.formatOnType": true
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "vscode.json-language-features"
+    },
+    "[javascriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[css]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    // Notebook
+    "jupyter.askForKernelRestart": false,
+    "vim.smartRelativeLine": true,
+    "workbench.colorTheme": "Nightingale",
+    "workbench.tips.enabled": false,
+    "terminal.external.osxExec": "Ghostty.app",
+    "window.commandCenter": false,
+    "editor.accessibilitySupport": "off",
+    "window.confirmSaveUntitledWorkspace": false,
+    "debug.disassemblyView.showSourceCode": false,
+    "update.mode": "default",
+    "notebook.markup.fontFamily": "TX-02",
+    "notebook.lineNumbers": "on",
+    "github.copilot.nextEditSuggestions.enabled": true,
+    "explorer.compactFolders": false,
+    "vscode-neovim.neovimExecutablePaths.darwin": "/usr/local/bin/nvim",
+    "vscode-neovim.neovimInitVimPaths.darwin": "$HOME/.vscode/nvim-core-export.lua",
+    "extensions.experimental.affinity": {
+        "asvetliakov.vscode-neovim": 1
+    },
+    "github.copilot.advanced": {},
+    "github.copilot.chat.customInstructionsInSystemMessage": false,
+    "github.copilot.chat.scopeSelection": true,
+    "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+}
