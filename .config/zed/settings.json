@@ -1,0 +1,35 @@
+{
+  "ui_font_features": {
+    "calt": 0
+  },
+  "ui_font_family": "TX-02",
+  "icon_theme": {
+    "mode": "system",
+    "light": "Catppuccin Latte",
+    "dark": "Catppuccin Latte"
+  },
+  "edit_predictions": {
+    "mode": "eager",
+    "copilot": {
+      "proxy": null,
+      "proxy_no_verify": null
+    },
+    "enabled_in_text_threads": false
+  },
+  "cursor_blink": false,
+  "cursor_shape": "block",
+  "buffer_font_size": 16,
+  "buffer_font_family": "TX-02",
+  "buffer_font_features": { "ss01": true },
+  "base_keymap": "VSCode",
+  "vim_mode": true,
+  "ui_font_size": 16,
+  "theme": {
+    "mode": "system",
+    "light": "One Light",
+    "dark": "Kanagawa Dragon - No Italics"
+  },
+  "features": {
+    "edit_prediction_provider": "zed"
+  }
+}
