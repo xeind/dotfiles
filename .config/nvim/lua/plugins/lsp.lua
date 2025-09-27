@@ -58,6 +58,7 @@ vim.g.lsp_servers = {
 			"javascript",
 			"javascriptreact",
 			"typescriptreact",
+			"vue",
 		},
 		init_options = {
 			html = {
@@ -67,9 +68,17 @@ vim.g.lsp_servers = {
 			},
 		},
 	},
+
+	ruby_lsp = {
+		cmd = { os.getenv("HOME") .. "/.local/share/mise/shims/ruby-lsp" },
+	},
+
+	rubocop = {
+		cmd = { os.getenv("HOME") .. "/.local/share/mise/shims/rubocop", "--lsp" },
+	},
 }
 
-vim.g.other_mason_servers = { "stylua" }
+vim.g.other_mason_servers = {}
 
 return {
 	{
@@ -107,12 +116,15 @@ return {
 
 			-- Configure and get names of lsp servers
 			local lsp_server_names = {}
-			for lsp_server_name, _ in pairs(vim.g.lsp_servers) do
+			for lsp_server_name, lsp_server_config in pairs(vim.g.lsp_servers) do
 				-- Add custom config settings
 				local lsp_server_settings = vim.g.lsp_servers[lsp_server_name] or {}
 				vim.lsp.config(lsp_server_name, lsp_server_settings)
 
-				table.insert(lsp_server_names, lsp_server_name)
+				-- Only add to mason's ensure_installed if mason is not disabled
+				if lsp_server_config.mason ~= false then
+					table.insert(lsp_server_names, lsp_server_name)
+				end
 			end
 
 			local capabilities = require("blink.cmp").get_lsp_capabilities(nil, true)
@@ -124,7 +136,8 @@ return {
 			})
 
 			local function setup_document_highlight(bufnr)
-				local highlight_augroup = vim.api.nvim_create_augroup("LspDocumentHighlight", { clear = false })
+				local highlight_augroup = vim.api.nvim_create_augroup("LspDocumentHighlight",
+					{ clear = false })
 
 				vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
 					group = highlight_augroup,
@@ -142,7 +155,11 @@ return {
 					group = vim.api.nvim_create_augroup("kickstart-lsp-detach", { clear = true }),
 					callback = function(event2)
 						vim.lsp.buf.clear_references()
-						vim.api.nvim_clear_autocmds({ group = "LspDocumentHighlight", buffer = event2.buf })
+						vim.api.nvim_clear_autocmds({
+							group = "LspDocumentHighlight",
+							buffer =
+							    event2.buf
+						})
 					end,
 				})
 			end
@@ -159,7 +176,8 @@ return {
 				group = vim.api.nvim_create_augroup("lsp-attach", { clear = true }),
 				callback = function(event)
 					local map = function(keys, func, desc)
-						vim.keymap.set("n", keys, func, { buffer = event.buf, desc = "LSP: " .. desc })
+						vim.keymap.set("n", keys, func,
+							{ buffer = event.buf, desc = "LSP: " .. desc })
 					end
 
 					map("gd", require("fzf-lua").lsp_definitions, "[G]oto [D]efinition")
@@ -167,11 +185,13 @@ return {
 					map("gI", require("fzf-lua").lsp_implementations, "[G]oto [I]mplementation")
 					map("<leader>D", require("fzf-lua").lsp_typedefs, "Type [D]efinition")
 					map("<leader>ds", require("fzf-lua").lsp_document_symbols, "[D]ocument [S]ymbols")
-					map("<leader>sw", require("fzf-lua").lsp_live_workspace_symbols, "[W]orkspace [S]ymbols")
+					map("<leader>sw", require("fzf-lua").lsp_live_workspace_symbols,
+						"[W]orkspace [S]ymbols")
 					map("<leader>cr", vim.lsp.buf.rename, "[R]e[n]ame")
 					map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction")
 					map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
-					map("<leader>lk", vim.diagnostic.open_float, "Open Diagnostics in Floating Window")
+					map("<leader>lk", vim.diagnostic.open_float,
+						"Open Diagnostics in Floating Window")
 					map("<leader>ln", function()
 						vim.diagnostic.jump({ count = 1, float = true })
 					end, "Go to next diagnostic")
@@ -182,7 +202,7 @@ return {
 					local client = vim.lsp.get_client_by_id(event.data.client_id)
 					if client then
 						if
-							client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf)
+						    client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf)
 						then
 							setup_document_highlight(event.buf)
 						end
@@ -199,7 +219,7 @@ return {
 				end,
 			})
 
-			vim.lsp.set_log_level("off")
+			vim.lsp.set_log_level("off") -- Disable logging
 
 			vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, {
 				border = "rounded",
@@ -287,7 +307,8 @@ return {
 				virtual_lines_enabled = not virtual_lines_enabled
 
 				vim.diagnostic.config({
-					virtual_lines = virtual_lines_enabled and def_virtual_lines.isTrue or def_virtual_lines.isFalse,
+					virtual_lines = virtual_lines_enabled and def_virtual_lines.isTrue or
+					    def_virtual_lines.isFalse,
 				})
 
 				if virtual_lines_enabled then
@@ -351,8 +372,7 @@ return {
 		"saghen/blink.cmp",
 		event = "InsertEnter",
 		-- dependencies = { "rafamadriz/friendly-snippets" },
-		-- version = "1.*",
-		build = "cargo build --release",
+		version = "v1.*",
 
 		---@module 'blink.cmp'
 		---@type blink.cmp.Config
@@ -411,7 +431,7 @@ return {
 					},
 				},
 			},
-			fuzzy = { implementation = "prefer_rust_with_warning" },
+			fuzzy = { implementation = "lua" },
 		},
 		opts_extend = { "sources.default" },
 	},

@@ -17,7 +17,7 @@ return {
 		-- setting the keybinding for LazyGit with 'keys' is recommended in
 		-- order to load the plugin when the command is run for the first time
 		keys = {
-			{ "<leader>lg", "<cmd>LazyGit<cr>", desc = "Open [L]azy[G]it" },
+			{ "<leader>lg", "<cmd>LazyGit<cr>",    desc = "Open [L]azy[G]it" },
 			{ "<leader>gl", "<cmd>LazyGitLog<cr>", desc = "Open [G]it [L]ogs" },
 		},
 	},
@@ -67,7 +67,8 @@ return {
 					map("n", "<leader>hS", gitsigns.stage_buffer, { desc = "Stage buffer" })
 					map("n", "<leader>hR", gitsigns.reset_buffer, { desc = "Reset buffer" })
 					map("n", "<leader>hp", gitsigns.preview_hunk, { desc = "Preview hunk" })
-					map("n", "<leader>hi", gitsigns.preview_hunk_inline, { desc = "Inline preview hunk" })
+					map("n", "<leader>hi", gitsigns.preview_hunk_inline,
+						{ desc = "Inline preview hunk" })
 
 					map("n", "<leader>hb", function()
 						gitsigns.blame_line({ full = true })
@@ -83,10 +84,12 @@ return {
 						gitsigns.setqflist("all")
 					end, { desc = "Add all hunks to quickfix list" })
 
-					map("n", "<leader>hq", gitsigns.setqflist, { desc = "Add hunks to quickfix list" })
+					map("n", "<leader>hq", gitsigns.setqflist,
+						{ desc = "Add hunks to quickfix list" })
 
 					-- Toggles
-					map("n", "<leader>tb", gitsigns.toggle_current_line_blame, { desc = "Toggle line blame" })
+					map("n", "<leader>tb", gitsigns.toggle_current_line_blame,
+						{ desc = "Toggle line blame" })
 					map("n", "<leader>tw", gitsigns.toggle_word_diff, { desc = "Toggle word diff" })
 
 					-- Text object
@@ -275,14 +278,18 @@ return {
 	},
 	{
 		"tpope/vim-sleuth",
+		enabled = false,
 	},
 	{
 		"dmtrKovalenko/fff.nvim",
-		lazy = true,
+		lazy = false,
 		enabled = true,
-		build = "cargo build --release",
+		-- build = "cargo build --release",
 		-- or if you are using nixos
 		-- build = "nix run .#release",
+		build = function()
+			require("fff.download").download_or_build_binary()
+		end,
 		opts = {
 			-- pass here all the options
 		},
@@ -394,7 +401,8 @@ return {
 				if mixed_same_line > 0 then
 					mixed_cache = "MI:" .. mixed_same_line
 				elseif space_indent > 0 and tab_indent > 0 then
-					mixed_cache = space_indent > tab_indent and "MI:" .. tab_indent or "MI:" .. space_indent
+					mixed_cache = space_indent > tab_indent and "MI:" .. tab_indent or
+					    "MI:" .. space_indent
 				else
 					mixed_cache = ""
 				end
@@ -411,7 +419,12 @@ return {
 			local diff = function()
 				local git_status = vim.b.gitsigns_status_dict
 				return git_status
-					and { added = git_status.added, modified = git_status.changed, removed = git_status.removed }
+				    and {
+					    added = git_status.added,
+					    modified = git_status.changed,
+					    removed = git_status
+					        .removed
+				    }
 			end
 
 			local virtual_env = function()
@@ -501,8 +514,8 @@ return {
 							color = { gui = "italic,bold" },
 						},
 						{ get_git_ahead_behind_info, color = { fg = "#E0C479" } },
-						{ "diff", source = diff },
-						{ virtual_env, color = { fg = "black", bg = "#F1CA81" } },
+						{ "diff",                    source = diff },
+						{ virtual_env,               color = { fg = "black", bg = "#F1CA81" } },
 					},
 					lualine_c = {},
 					lualine_x = {
@@ -544,4 +557,23 @@ return {
 			}
 		end,
 	},
+	{
+		"lukas-reineke/indent-blankline.nvim",
+		main = "ibl",
+		---@module "ibl"
+		---@type ibl.config
+		opts = {},
+		config = function()
+			require("ibl").setup {
+				indent = { char = "▏" },
+				whitespace = { highlight = { "Whitespace" } },
+				scope = {
+					show_start = false,
+					show_end = false,
+				}
+
+			}
+		end
+
+	}
 }
