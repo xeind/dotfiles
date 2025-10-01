@@ -76,6 +76,8 @@ vim.g.lsp_servers = {
 	rubocop = {
 		cmd = { os.getenv("HOME") .. "/.local/share/mise/shims/rubocop", "--lsp" },
 	},
+
+	cssls = {},
 }
 
 vim.g.other_mason_servers = {}
@@ -83,6 +85,7 @@ vim.g.other_mason_servers = {}
 return {
 	{
 		"mason-org/mason.nvim",
+		cmd = "Mason",
 		opts = {},
 	},
 	{

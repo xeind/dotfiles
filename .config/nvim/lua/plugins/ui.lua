@@ -100,7 +100,7 @@ return {
 	},
 	{
 		"stevearc/oil.nvim",
-		event = "VeryLazy",
+		-- event = "VeryLazy",
 		cmd = { "Oil " },
 		keys = {
 			{
@@ -520,7 +520,7 @@ return {
 					lualine_c = {},
 					lualine_x = {
 						{ get_active_lsp },
-						{ "diagnostics", sources = { "nvim_diagnostic" } },
+						{ "diagnostics", sources = { "nvim_diagnostic" }, },
 						{
 							function()
 								return trailing_cache
@@ -560,6 +560,7 @@ return {
 	{
 		"lukas-reineke/indent-blankline.nvim",
 		main = "ibl",
+		event = { "BufReadPost", "BufNewFile" },
 		---@module "ibl"
 		---@type ibl.config
 		opts = {},
@@ -574,6 +575,5 @@ return {
 
 			}
 		end
-
 	}
 }
