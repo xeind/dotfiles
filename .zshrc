@@ -91,6 +91,18 @@ source $ZSH/oh-my-zsh.sh
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
+function cling() {
+    local folders=()
+    for arg in "$@"; do
+        if [ -d "$arg" ]; then
+            folders+=("$arg")
+        else [ -f "$arg" ]
+            folders+=("$(dirname "$arg")")
+        fi
+    done
+    open -a Cling "${folders[@]}"
+}
+
 # Preferred editor for local and remote sessions
 # if [[ -n $SSH_CONNECTION ]]; then
 #   export EDITOR='vim'
@@ -126,28 +138,29 @@ bindkey '^P' reverse-menu-complete      # Ctrl + P: Move to the previous suggest
 bindkey '^R' history-incremental-search-backward  # Ctrl + R: Reverse history search
 bindkey '^[[Z' forward-char
 
+export PATH="$HOME/.local/bin:$PATH"
+
 # Tmux config
 export TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 # export TERM="xterm-256color"
 # alias tmux="tmux -2 -f $TMUX_CONFIG_HOME/tmux/tmux.conf"
 # alias tmuxa='tmux attach || tmux new-session'
 
-alias cd..='cd ..'
-alias .='pwd'
-alias ..='cd ..'
-alias 2..='cd ../..'
-alias 3..='cd ../../..'
-alias 4..='cd ../../../..'
-alias 5..='cd ../../../../..'
+alias skim='/Applications/Skim.app/Contents/MacOS/Skim'
+export PATH="/usr/local/texlive/2025/bin/universal-darwin:$PATH"
+
+# _fix_cursor() {
+#    echo -ne '\e[5 q'
+# }
+#
+# precmd_functions+=(_fix_cursor)
 
 export EDITOR=nvim
 alias vi="$EDITOR"
 alias nvim="$EDITOR"
 
-
-
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+export ANDROID_HOME=/Users/$USER/Library/Android/sdk
+export PATH=${PATH}:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
 
 # bun completions
 [ -s "/Users/xein/.bun/_bun" ] && source "/Users/xein/.bun/_bun"
@@ -155,3 +168,11 @@ alias nvim="$EDITOR"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# opencode
+export PATH=/Users/xein/.opencode/bin:$PATH
+
+eval "$(~/.local/bin/mise activate)"
