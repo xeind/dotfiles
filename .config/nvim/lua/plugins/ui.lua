@@ -1,7 +1,7 @@
 return {
 	{
 		"kdheepak/lazygit.nvim",
-		events = "VeryLazy",
+		event = "VeryLazy",
 		lazy = true,
 		cmd = {
 			"LazyGit",
@@ -17,7 +17,7 @@ return {
 		-- setting the keybinding for LazyGit with 'keys' is recommended in
 		-- order to load the plugin when the command is run for the first time
 		keys = {
-			{ "<leader>lg", "<cmd>LazyGit<cr>",    desc = "Open [L]azy[G]it" },
+			{ "<leader>lg", "<cmd>LazyGit<cr>", desc = "Open [L]azy[G]it" },
 			{ "<leader>gl", "<cmd>LazyGitLog<cr>", desc = "Open [G]it [L]ogs" },
 		},
 	},
@@ -67,8 +67,7 @@ return {
 					map("n", "<leader>hS", gitsigns.stage_buffer, { desc = "Stage buffer" })
 					map("n", "<leader>hR", gitsigns.reset_buffer, { desc = "Reset buffer" })
 					map("n", "<leader>hp", gitsigns.preview_hunk, { desc = "Preview hunk" })
-					map("n", "<leader>hi", gitsigns.preview_hunk_inline,
-						{ desc = "Inline preview hunk" })
+					map("n", "<leader>hi", gitsigns.preview_hunk_inline, { desc = "Inline preview hunk" })
 
 					map("n", "<leader>hb", function()
 						gitsigns.blame_line({ full = true })
@@ -84,12 +83,10 @@ return {
 						gitsigns.setqflist("all")
 					end, { desc = "Add all hunks to quickfix list" })
 
-					map("n", "<leader>hq", gitsigns.setqflist,
-						{ desc = "Add hunks to quickfix list" })
+					map("n", "<leader>hq", gitsigns.setqflist, { desc = "Add hunks to quickfix list" })
 
 					-- Toggles
-					map("n", "<leader>tb", gitsigns.toggle_current_line_blame,
-						{ desc = "Toggle line blame" })
+					map("n", "<leader>tb", gitsigns.toggle_current_line_blame, { desc = "Toggle line blame" })
 					map("n", "<leader>tw", gitsigns.toggle_word_diff, { desc = "Toggle word diff" })
 
 					-- Text object
@@ -225,48 +222,6 @@ return {
 	},
 
 	{
-		"mikavilpas/yazi.nvim",
-		event = "VeryLazy",
-		enabled = false,
-		keys = {
-			-- 👇 in this section, choose your own keymappings!
-			{
-				"<leader>n",
-				"<cmd>Yazi<cr>",
-				desc = "Open yazi at the current file",
-			},
-			{
-				-- Open in the current working directory
-				"<leader>cw",
-				"<cmd>Yazi cwd<cr>",
-				desc = "Open the file manager in nvim's working directory",
-			},
-			{
-				-- NOTE: this requires a version of yazi that includes
-				-- https://github.com/sxyazi/yazi/pull/1305 from 2024-07-18
-				"<c-up>",
-				"<cmd>Yazi toggle<cr>",
-				desc = "Resume the last yazi session",
-			},
-		},
-		opts = {
-			-- if you want to open yazi instead of netrw, see below for more info
-			open_for_directories = false,
-			keymaps = {
-				show_help = "<f1>",
-			},
-		},
-	},
-	{
-		-- example: include a flavor
-		"BennyOe/onedark.yazi",
-		lazy = true,
-		enabled = false,
-		build = function(plugin)
-			require("yazi.plugin").build_flavor(plugin)
-		end,
-	},
-	{
 		"nvzone/showkeys",
 		event = "VeryLazy",
 		cmd = "ShowkeysToggle",
@@ -278,7 +233,7 @@ return {
 	},
 	{
 		"tpope/vim-sleuth",
-		enabled = false,
+		-- enabled = false,
 	},
 	{
 		"dmtrKovalenko/fff.nvim",
@@ -401,8 +356,7 @@ return {
 				if mixed_same_line > 0 then
 					mixed_cache = "MI:" .. mixed_same_line
 				elseif space_indent > 0 and tab_indent > 0 then
-					mixed_cache = space_indent > tab_indent and "MI:" .. tab_indent or
-					    "MI:" .. space_indent
+					mixed_cache = space_indent > tab_indent and "MI:" .. tab_indent or "MI:" .. space_indent
 				else
 					mixed_cache = ""
 				end
@@ -419,12 +373,11 @@ return {
 			local diff = function()
 				local git_status = vim.b.gitsigns_status_dict
 				return git_status
-				    and {
-					    added = git_status.added,
-					    modified = git_status.changed,
-					    removed = git_status
-					        .removed
-				    }
+					and {
+						added = git_status.added,
+						modified = git_status.changed,
+						removed = git_status.removed,
+					}
 			end
 
 			local virtual_env = function()
@@ -514,13 +467,13 @@ return {
 							color = { gui = "italic,bold" },
 						},
 						{ get_git_ahead_behind_info, color = { fg = "#E0C479" } },
-						{ "diff",                    source = diff },
-						{ virtual_env,               color = { fg = "black", bg = "#F1CA81" } },
+						{ "diff", source = diff },
+						{ virtual_env, color = { fg = "black", bg = "#F1CA81" } },
 					},
 					lualine_c = {},
 					lualine_x = {
 						{ get_active_lsp },
-						{ "diagnostics", sources = { "nvim_diagnostic" }, },
+						{ "diagnostics", sources = { "nvim_diagnostic" } },
 						{
 							function()
 								return trailing_cache
@@ -565,15 +518,14 @@ return {
 		---@type ibl.config
 		opts = {},
 		config = function()
-			require("ibl").setup {
+			require("ibl").setup({
 				indent = { char = "▏" },
 				whitespace = { highlight = { "Whitespace" } },
 				scope = {
 					show_start = false,
 					show_end = false,
-				}
-
-			}
-		end
-	}
+				},
+			})
+		end,
+	},
 }

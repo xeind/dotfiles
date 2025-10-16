@@ -37,6 +37,7 @@ key.set("n", "<leader>o", ":update<CR> :source<CR>", { desc = "Source File" })
 key.set("n", "<leader>w", ":write<CR>", { desc = "Write File" })
 key.set("n", "<leader>q", ":quit<CR>", { desc = "Quit File" })
 -- key.set("n", "<leader>Q", ":quit!<CR>", { desc = "Force Quit File" })
+key.set("n", "<leader>l", ":Lazy<CR>", { desc = "Open Lazy" })
 
 -- Blackhole delete only for empty lines, otherwise normal delete
 vim.keymap.set("n", "dd", function()

@@ -70,11 +70,36 @@ vim.g.lsp_servers = {
 	},
 
 	ruby_lsp = {
+		mason = false,
 		cmd = { os.getenv("HOME") .. "/.local/share/mise/shims/ruby-lsp" },
+		init_options = {
+			enabledFeatures = {
+				codeActions = true,
+				codeLens = true,
+				completion = true,
+				definition = true,
+				diagnostics = true,
+				documentHighlights = true,
+				documentLink = true,
+				documentSymbols = true,
+				foldingRanges = true,
+				formatting = true,
+				hover = true,
+				inlayHint = true,
+				onTypeFormatting = true,
+				selectionRanges = true,
+				semanticHighlighting = true,
+				signatureHelp = true,
+				typeHierarchy = true,
+				workspaceSymbol = true
+			},
+			experimentalFeaturesEnabled = false
+		},
 	},
 
 	rubocop = {
 		cmd = { os.getenv("HOME") .. "/.local/share/mise/shims/rubocop", "--lsp" },
+		mason = false,
 	},
 
 	cssls = {},
@@ -120,7 +145,14 @@ return {
 			-- Configure and get names of lsp servers
 			local lsp_server_names = {}
 			for lsp_server_name, lsp_server_config in pairs(vim.g.lsp_servers) do
-				-- Add custom config settings
+				-- RUBY LSP
+				-- if lsp_server_name == "ruby_lsp" then
+				-- 	require('lspconfig').ruby_lsp.setup(lsp_server_config)
+				-- else
+				-- 	-- Add custom config settings for other servers
+				-- 	local lsp_server_settings = vim.g.lsp_servers[lsp_server_name] or {}
+				-- 	vim.lsp.config(lsp_server_name, lsp_server_settings)
+				-- end
 				local lsp_server_settings = vim.g.lsp_servers[lsp_server_name] or {}
 				vim.lsp.config(lsp_server_name, lsp_server_settings)
 

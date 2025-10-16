@@ -188,32 +188,29 @@ return {
 	},
 	{
 		"stevearc/conform.nvim",
-		events = "VeryLazy",
+		event = "VeryLazy",
 		ft = { "ruby" },
 		opts = {
 			formatters_by_ft = {
 				lua = { "stylua" },
 				json = { "jq", "prettierd" },
-				tex = {},
 				python = { "black" },
 				javascript = { "prettierd" },
 				typescript = { "prettierd" },
 				typescriptreact = { "prettierd" },
 				vue = { "prettierd" },
 				typst = { "typstyle" },
-				markdown = { "prettierd", "prettier" },
-				cpp = {},
+				markdown = { "prettierd" },
 				latex = { "latexindent" },
 				ruby = { "rubocop" },
 				eruby = { "erb_format" },
 				--	typescriptreact = { "typescript_tool",  },
 			},
-			-- Place this outside the table, in the `opts`
-			-- format_opts = {
-			-- 	javascript = { stop_after_first = true },
-			-- 	typescript = { stop_after_first = true },
-			-- 	typescriptreact = { stop_after_first = true },
-			-- 	markdown = { stop_after_first = true },
+			-- formatters = {
+			-- 	rubocop = {
+			-- 		command = os.getenv("HOME") .. "/.local/share/mise/shims/rubocop",
+			-- 		args = { "--autocorrect", "--stderr", "--stdin", "$FILENAME" }
+			-- 	},
 			-- },
 			format_on_save = {
 				-- lsp_format = true,

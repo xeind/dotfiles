@@ -9,41 +9,41 @@ return {
 				transparent = true,
 				overrides = function(colors)
 					local palette = colors.palette
-					local theme   = colors.theme
+					local theme = colors.theme
 					return {
 						-- Diagnostics
-						SpellBad                               = { undercurl = true, sp = palette.dragonAsh },
+						SpellBad = { undercurl = true, sp = palette.dragonAsh },
 
 						-- Markdown
-						["@markup.link.url.markdown_inline"]   = { link = "Special" },
+						["@markup.link.url.markdown_inline"] = { link = "Special" },
 						["@markup.link.label.markdown_inline"] = { link = "WarningMsg" },
-						["@markup.italic.markdown_inline"]     = { link = "Italic" },
-						["@markup.raw.markdown_inline"]        = { link = "String" },
-						["@markup.list.markdown"]              = { link = "Function" },
-						["@markup.quote.markdown"]             = { link = "Comment" },
-						["@markup.list.checked.markdown"]      = { link = "DiagnosticOk" },
+						["@markup.italic.markdown_inline"] = { link = "Italic" },
+						["@markup.raw.markdown_inline"] = { link = "String" },
+						["@markup.list.markdown"] = { link = "Function" },
+						["@markup.quote.markdown"] = { link = "Comment" },
+						["@markup.list.checked.markdown"] = { link = "DiagnosticOk" },
 
 						-- Blink / Cmp menu
-						BlinkCmpMenu                           = { bg = theme.ui.bg_p2, fg = theme.ui.fg },
-						BlinkCmpMenuBorder                     = { fg = theme.ui.bg_m3 },
-						BlinkCmpMenuSelection                  = { bg = theme.syn.fun, fg = theme.ui.fg, bold = true },
+						BlinkCmpMenu = { bg = theme.ui.bg_p2, fg = theme.ui.fg },
+						BlinkCmpMenuBorder = { fg = theme.ui.bg_m3 },
+						BlinkCmpMenuSelection = { bg = theme.syn.fun, fg = theme.ui.fg, bold = true },
 
 						-- Scrollbar
-						BlinkCmpScrollBarGutter                = { bg = palette.waveBlue1 },
-						BlinkCmpScrollBarThumb                 = { bg = palette.waveBlue2 },
+						BlinkCmpScrollBarGutter = { bg = palette.waveBlue1 },
+						BlinkCmpScrollBarThumb = { bg = palette.waveBlue2 },
 
 						-- Labels
-						BlinkCmpLabel                          = { fg = palette.fujiWhite },
-						BlinkCmpLabelMatch                     = { fg = palette.waveRed, bold = true },
+						BlinkCmpLabel = { fg = palette.fujiWhite },
+						BlinkCmpLabelMatch = { fg = palette.waveRed, bold = true },
 
 						-- Popup
-						NormalFloat                            = { bg = theme.ui.bg_p1 },
-						FloatBorder                            = { bg = theme.ui.bg_p1, fg = theme.ui.bg_m3 },
+						NormalFloat = { bg = theme.ui.bg_p1 },
+						FloatBorder = { bg = theme.ui.bg_p1, fg = theme.ui.bg_m3 },
 
 						-- Transparency consistency
-						Normal                                 = { bg = "none" },
-						NormalNC                               = { bg = "none" },
-						SignColumn                             = { bg = "none" },
+						Normal = { bg = "none" },
+						NormalNC = { bg = "none" },
+						SignColumn = { bg = "none" },
 					}
 				end,
 			})
