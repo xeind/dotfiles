@@ -1,30 +1,15 @@
 return {
 	{
-		"norcalli/nvim-colorizer.lua",
-		event = "BufReadPost",
-		config = function()
-			vim.opt.termguicolors = true
-			require("colorizer").setup({
-				"*", -- Highlight all files, but customize some specific file types
-				css = { css = true }, -- Enable all CSS features: rgb_fn, hsl_fn, names, RRGGBBAA
-				html = { names = true }, -- Enable named colors in HTML
-			}, {
-				mode = "background", -- Set the display mode. Options: 'foreground', 'background'
-			})
-		end,
-	},
-	{
 		"xeind/nightingale.nvim",
 		lazy = false,
 		priority = 1000,
 		config = function()
 			require("nightingale").setup({
 				compile = true,
-				transparent = true,
-				numberStyle = {},
+				transparent = false,
 				overrides = function(colors)
 					return {
-						SpellBad = { undercurl = true, sp = colors.gray },
+						SpellBad = { undercurl = true, sp = colors.palette.gray },
 
 						["@markup.link.url.markdown_inline"] = { link = "Special" },
 						["@markup.link.label.markdown_inline"] = { link = "WarningMsg" },

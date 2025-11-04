@@ -21,7 +21,7 @@ vim.g.lsp_servers = {
 					},
 				},
 				hint = {
-					enable = true,
+					enable = false,
 				},
 				checkThirdParty = false,
 			},

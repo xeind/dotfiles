@@ -144,4 +144,18 @@ return {
 		-- make sure to set opts so that lazy.nvim calls blink.compat's setup
 		opts = {},
 	},
+	{
+		"norcalli/nvim-colorizer.lua",
+		event = "BufReadPost",
+		config = function()
+			vim.opt.termguicolors = true
+			require("colorizer").setup({
+				"*", -- Highlight all files, but customize some specific file types
+				css = { css = true }, -- Enable all CSS features: rgb_fn, hsl_fn, names, RRGGBBAA
+				html = { names = true }, -- Enable named colors in HTML
+			}, {
+				mode = "background", -- Set the display mode. Options: 'foreground', 'background'
+			})
+		end,
+	},
 }
