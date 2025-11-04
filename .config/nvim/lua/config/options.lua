@@ -7,6 +7,7 @@ opt.cursorline = true
 opt.signcolumn = "yes"
 opt.showmode = false
 opt.winborder = "rounded"
+opt.updatetime = 300
 
 opt.tabstop = 4
 -- opt.softtabstop = 4

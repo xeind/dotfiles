@@ -21,7 +21,7 @@ vim.g.lsp_servers = {
 					},
 				},
 				hint = {
-					-- enable = true,
+					enable = true,
 				},
 				checkThirdParty = false,
 			},
@@ -91,9 +91,9 @@ vim.g.lsp_servers = {
 				semanticHighlighting = true,
 				signatureHelp = true,
 				typeHierarchy = true,
-				workspaceSymbol = true
+				workspaceSymbol = true,
 			},
-			experimentalFeaturesEnabled = false
+			experimentalFeaturesEnabled = false,
 		},
 	},
 
@@ -103,6 +103,17 @@ vim.g.lsp_servers = {
 	},
 
 	cssls = {},
+
+	prismals = {
+		mason = false,
+		cmd = { "prisma-language-server", "--stdio" },
+	},
+
+	jsonls = {
+		settings = {
+			json = {},
+		},
+	},
 }
 
 vim.g.other_mason_servers = {}
@@ -171,8 +182,7 @@ return {
 			})
 
 			local function setup_document_highlight(bufnr)
-				local highlight_augroup = vim.api.nvim_create_augroup("LspDocumentHighlight",
-					{ clear = false })
+				local highlight_augroup = vim.api.nvim_create_augroup("LspDocumentHighlight", { clear = false })
 
 				vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
 					group = highlight_augroup,
@@ -192,8 +202,7 @@ return {
 						vim.lsp.buf.clear_references()
 						vim.api.nvim_clear_autocmds({
 							group = "LspDocumentHighlight",
-							buffer =
-							    event2.buf
+							buffer = event2.buf,
 						})
 					end,
 				})
@@ -211,8 +220,7 @@ return {
 				group = vim.api.nvim_create_augroup("lsp-attach", { clear = true }),
 				callback = function(event)
 					local map = function(keys, func, desc)
-						vim.keymap.set("n", keys, func,
-							{ buffer = event.buf, desc = "LSP: " .. desc })
+						vim.keymap.set("n", keys, func, { buffer = event.buf, desc = "LSP: " .. desc })
 					end
 
 					map("gd", require("fzf-lua").lsp_definitions, "[G]oto [D]efinition")
@@ -220,13 +228,11 @@ return {
 					map("gI", require("fzf-lua").lsp_implementations, "[G]oto [I]mplementation")
 					map("<leader>D", require("fzf-lua").lsp_typedefs, "Type [D]efinition")
 					map("<leader>ds", require("fzf-lua").lsp_document_symbols, "[D]ocument [S]ymbols")
-					map("<leader>sw", require("fzf-lua").lsp_live_workspace_symbols,
-						"[W]orkspace [S]ymbols")
+					map("<leader>sw", require("fzf-lua").lsp_live_workspace_symbols, "[W]orkspace [S]ymbols")
 					map("<leader>cr", vim.lsp.buf.rename, "[R]e[n]ame")
 					map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction")
 					map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
-					map("<leader>lk", vim.diagnostic.open_float,
-						"Open Diagnostics in Floating Window")
+					map("<leader>lk", vim.diagnostic.open_float, "Open Diagnostics in Floating Window")
 					map("<leader>ln", function()
 						vim.diagnostic.jump({ count = 1, float = true })
 					end, "Go to next diagnostic")
@@ -237,7 +243,7 @@ return {
 					local client = vim.lsp.get_client_by_id(event.data.client_id)
 					if client then
 						if
-						    client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf)
+							client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf)
 						then
 							setup_document_highlight(event.buf)
 						end
@@ -342,8 +348,7 @@ return {
 				virtual_lines_enabled = not virtual_lines_enabled
 
 				vim.diagnostic.config({
-					virtual_lines = virtual_lines_enabled and def_virtual_lines.isTrue or
-					    def_virtual_lines.isFalse,
+					virtual_lines = virtual_lines_enabled and def_virtual_lines.isTrue or def_virtual_lines.isFalse,
 				})
 
 				if virtual_lines_enabled then
@@ -475,5 +480,9 @@ return {
 		dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
 		event = { "BufReadPre *.ts", "BufReadPre *.tsx", "BufReadPre *.js", "BufReadPre *.jsx" },
 		opts = {},
+	},
+	{
+		"b0o/schemastore.nvim",
+		lazy = true,
 	},
 }

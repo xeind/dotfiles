@@ -233,7 +233,7 @@ return {
 	},
 	{
 		"tpope/vim-sleuth",
-		-- enabled = false,
+		enabled = true,
 	},
 	{
 		"dmtrKovalenko/fff.nvim",

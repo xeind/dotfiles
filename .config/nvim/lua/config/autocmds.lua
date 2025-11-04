@@ -82,15 +82,6 @@ api.nvim_create_autocmd({ "InsertEnter", "WinLeave" }, {
 	end,
 })
 
--- Format on save
--- api.nvim_create_autocmd("BufWritePre", {
--- 	group = augroup("autoformat"),
--- 	pattern = "*",
--- 	callback = function(args)
--- 		require("conform").format({ bufnr = args.buf })
--- 	end,
--- })
-
 -- Check if we need to reload the file when it changed
 api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
 	group = augroup("checktime"),
@@ -129,6 +120,23 @@ api.nvim_create_autocmd("FileType", {
 	end,
 })
 
+-- Highlight references under cursor using LSP
+api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+	group = augroup("lsp_document_highlight"),
+	callback = function()
+		if vim.lsp.buf.server_ready() then
+			vim.lsp.buf.document_highlight()
+		end
+	end,
+})
+
+api.nvim_create_autocmd("CursorMoved", {
+	group = augroup("lsp_document_highlight"),
+	callback = function()
+		vim.lsp.buf.clear_references()
+	end,
+})
+
 -- Re-apply highlights when colorscheme loads
 -- api.nvim_create_autocmd("ColorScheme", {
 -- 	group = augroup("custom_highlights"),
@@ -144,5 +152,14 @@ api.nvim_create_autocmd("FileType", {
 -- 			bold = true,
 -- 			italic = true,
 -- 		})
+-- 	end,
+-- })
+
+-- Format on save
+-- api.nvim_create_autocmd("BufWritePre", {
+-- 	group = augroup("autoformat"),
+-- 	pattern = "*",
+-- 	callback = function(args)
+-- 		require("conform").format({ bufnr = args.buf })
 -- 	end,
 -- })
