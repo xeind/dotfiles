@@ -42,6 +42,10 @@ const rules: KarabinerRules[] = [
   },
 
   ...createHyperSubLayers({
+    // spacebar: {
+    //   to: [{ key_code: "f1", modifiers: ["left_control", "left_command"] }],
+    // },
+
     // b = "B"rowse
     b: {
       x: open("https://x.com"),
@@ -50,26 +54,27 @@ const rules: KarabinerRules[] = [
       g: open("https://github.com"),
       r: open("https://reddit.com"),
       c: open("https://chatgpt.com"),
-      d: open("https://chat.deepseek.com"),
-      t: open("https://monkeytype.com"),
       m: open("https://mail.google.com/mail/u/0/#inbox"),
       p: open("https://photos.google.com/u/3/"),
-      k: open("https://keybr.com"),
       l: open("https://linkedin.com"),
+      // d: open("https://chat.deepseek.com"),
+      // t: open("https://monkeytype.com"),
+      // k: open("https://keybr.com"),
     },
 
     // o = "Open" applications
     o: {
       1: app("Bitwarden"),
-      c: app("Google Chrome"),
       b: app("Firefox"),
       z: app("Zen Browser"),
-      v: app("Visual Studio Code"),
       d: app("Discord"),
       t: app("Ghostty"),
       m: app("Obsidian"),
       f: app("Finder"),
       n: app("Things3"),
+      p: app("Skim"),
+      // v: app("Visual Studio Code"),
+      c: app("Zed"),
     },
 
     // w = "Window" via raycast.app

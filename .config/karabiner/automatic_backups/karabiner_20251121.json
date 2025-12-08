@@ -451,22 +451,6 @@
                                 },
                                 "to": [{ "shell_command": "open -a 'Skim.app'" }],
                                 "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "hyper_sublayer_o",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "description": "Open -a 'Zed.app'",
-                                "from": {
-                                    "key_code": "c",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "shell_command": "open -a 'Zed.app'" }],
-                                "type": "basic"
                             }
                         ]
                     },
