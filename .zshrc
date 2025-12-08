@@ -126,7 +126,7 @@ function cling() {
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 alias ls='lsd'
 alias ll='ls -lah'
-# alis c="open $1 -a \"Visual Studio Code\""
+# alias c="open $1 -a \"Visual Studio Code\""
 
 source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
 
@@ -142,6 +142,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 # Tmux config
 export TMUX_CONF="$HOME/.config/tmux/tmux.conf"
+
 # export TERM="xterm-256color"
 # alias tmux="tmux -2 -f $TMUX_CONFIG_HOME/tmux/tmux.conf"
 # alias tmuxa='tmux attach || tmux new-session'
@@ -159,9 +160,6 @@ export EDITOR=nvim
 alias vi="$EDITOR"
 alias nvim="$EDITOR"
 
-export ANDROID_HOME=/Users/$USER/Library/Android/sdk
-export PATH=${PATH}:$ANDROID_HOME/tools:$ANDROID_HOME/platform-tools
-
 # bun completions
 [ -s "/Users/xein/.bun/_bun" ] && source "/Users/xein/.bun/_bun"
 
@@ -176,3 +174,5 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 export PATH=/Users/xein/.opencode/bin:$PATH
 
 eval "$(~/.local/bin/mise activate)"
+
+export PATH="$HOME/.go/bin:$PATH"
