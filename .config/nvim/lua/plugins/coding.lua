@@ -31,16 +31,16 @@ return {
 				},
 				indent = { enable = true },
 
-				-- Select through <CR>
-				incremental_selection = {
-					enable = true,
-					keymaps = {
-						init_selection = "<enter>",
-						node_incremental = "<enter>",
-						scope_incremental = false,
-						node_decremental = "<backspace>",
-					},
+			-- Select through <CR>
+			incremental_selection = {
+				enable = true,
+				keymaps = {
+					init_selection = "gnn", -- Changed from <enter> to gnn
+					node_incremental = "grn",
+					scope_incremental = "grc",
+					node_decremental = "grm",
 				},
+			},
 			})
 		end,
 	},

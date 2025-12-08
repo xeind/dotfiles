@@ -126,9 +126,12 @@ return {
 		---@module 'oil'
 		---@type oil.SetupOpts
 		opts = {
+			float = {
+				preview_split = "auto",
+			},
 			columns = {
 				"icon",
-				"size",
+				-- "size",
 				"mtime",
 			},
 			delete_to_trash = true,
@@ -165,7 +168,8 @@ return {
 	},
 	{
 		"kevinhwang91/nvim-ufo",
-		event = "BufReadPost",
+		lazy = false, -- Load immediately to ensure fold settings are available
+		priority = 1000, -- High priority to load before other plugins
 		keys = {
 			{
 				"K",
@@ -175,6 +179,19 @@ return {
 						vim.lsp.buf.hover()
 					end
 				end,
+			},
+			{ "zR", function() require("ufo").openAllFolds() end, desc = "Open all folds" },
+			{ "zM", function() require("ufo").closeAllFolds() end, desc = "Close all folds" },
+			{
+				"<leader>zf",
+				function()
+					if vim.wo.foldlevel == 99 then
+						require("ufo").closeAllFolds()
+					else
+						require("ufo").openAllFolds()
+					end
+				end,
+				desc = "Toggle all folds",
 			},
 		},
 		dependencies = {
@@ -217,6 +234,27 @@ return {
 
 			require("ufo").setup({
 				fold_virt_text_handler = handler,
+				provider_selector = function(bufnr, filetype, buftype)
+					return { "treesitter", "indent" }
+				end,
+				open_fold_hl_timeout = 150,
+				close_fold_kinds_for_ft = {},
+			})
+
+			-- Ensure fold levels are properly set for all buffers
+			vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile", "BufWinEnter" }, {
+				group = vim.api.nvim_create_augroup("ufo_buffer_folds", { clear = true }),
+				callback = function(args)
+					-- Skip special buffers
+					local buftype = vim.bo[args.buf].buftype
+					if buftype == "nofile" or buftype == "terminal" or buftype == "prompt" then
+						return
+					end
+
+					-- Set buffer-local fold options
+					vim.wo.foldlevel = 99
+					vim.wo.foldenable = true
+				end,
 			})
 		end,
 	},
@@ -294,6 +332,27 @@ return {
 			local last_git_check = 0
 			local git_check_interval = 5 -- seconds
 
+			-- Path display cache to prevent flickering
+			local path_cache = {}
+			local function get_cached_path(bufnr)
+				local bufname = vim.api.nvim_buf_get_name(bufnr)
+				if path_cache[bufnr] and path_cache[bufnr].name == bufname then
+					return path_cache[bufnr].display
+				end
+				return nil
+			end
+
+			local function set_cached_path(bufnr, bufname, display)
+				path_cache[bufnr] = { name = bufname, display = display }
+			end
+
+			-- Clear cache when buffer is deleted
+			vim.api.nvim_create_autocmd("BufDelete", {
+				callback = function(ev)
+					path_cache[ev.buf] = nil
+				end,
+			})
+
 			-- Async helpers
 			local function async_cmd(cmd_str, on_exit)
 				local cmd = vim.tbl_filter(function(e)
@@ -339,7 +398,8 @@ return {
 				end
 				for i = 1, fn.line("$") do
 					if fn.match(fn.getline(i), [[\v\s+$]]) ~= -1 then
-						trailing_cache = string.format("[%d]trailing", i)
+						-- trailing_cache = string.format("[%d]trailing", i)
+						trailing_cache = string.format("%d~", i)
 						return
 					end
 				end
@@ -448,15 +508,143 @@ return {
 					component_separators = { left = "⏐", right = "⏐" },
 					section_separators = "",
 					always_divide_middle = true,
-					refresh = { statusline = 1000 },
+					refresh = {
+						statusline = 200, -- Reduced from 1000ms to 200ms but with caching
+						tabline = 200,
+						winbar = 200,
+					},
 				},
 				sections = {
 					lualine_a = {
-						function()
-							local cwd = fn.fnamemodify(fn.getcwd(), ":t")
-							local filename = fn.expand("%:t")
-							return string.format("%s/%s", cwd, filename)
-						end,
+						{
+							function()
+								local bufnr = vim.api.nvim_get_current_buf()
+								if not vim.api.nvim_buf_is_valid(bufnr) then
+									return ""
+								end
+
+								local bufname = vim.api.nvim_buf_get_name(bufnr)
+
+								-- Check cache first to reduce flickering
+								local cached = get_cached_path(bufnr)
+								if cached then
+									return cached
+								end
+
+								local display
+
+								-- Handle empty buffer names
+								if bufname == "" then
+									display = "[No Name]"
+									set_cached_path(bufnr, bufname, display)
+									return display
+								end
+
+								-- Handle Oil.nvim buffers
+								if bufname:match("^oil://") then
+									local path = bufname:gsub("^oil://", "")
+									local relative_path = vim.fn.fnamemodify(path, ":~:.")
+
+									-- Handle root directory or empty path
+									if relative_path == "" or relative_path == "." or relative_path == "/" then
+										display = "󰉓 ."
+										set_cached_path(bufnr, bufname, display)
+										return display
+									end
+
+									local parts = {}
+									for part in relative_path:gmatch("[^/]+") do
+										table.insert(parts, part)
+									end
+
+									if #parts == 0 then
+										display = "󰉓 ."
+									elseif #parts <= 2 then
+										display = "󰉓 " .. relative_path
+									else
+										-- Smart truncation for oil paths
+										local truncated = parts[1]:sub(1, 1)
+										for i = 2, #parts - 1 do
+											truncated = truncated .. "/" .. parts[i]:sub(1, 1)
+										end
+										truncated = truncated .. "/" .. parts[#parts]
+										display = "󰉓 " .. truncated
+									end
+
+									set_cached_path(bufnr, bufname, display)
+									return display
+								end
+
+								-- For normal files, use your existing logic
+								local relative_path = vim.fn.expand("%:p:.")
+								if relative_path == "" then
+									display = "[No Name]"
+									set_cached_path(bufnr, bufname, display)
+									return display
+								end
+
+								local parts = {}
+
+								for part in relative_path:gmatch("[^/]+") do
+									table.insert(parts, part)
+								end
+
+								if #parts == 0 then
+									display = relative_path
+								elseif #parts <= 3 then
+									display = table.concat(parts, "/")
+								else
+									local dir_abbr = {
+										routes = "r",
+										handlers = "h",
+										components = "c",
+										utils = "u",
+										src = "src",
+										dist = "dist",
+										lib = "lib",
+										app = "app",
+										pages = "p",
+										types = "t",
+										hooks = "h",
+										middleware = "mw",
+									}
+
+									local display_parts = {}
+
+									-- Project initial
+									display_parts[1] = parts[1]:sub(1, 1)
+
+									-- Special handling for common second-level directories
+									if #parts >= 2 then
+										local second_dir = parts[2]:lower()
+										if second_dir == "src" or second_dir == "dist" or second_dir == "lib" then
+											display_parts[2] = second_dir
+										else
+											display_parts[2] = dir_abbr[second_dir] or second_dir:sub(1, 1)
+										end
+									end
+
+									-- Middle directories as initials
+									for i = 3, #parts - 2 do
+										local dir = parts[i]:lower()
+										display_parts[i] = dir_abbr[dir] or dir:sub(1, 1)
+									end
+
+									-- Last 2 parts full
+									display_parts[#parts - 1] = parts[#parts - 1]
+									display_parts[#parts] = parts[#parts]
+
+									display = table.concat(display_parts, "/")
+								end
+
+								set_cached_path(bufnr, bufname, display)
+								return display
+							end,
+							cond = function()
+								local bufnr = vim.api.nvim_get_current_buf()
+								return vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_get_name(bufnr) ~= ""
+							end,
+						},
 					},
 					lualine_b = {
 						{
@@ -472,14 +660,14 @@ return {
 					},
 					lualine_c = {},
 					lualine_x = {
-						{ get_active_lsp },
+						-- { get_active_lsp },
 						{ "diagnostics", sources = { "nvim_diagnostic" } },
-						{
-							function()
-								return trailing_cache
-							end,
-							color = "WarningMsg",
-						},
+						-- {
+						-- 	function()
+						-- 		return trailing_cache
+						-- 	end,
+						-- 	color = "WarningMsg",
+						-- },
 						{
 							function()
 								return mixed_cache

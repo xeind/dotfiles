@@ -15,7 +15,7 @@ key.set("n", "<C-u>", "<C-u>zz", { desc = "Half Page Up and Center" })
 key.set("n", "dw", 'vb"_d', { desc = "Delete word backwards" })
 
 -- Select all
-key.set("n", "<C-a>", "gg<S-v>G", { desc = "Select all" })
+-- key.set("n", "<C-a>", "gg<S-v>G", { desc = "Select all" })
 
 -- New tab
 key.set("n", "te", ":tabedit")
@@ -36,7 +36,6 @@ key.set("n", "<C-w><down>", "<C-w>-")
 key.set("n", "<leader>o", ":update<CR> :source<CR>", { desc = "Source File" })
 key.set("n", "<leader>w", ":write<CR>", { desc = "Write File" })
 key.set("n", "<leader>q", ":quit<CR>", { desc = "Quit File" })
--- key.set("n", "<leader>Q", ":quit!<CR>", { desc = "Force Quit File" })
 key.set("n", "<leader>l", ":Lazy<CR>", { desc = "Open Lazy" })
 
 -- Blackhole delete only for empty lines, otherwise normal delete

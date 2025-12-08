@@ -22,7 +22,11 @@ return {
 			{
 				"<leader>ff",
 				function()
-					require("fzf-lua").files()
+					require("fzf-lua").files({
+						-- winopts = {
+						-- 	split = "belowright new", -- horizontal split
+						-- },
+					})
 				end,
 				desc = "[F]ind [F]iles",
 			},
@@ -112,6 +116,12 @@ return {
 			},
 		},
 		opts = {
+			winopts = {
+				preview = {
+					scrollbar = false, -- Clean look, no scrollbar
+				},
+			},
+			keymap = {},
 			files = {
 				fd_opts = table.concat({
 					"--hidden",
@@ -190,34 +200,45 @@ return {
 		"stevearc/conform.nvim",
 		event = "VeryLazy",
 		ft = { "ruby" },
-		opts = {
-			formatters_by_ft = {
-				lua = { "stylua" },
-				json = { "jq", "prettierd" },
-				python = { "black" },
-				javascript = { "prettierd" },
-				typescript = { "prettierd" },
-				typescriptreact = { "prettierd" },
-				vue = { "prettierd" },
-				typst = { "typstyle" },
-				markdown = { "prettierd" },
-				latex = { "latexindent" },
-				ruby = { "rubocop" },
-				eruby = { "erb_format" },
-				--	typescriptreact = { "typescript_tool",  },
-			},
-			-- formatters = {
-			-- 	rubocop = {
-			-- 		command = os.getenv("HOME") .. "/.local/share/mise/shims/rubocop",
-			-- 		args = { "--autocorrect", "--stderr", "--stdin", "$FILENAME" }
-			-- 	},
-			-- },
-			format_on_save = {
-				-- lsp_format = true,
-				lsp_fallback = true,
-				timeout_ms = 400,
-			},
-		},
+		config = function()
+			local conform = require("conform")
+
+			-- Track format-on-save state
+			vim.g.format_on_save_enabled = true
+
+			conform.setup({
+				formatters_by_ft = {
+					lua = { "stylua" },
+					json = { "jq", "prettierd" },
+					python = { "black" },
+					javascript = { "prettierd" },
+					typescript = { "prettierd" },
+					typescriptreact = { "prettierd" },
+					vue = { "prettierd" },
+					typst = { "typstyle" },
+					markdown = { "prettierd" },
+					latex = { "latexindent" },
+					ruby = { "rubocop" },
+					eruby = { "erb_format" },
+					--	typescriptreact = { "typescript_tool",  },
+				},
+				-- formatters = {
+				-- 	rubocop = {
+				-- 		command = os.getenv("HOME") .. "/.local/share/mise/shims/rubocop",
+				-- 		args = { "--autocorrect", "--stderr", "--stdin", "$FILENAME" }
+				-- 	},
+				-- },
+				format_on_save = function(bufnr)
+					if not vim.g.format_on_save_enabled then
+						return
+					end
+					return {
+						lsp_fallback = true,
+						timeout_ms = 400,
+					}
+				end,
+			})
+		end,
 		keys = {
 			{
 				"<leader>cf",
@@ -227,7 +248,19 @@ return {
 					})
 				end,
 				mode = { "n", "v" },
-				desc = "Format on save",
+				desc = "Format buffer",
+			},
+			{
+				"<leader>uf",
+				function()
+					vim.g.format_on_save_enabled = not vim.g.format_on_save_enabled
+					if vim.g.format_on_save_enabled then
+						print("Format on save enabled")
+					else
+						print("Format on save disabled")
+					end
+				end,
+				desc = "Toggle format on save",
 			},
 		},
 	},
