@@ -1,10 +1,11 @@
-theme = Kanagawa Dragon
+theme = /Users/xein/.local/share/nvim/lazy/nightingale.nvim/extras/ghostty/nightingale
+# theme = Kanagawa Dragon
 background-opacity = .98
 background-blur-radius = 22
 
-font-family = TX-02
-font-size = 16
-font-feature= ss01
+font-family = TX-02 Condensed
+font-size = 18
+font-feature= -calt, aalt
 
 window-height = 24
 window-width = 90
@@ -15,7 +16,7 @@ window-title-font-family = TX-02
 macos-titlebar-style = hidden
 macos-titlebar-proxy-icon = hidden
 # macos-non-native-fullscreen = true
-title = " "
+#title = " "
 
 macos-option-as-alt = left
 
@@ -28,3 +29,4 @@ macos-icon = custom-style
 shell-integration = zsh
 cursor-style-blink = false
 shell-integration-features = no-cursor
+
