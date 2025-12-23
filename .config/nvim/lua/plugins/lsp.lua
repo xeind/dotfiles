@@ -1,5 +1,50 @@
 vim.g.lsp_servers = {
 	-- Copied from github/rijulkap
+	pyright = {
+		on_attach = function(client, _bufnr)
+			-- Dynamically detect and set Python path for this workspace
+			local cwd = vim.fn.getcwd()
+			local venv_python = cwd .. "/.venv/bin/python"
+
+			if vim.fn.filereadable(venv_python) == 1 then
+				-- Update workspace configuration for this client
+				client.config.settings.python = client.config.settings.python or {}
+				client.config.settings.python.pythonPath = venv_python
+				client.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
+			end
+		end,
+		settings = {
+			python = {
+				analysis = {
+					autoSearchPaths = true,
+					useLibraryCodeForTypes = true,
+					typeCheckingMode = "basic",
+				},
+			},
+		},
+	},
+	ruff = {},
+
+	eslint = {
+		settings = {
+			format = false, -- Don't format (conform.nvim handles this)
+			workingDirectory = { mode = "auto" },
+
+			-- Remap ESLint rule severities to proper colors
+			rulesCustomizations = {
+				{ rule = "react-hooks/exhaustive-deps", severity = "warn" },
+				{ rule = "*unused-vars*", severity = "info" },
+				{ rule = "*unused-imports*", severity = "info" },
+			},
+		},
+
+		on_attach = function(client, _bufnr)
+			-- Disable ESLint formatting (use prettierd via conform.nvim)
+			client.server_capabilities.documentFormattingProvider = false
+			client.server_capabilities.documentRangeFormattingProvider = false
+		end,
+	},
+
 	lua_ls = {
 		settings = {
 			Lua = {
@@ -29,7 +74,7 @@ vim.g.lsp_servers = {
 	},
 
 	svelte = {
-		on_attach = function(client, bufnr)
+		on_attach = function(client, _bufnr)
 			vim.api.nvim_create_autocmd("BufWritePost", {
 				pattern = { "*.js", "*.ts" },
 				callback = function(ctx)
@@ -41,14 +86,6 @@ vim.g.lsp_servers = {
 
 	clangd = {
 		cmd = { "clangd", "--compile-commands-dir=.", "--background-index", "--all-scopes-completion" },
-	},
-
-	tailwindcss = {
-		settings = {
-			editors = {
-				tabSize = 2,
-			},
-		},
 	},
 
 	emmet_ls = {
@@ -116,7 +153,9 @@ vim.g.lsp_servers = {
 	},
 }
 
-vim.g.other_mason_servers = {}
+vim.g.other_mason_servers = {
+	"eslint-lsp",
+}
 
 return {
 	{
@@ -156,14 +195,6 @@ return {
 			-- Configure and get names of lsp servers
 			local lsp_server_names = {}
 			for lsp_server_name, lsp_server_config in pairs(vim.g.lsp_servers) do
-				-- RUBY LSP
-				-- if lsp_server_name == "ruby_lsp" then
-				-- 	require('lspconfig').ruby_lsp.setup(lsp_server_config)
-				-- else
-				-- 	-- Add custom config settings for other servers
-				-- 	local lsp_server_settings = vim.g.lsp_servers[lsp_server_name] or {}
-				-- 	vim.lsp.config(lsp_server_name, lsp_server_settings)
-				-- end
 				local lsp_server_settings = vim.g.lsp_servers[lsp_server_name] or {}
 				vim.lsp.config(lsp_server_name, lsp_server_settings)
 
@@ -248,7 +279,10 @@ return {
 							setup_document_highlight(event.buf)
 						end
 						if client:supports_method(vim.lsp.protocol.Methods.textDocument_codeLens, event.buf) then
-							setup_codelens(event.buf)
+							-- Skip codelens for lua_ls (causes "0 references, Unresolved lens..." spam)
+							if client.name ~= "lua_ls" then
+								setup_codelens(event.buf)
+							end
 						end
 						if client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
 							vim.lsp.inlay_hint.enable(true)
@@ -277,7 +311,8 @@ return {
 			-- wrappers to allow for toggling
 			local def_virtual_text = {
 				isTrue = {
-					severity = { max = "WARN" },
+					-- severity = { max = "WARN" },
+					severity = { min = vim.diagnostic.severity.WARN },
 					source = "if_many",
 					spacing = 4,
 					prefix = "• ",
@@ -320,10 +355,10 @@ return {
 				},
 				signs = {
 					text = {
-						-- [vim.diagnostic.severity.ERROR] = " ",
-						-- [vim.diagnostic.severity.WARN] = " ",
-						-- [vim.diagnostic.severity.INFO] = " ",
-						-- [vim.diagnostic.severity.HINT] = " ",
+						-- [vim.diagnostic.severity.ERROR] = " ",
+						-- [vim.diagnostic.severity.WARN] = " ",
+						-- [vim.diagnostic.severity.INFO] = " ",
+						-- [vim.diagnostic.severity.HINT] = " ",
 						[vim.diagnostic.severity.ERROR] = "",
 						[vim.diagnostic.severity.WARN] = "",
 						[vim.diagnostic.severity.INFO] = "",
@@ -485,4 +520,37 @@ return {
 		"b0o/schemastore.nvim",
 		lazy = true,
 	},
+	-- {
+	-- 	"mfussenegger/nvim-lint",
+	-- 	enabled = false,
+	-- 	event = {
+	-- 		"BufReadPre",
+	-- 		"BufNewFile",
+	-- 	},
+	--
+	-- 	config = function()
+	-- 		local lint = require("lint")
+	--
+	-- 		-- ESLint LSP handles JS/TS linting now, so nvim-lint is not needed for those
+	-- 		lint.linters_by_ft = {
+	-- 			-- javascript = { "eslint_d" },  -- Removed: ESLint LSP handles this
+	-- 			-- typescript = { "eslint_d" },  -- Removed: ESLint LSP handles this
+	-- 			-- javascriptreact = { "eslint_d" },  -- Removed: ESLint LSP handles this
+	-- 			-- typescriptreact = { "eslint_d" },  -- Removed: ESLint LSP handles this
+	-- 			-- svelte = { "eslint_d" },  -- Removed: ESLint LSP handles this
+	-- 		}
+	-- 		local lint_augroup = vim.api.nvim_create_augroup("lint", { clear = true })
+	--
+	-- 		vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
+	-- 			group = lint_augroup,
+	-- 			callback = function()
+	-- 				lint.try_lint()
+	-- 			end,
+	-- 		})
+	--
+	-- 		vim.keymap.set("n", "<leader>ll", function()
+	-- 			lint.try_lint()
+	-- 		end, { desc = "Trigger linting for current file" })
+	-- 	end,
+	-- },
 }

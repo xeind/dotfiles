@@ -222,12 +222,23 @@ return {
 					eruby = { "erb_format" },
 					--	typescriptreact = { "typescript_tool",  },
 				},
-				-- formatters = {
-				-- 	rubocop = {
-				-- 		command = os.getenv("HOME") .. "/.local/share/mise/shims/rubocop",
-				-- 		args = { "--autocorrect", "--stderr", "--stdin", "$FILENAME" }
-				-- 	},
-				-- },
+				formatters = {
+					-- Configure prettierd to prefer project's node_modules
+					prettierd = {
+						command = function()
+							local local_prettierd = vim.fn.fnamemodify("./node_modules/.bin/prettierd", ":p")
+							if vim.fn.executable(local_prettierd) == 1 then
+								return local_prettierd
+							end
+							-- Fallback to global/Mason prettierd
+							return "prettierd"
+						end,
+					},
+					-- 	rubocop = {
+					-- 		command = os.getenv("HOME") .. "/.local/share/mise/shims/rubocop",
+					-- 		args = { "--autocorrect", "--stderr", "--stdin", "$FILENAME" }
+					-- 	},
+				},
 				format_on_save = function(bufnr)
 					if not vim.g.format_on_save_enabled then
 						return

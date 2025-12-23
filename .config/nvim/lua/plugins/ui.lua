@@ -168,8 +168,7 @@ return {
 	},
 	{
 		"kevinhwang91/nvim-ufo",
-		lazy = false, -- Load immediately to ensure fold settings are available
-		priority = 1000, -- High priority to load before other plugins
+		event = { "BufReadPost", "BufNewFile" },
 		keys = {
 			{
 				"K",
@@ -180,8 +179,20 @@ return {
 					end
 				end,
 			},
-			{ "zR", function() require("ufo").openAllFolds() end, desc = "Open all folds" },
-			{ "zM", function() require("ufo").closeAllFolds() end, desc = "Close all folds" },
+			{
+				"zR",
+				function()
+					require("ufo").openAllFolds()
+				end,
+				desc = "Open all folds",
+			},
+			{
+				"zM",
+				function()
+					require("ufo").closeAllFolds()
+				end,
+				desc = "Close all folds",
+			},
 			{
 				"<leader>zf",
 				function()
@@ -258,7 +269,6 @@ return {
 			})
 		end,
 	},
-
 	{
 		"nvzone/showkeys",
 		event = "VeryLazy",
@@ -282,6 +292,12 @@ return {
 		-- build = "nix run .#release",
 		build = function()
 			require("fff.download").download_or_build_binary()
+		end,
+
+		config = function()
+			require("fff").setup({
+				prompt = " ",
+			})
 		end,
 		opts = {
 			-- pass here all the options
