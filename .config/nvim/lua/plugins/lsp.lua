@@ -520,37 +520,4 @@ return {
 		"b0o/schemastore.nvim",
 		lazy = true,
 	},
-	-- {
-	-- 	"mfussenegger/nvim-lint",
-	-- 	enabled = false,
-	-- 	event = {
-	-- 		"BufReadPre",
-	-- 		"BufNewFile",
-	-- 	},
-	--
-	-- 	config = function()
-	-- 		local lint = require("lint")
-	--
-	-- 		-- ESLint LSP handles JS/TS linting now, so nvim-lint is not needed for those
-	-- 		lint.linters_by_ft = {
-	-- 			-- javascript = { "eslint_d" },  -- Removed: ESLint LSP handles this
-	-- 			-- typescript = { "eslint_d" },  -- Removed: ESLint LSP handles this
-	-- 			-- javascriptreact = { "eslint_d" },  -- Removed: ESLint LSP handles this
-	-- 			-- typescriptreact = { "eslint_d" },  -- Removed: ESLint LSP handles this
-	-- 			-- svelte = { "eslint_d" },  -- Removed: ESLint LSP handles this
-	-- 		}
-	-- 		local lint_augroup = vim.api.nvim_create_augroup("lint", { clear = true })
-	--
-	-- 		vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "InsertLeave" }, {
-	-- 			group = lint_augroup,
-	-- 			callback = function()
-	-- 				lint.try_lint()
-	-- 			end,
-	-- 		})
-	--
-	-- 		vim.keymap.set("n", "<leader>ll", function()
-	-- 			lint.try_lint()
-	-- 		end, { desc = "Trigger linting for current file" })
-	-- 	end,
-	-- },
 }
