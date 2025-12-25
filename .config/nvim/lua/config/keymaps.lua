@@ -14,9 +14,6 @@ key.set("n", "<C-u>", "<C-u>zz", { desc = "Half Page Up and Center" })
 -- Delete word backswards
 key.set("n", "dw", 'vb"_d', { desc = "Delete word backwards" })
 
--- Select all
--- key.set("n", "<C-a>", "gg<S-v>G", { desc = "Select all" })
-
 -- New tab
 key.set("n", "te", ":tabedit")
 key.set("n", "<tab>", ":tabnext<Return>", opts)
@@ -54,9 +51,3 @@ end, { desc = "Delete line (black hole if empty)", noremap = true, silent = true
 key.set("n", "<leader>uw", function()
 	vim.o.wrap = not vim.o.wrap
 end, { desc = "Toggle line wrap" })
-
--- Move window
--- key.set("n", "sh", "<C-w>h")
--- key.set("n", "sk", "<C-w>k")
--- key.set("n", "sj", "<C-w>j")
--- key.set("n", "sl", "<C-w>l")
