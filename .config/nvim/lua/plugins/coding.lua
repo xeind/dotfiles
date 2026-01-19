@@ -1,114 +1,130 @@
 return {
 	{
 		"nvim-treesitter/nvim-treesitter",
-		build = ":TSupdate",
-		-- lazy = false,
+		branch = "main",
+		build = ":TSUpdate",
 		event = { "BufReadPre", "BufNewFile" },
 		config = function()
-			local configs = require("nvim-treesitter.configs")
+			require("nvim-treesitter").setup({})
 
-			configs.setup({
-				ensure_installed = {
-					"c",
+			-- Enable treesitter for specific languages (official recommended approach)
+			-- This prevents the autocmd from firing on UI buffers like blink-cmp-menu
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = {
+					-- Neovim/Lua development
 					"lua",
 					"vim",
 					"vimdoc",
 					"query",
+					-- Elixir
 					"elixir",
 					"heex",
+					"eex",
+					-- JavaScript/TypeScript
 					"javascript",
+					"typescript",
+					"javascriptreact",
+					"typescriptreact",
+					"jsx",
+					"tsx",
+					-- Web
 					"html",
-					"json5",
+					"css",
+					"scss",
+					"json",
+					"jsonc",
+					-- Python
 					"python",
+					-- Markdown
 					"markdown",
+					"markdown_inline",
+					-- Shell
+					"bash",
+					"sh",
+					"zsh",
+					-- C/C++
+					"c",
+					"cpp",
+					"h",
+					-- Docker
 					"dockerfile",
+					-- Git (if you want syntax highlighting in commit messages)
+					"gitcommit",
+					"gitrebase",
+					"gitconfig",
+					-- Other
+					"yaml",
+					"toml",
+					"sql",
 				},
-				auto_install = true,
-				sync_install = false,
-				highlight = {
-					enable = true,
-					additional_vim_regex_highlighting = false,
-				},
-				indent = { enable = true },
-
-			-- Select through <CR>
-			incremental_selection = {
-				enable = true,
-				keymaps = {
-					init_selection = "gnn", -- Changed from <enter> to gnn
-					node_incremental = "grn",
-					scope_incremental = "grc",
-					node_decremental = "grm",
-				},
-			},
+				callback = function()
+					vim.treesitter.start()
+				end,
 			})
 		end,
 	},
 	{
 		"nvim-treesitter/nvim-treesitter-textobjects",
-		enabled = true,
 		dependencies = {
 			"nvim-treesitter/nvim-treesitter",
 		},
 		event = { "BufReadPost", "BufNewFile" },
-
+		branch = "main",
 		config = function()
-			local config = require("nvim-treesitter.configs")
-			config.setup({
-				textobjects = {
-					select = {
-						enable = true,
-
-						-- automatically jump forward to textobj, similar to targets.vim
-						lookahead = true,
-
-						keymaps = {
-							-- you can use the capture groups defined in textobjects.scm
-							["af"] = "@function.outer",
-							["if"] = "@function.inner",
-							["ac"] = "@class.outer",
-							-- you can optionally set descriptions to the mappings (used in the desc parameter of
-							-- nvim_buf_set_keymap) which plugins like which-key display
-							["ic"] = { query = "@class.inner", desc = "select inner part of a class region" },
-							-- you can also use captures from other query groups like `locals.scm`
-							["as"] = { query = "@local.scope", query_group = "locals", desc = "select language scope" },
-							["ab"] = "@block.outer",
-							["ib"] = "@block.inner",
-						},
-						-- you can choose the select mode (default is charwise 'v')
-						--
-						-- can also be a function which gets passed a table with the keys
-						-- * query_string: eg '@function.inner'
-						-- * method: eg 'v' or 'o'
-						-- and should return the mode ('v', 'v', or '<c-v>') or a table
-						-- mapping query_strings to modes.
-						selection_modes = {
-							["@parameter.outer"] = "v", -- charwise
-							["@function.outer"] = "v", -- linewise
-							["@class.outer"] = "<c-v>", -- blockwise
-						},
-						-- if you set this to `true` (default is `false`) then any textobject is
-						-- extended to include preceding or succeeding whitespace. succeeding
-						-- whitespace has priority in order to act similarly to eg the built-in
-						-- `ap`.
-						--
-						-- can also be a function which gets passed a table with the keys
-						-- * query_string: eg '@function.inner'
-						-- * selection_mode: eg 'v'
-						-- and should return true or false
-						include_surrounding_whitespace = true,
-					},
-					swap = {
-						enable = true,
-						swap_next = {
-							["<leader>a"] = { query = "@parameter.inner", desc = "Swap with next parameter" },
-						},
-						swap_previous = {
-							["<leader>A"] = { query = "@parameter.inner", desc = "Swap with previous parameter" },
-						},
+			-- Setup textobjects (new main branch API)
+			require("nvim-treesitter-textobjects").setup({
+				select = {
+					include_surrounding_whitespace = true,
+					lookahead = true,
+					selection_modes = {
+						["@parameter.outer"] = "v", -- charwise
+						["@function.outer"] = "V", -- linewise
+						["@class.outer"] = "<c-v>", -- blockwise
 					},
 				},
 			})
+
+			-- Manual keymaps for SELECT textobjects (new API requirement)
+			local select = require("nvim-treesitter-textobjects.select")
+
+			vim.keymap.set({ "x", "o" }, "af", function()
+				select.select_textobject("@function.outer", "textobjects")
+			end, { desc = "Select around function" })
+
+			vim.keymap.set({ "x", "o" }, "if", function()
+				select.select_textobject("@function.inner", "textobjects")
+			end, { desc = "Select inner function" })
+
+			vim.keymap.set({ "x", "o" }, "ac", function()
+				select.select_textobject("@class.outer", "textobjects")
+			end, { desc = "Select around class" })
+
+			vim.keymap.set({ "x", "o" }, "ic", function()
+				select.select_textobject("@class.inner", "textobjects")
+			end, { desc = "Select inner class" })
+
+			vim.keymap.set({ "x", "o" }, "ab", function()
+				select.select_textobject("@block.outer", "textobjects")
+			end, { desc = "Select around block" })
+
+			vim.keymap.set({ "x", "o" }, "ib", function()
+				select.select_textobject("@block.inner", "textobjects")
+			end, { desc = "Select inner block" })
+
+			vim.keymap.set({ "x", "o" }, "as", function()
+				select.select_textobject("@local.scope", "locals")
+			end, { desc = "Select language scope" })
+
+			-- Manual keymaps for SWAP textobjects (using ]a/[a to match ] and [ navigation)
+			local swap = require("nvim-treesitter-textobjects.swap")
+
+			vim.keymap.set("n", "]a", function()
+				swap.swap_next("@parameter.inner")
+			end, { desc = "Swap parameter with next" })
+
+			vim.keymap.set("n", "[a", function()
+				swap.swap_previous("@parameter.inner")
+			end, { desc = "Swap parameter with previous" })
 		end,
 	},
 	{

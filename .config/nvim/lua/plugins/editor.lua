@@ -122,6 +122,11 @@ return {
 				},
 			},
 			keymap = {},
+			previewers = {
+				builtin = {
+					treesitter = { enabled = false },
+				},
+			},
 			files = {
 				fd_opts = table.concat({
 					"--hidden",
