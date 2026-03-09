@@ -51,6 +51,14 @@
       "ctrl-w q": "pane::CloseActiveItem",
     },
   },
+  // Half-page scroll + center cursor (like nvim)
+  {
+    "context": "Editor && VimControl && !menu",
+    "bindings": {
+      "ctrl-d": ["action::Sequence", ["vim::ScrollDown", "editor::ScrollCursorCenter"]],
+      "ctrl-u": ["action::Sequence", ["vim::ScrollUp", "editor::ScrollCursorCenter"]]
+    }
+  },
   // Make d delete (to black hole register) and x cut (default vim d behavior)
   {
     "context": "Editor && VimControl && vim_mode == normal",
