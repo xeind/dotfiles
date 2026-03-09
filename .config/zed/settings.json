@@ -1,8 +1,30 @@
 {
+  "sticky_scroll": {
+    "enabled": true
+  },
+  "which_key": {
+    "enabled": true
+  },
+  "agent_buffer_font_size": 14.0,
+  "selection_highlight": false,
+  "session": {
+    "restore_unsaved_buffers": false
+  },
+  "vim": {
+    "toggle_relative_line_numbers": true,
+    "use_system_clipboard": "always",
+    "use_smartcase_find": true
+  },
+  "show_edit_predictions": false,
+  "disable_ai": false,
+  "unnecessary_code_fade": 0.3,
+  "rounded_selection": false,
+  "buffer_font_weight": 400.0,
   "colorize_brackets": true,
-  "helix_mode": true,
   "gutter": {
-    "folds": false
+    "runnables": true,
+    "breakpoints": false,
+    "folds": true
   },
   "git_panel": {
     "scrollbar": {
@@ -12,7 +34,6 @@
   "ui_font_weight": 450.0,
   "preview_tabs": {
     "enable_preview_from_file_finder": false
-  },
   "git": {
     "blame": {
       "show_avatar": false
@@ -68,13 +89,14 @@
   "ui_font_family": "Inter",
   "icon_theme": {
     "mode": "system",
-    "light": "Colored Zed Icons Theme Light",
+    "light": "Colored Zed Icons Theme Dark",
     "dark": "Colored Zed Icons Theme Dark"
   },
   "terminal": {
+    "cursor_shape": "block",
     "option_as_meta": true,
     "dock": "bottom",
-    "font_family": "BerkeleyMono Nerd Font",
+    "font_family": "TX-02 Condensed",
     "font_features": {
       "calt": 0,
       "ss03": 1,
@@ -90,29 +112,24 @@
     "enabled_in_text_threads": false
   },
   "cursor_blink": false,
-  "cursor_shape": "block",
-  "buffer_font_size": 18,
+  "cursor_shape": "bar",
+  "buffer_font_size": 18.0,
   "buffer_font_family": "TX-02 Condensed",
   "buffer_font_features": { "ss01": true },
   //"base_keymap": "VSCode",
   "vim_mode": true,
-  "ui_font_size": 16,
-  "theme": "Nightingale",
-  "features": {
-    "edit_prediction_provider": "zed"
+  "command_aliases": {
+    "W": "w",
+    "Wq": "wq",
+    "Q": "q"
   },
+  "ui_font_size": 14,
+  "theme": "Nightingale",
   "agent": {
     "default_profile": "ask",
     "default_model": {
       "provider": "copilot_chat",
       "model": "claude-sonnet-4.5"
-    }
-  },
-  "agent_servers": {
-    "OpenCode": {
-      "type": "custom",
-      "command": "opencode",
-      "args": ["acp"]
     }
   }
 }

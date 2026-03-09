@@ -1,0 +1,71 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`
+// from the command palette.
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+      // "shift shift": "file_finder::Toggle"
+    },
+  },
+  {
+    "context": "Editor && vim_mode == insert",
+    "bindings": {
+      // "j k": "vim::NormalBefore"
+    },
+  },
+  // Space leader mappings (nvim-style)
+  {
+    "context": "Editor && VimControl && !menu",
+    "bindings": {
+      "space w": "workspace::Save",
+      "space q": "pane::CloseActiveItem",
+    },
+  },
+  // ctrl-w pane navigation in terminal and agent panel
+  {
+    "context": "Terminal",
+    "bindings": {
+      "ctrl-w h": "workspace::ActivatePaneLeft",
+      "ctrl-w l": "workspace::ActivatePaneRight",
+      "ctrl-w k": "workspace::ActivatePaneUp",
+      "ctrl-w j": "workspace::ActivatePaneDown",
+      "ctrl-w v": "pane::SplitRight",
+      "ctrl-w s": "pane::SplitDown",
+      "ctrl-w q": "pane::CloseActiveItem",
+    },
+  },
+  {
+    "context": "AssistantPanel || ContextEditor",
+    "bindings": {
+      "ctrl-w h": "workspace::ActivatePaneLeft",
+      "ctrl-w l": "workspace::ActivatePaneRight",
+      "ctrl-w k": "workspace::ActivatePaneUp",
+      "ctrl-w j": "workspace::ActivatePaneDown",
+      "ctrl-w v": "pane::SplitRight",
+      "ctrl-w s": "pane::SplitDown",
+      "ctrl-w q": "pane::CloseActiveItem",
+    },
+  },
+  // Make d delete (to black hole register) and x cut (default vim d behavior)
+  {
+    "context": "Editor && VimControl && vim_mode == normal",
+    "bindings": {
+      "ctrl-shift-d": "vim::PushDelete",
+      "d": ["workspace::SendKeystrokes", "\" _ ctrl-shift-d"],
+      "x": ["workspace::SendKeystrokes", "ctrl-shift-d"],
+    },
+  },
+  {
+    "context": "Editor && VimControl && vim_mode == visual",
+    "bindings": {
+      "ctrl-shift-d": "vim::VisualDelete",
+      "d": ["workspace::SendKeystrokes", "\" _ ctrl-shift-d"],
+      "x": ["workspace::SendKeystrokes", "ctrl-shift-d"],
+    },
+  },
+]
