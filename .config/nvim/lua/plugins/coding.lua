@@ -56,10 +56,17 @@ return {
 					"yaml",
 					"toml",
 					"sql",
+					"prisma",
 				},
-				callback = function()
-					vim.treesitter.start()
-				end,
+			callback = function(args)
+				local lang = vim.treesitter.language.get_lang(vim.bo[args.buf].filetype)
+				if lang then
+					local ok = pcall(vim.treesitter.start, args.buf, lang)
+					vim.b[args.buf].treesitter_available = ok
+				else
+					vim.b[args.buf].treesitter_available = false
+				end
+			end,
 			})
 		end,
 	},
@@ -173,5 +180,15 @@ return {
 				mode = "background", -- Set the display mode. Options: 'foreground', 'background'
 			})
 		end,
+	},
+	{
+		"ruicsh/tailwind-hover.nvim",
+		keys = {
+			{ "<leader><s-k>", "<cmd>TailwindHover<cr>", desc = "Tailwind: Hover" },
+		},
+		opts = {},
+		dependencies = {
+			"nvim-treesitter/nvim-treesitter",
+		},
 	},
 }
