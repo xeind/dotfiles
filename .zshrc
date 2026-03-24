@@ -1,9 +1,9 @@
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
+# if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+#   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+# fi
 
 # If you come from bash you might have to change your $PATH.
 # export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
@@ -80,6 +80,10 @@ DISABLE_AUTO_UPDATE="true"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(git sudo history encode64 copypath zsh-autosuggestions zsh-syntax-highlighting)
+# plugins=(git sudo history encode64 copypath)
+
+# Ensure p10k instant prompt is disabled early to avoid double-rendering prompt
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
 
 source $ZSH/oh-my-zsh.sh
 
@@ -128,6 +132,8 @@ alias ls='lsd'
 alias ll='ls -lah'
 # alias c="open $1 -a \"Visual Studio Code\""
 
+# alias claire='clear'
+
 source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
 
 # Keybinds
@@ -136,7 +142,7 @@ bindkey '^A' beginning-of-line          # Ctrl + A: Move cursor to the start of 
 bindkey '^N' menu-complete              # Ctrl + N: Move to the next suggestion
 bindkey '^P' reverse-menu-complete      # Ctrl + P: Move to the previous suggestion
 bindkey '^R' history-incremental-search-backward  # Ctrl + R: Reverse history search
-bindkey '^[[Z' forward-char
+# bindkey '^[[Z' forward-char
 
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -173,6 +179,6 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 # opencode
 export PATH=/Users/xein/.opencode/bin:$PATH
 
-eval "$(~/.local/bin/mise activate)"
+#eval "$(~/.local/bin/mise activate)"
 
 export PATH="$HOME/.go/bin:$PATH"
