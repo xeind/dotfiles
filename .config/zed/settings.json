@@ -34,6 +34,17 @@
   "ui_font_weight": 450.0,
   "preview_tabs": {
     "enable_preview_from_file_finder": false
+  },
+  "context_servers": {
+    "mcp-server-github": {
+      "enabled": true,
+      "settings": {}
+    },
+    "mcp-server-context7": {
+      "enabled": true,
+      "settings": {}
+    }
+  },
   "git": {
     "blame": {
       "show_avatar": false
@@ -88,7 +99,7 @@
   },
   "ui_font_family": "Inter",
   "icon_theme": {
-    "mode": "system",
+    "mode": "dark",
     "light": "Colored Zed Icons Theme Dark",
     "dark": "Colored Zed Icons Theme Dark"
   },
@@ -124,7 +135,11 @@
     "Q": "q"
   },
   "ui_font_size": 14,
-  "theme": "Nightingale",
+  "theme": {
+    "mode": "dark",
+    "light": "Nightingale",
+    "dark": "Nightingale"
+  },
   "agent": {
     "default_profile": "ask",
     "default_model": {
