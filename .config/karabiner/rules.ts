@@ -73,6 +73,7 @@ const rules: KarabinerRules[] = [
       f: app("Finder"),
       n: app("Things3"),
       p: app("Skim"),
+      h: app("Helium"),
       // v: app("Visual Studio Code"),
       c: app("Zed"),
     },
