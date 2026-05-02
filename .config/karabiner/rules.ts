@@ -321,6 +321,33 @@ const rules: KarabinerRules[] = [
       e: {
         to: [{ pointing_button: "button2" }],
       },
+      b: {
+        description: "Move Word Left",
+        to: [
+          {
+            key_code: "left_arrow",
+            modifiers: ["left_option"],
+          },
+        ],
+      },
+      m: {
+        description: "Move Word Right",
+        to: [
+          {
+            key_code: "right_arrow",
+            modifiers: ["left_option"],
+          },
+        ],
+      },
+      n: {
+        description: "Delete Word",
+        to: [
+          {
+            key_code: "delete_or_backspace",
+            modifiers: ["left_option"],
+          },
+        ],
+      },
 
       // Magicmove via homerow.app
       spacebar: {
