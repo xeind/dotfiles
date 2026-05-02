@@ -9,4 +9,4 @@ options=(
 		active_color="gradient(top_left=0xFFAAAAAA,bottom_right=0xFF777777)"
 )
 
-borders "${options[@]}"
+# borders "${options[@]}"
