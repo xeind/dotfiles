@@ -23,6 +23,7 @@ vim.g.lsp_servers = {
 			},
 		},
 	},
+
 	ruff = {},
 
 	eslint = {
@@ -154,6 +155,7 @@ vim.g.lsp_servers = {
 }
 
 vim.g.other_mason_servers = {
+	"tsgo",
 	"eslint-lsp",
 }
 
@@ -285,7 +287,7 @@ return {
 							end
 						end
 						if client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
-							vim.lsp.inlay_hint.enable(true)
+							vim.lsp.inlay_hint.enable(false)
 						end
 						if client.name == "ruff" then
 							client.server_capabilities.hoverProvider = false
@@ -311,8 +313,8 @@ return {
 			-- wrappers to allow for toggling
 			local def_virtual_text = {
 				isTrue = {
-					-- severity = { max = "WARN" },
-					severity = { min = vim.diagnostic.severity.WARN },
+					-- Show all diagnostics including HINT/INFO
+					severity = { min = vim.diagnostic.severity.HINT },
 					source = "if_many",
 					spacing = 4,
 					prefix = "• ",
@@ -510,12 +512,12 @@ return {
 		},
 		opts_extend = { "sources.default" },
 	},
-	{
-		"pmizio/typescript-tools.nvim",
-		dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
-		event = { "BufReadPre *.ts", "BufReadPre *.tsx", "BufReadPre *.js", "BufReadPre *.jsx" },
-		opts = {},
-	},
+	-- {
+	-- 	"pmizio/typescript-tools.nvim",
+	-- 	dependencies = { "nvim-lua/plenary.nvim", "neovim/nvim-lspconfig" },
+	-- 	event = { "BufReadPre *.ts", "BufReadPre *.tsx", "BufReadPre *.js", "BufReadPre *.jsx" },
+	-- 	opts = {},
+	-- },
 	{
 		"b0o/schemastore.nvim",
 		lazy = true,
