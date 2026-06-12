@@ -352,4 +352,5 @@ return {
 		opts = {}, -- lazy.nvim will implicitly calls `setup {}`
 		config = function() end,
 	},
+	{ dir = "~/dev/vallow.nvim", opts = {} },
 }

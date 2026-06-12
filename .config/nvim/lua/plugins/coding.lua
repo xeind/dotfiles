@@ -58,15 +58,15 @@ return {
 					"sql",
 					"prisma",
 				},
-			callback = function(args)
-				local lang = vim.treesitter.language.get_lang(vim.bo[args.buf].filetype)
-				if lang then
-					local ok = pcall(vim.treesitter.start, args.buf, lang)
-					vim.b[args.buf].treesitter_available = ok
-				else
-					vim.b[args.buf].treesitter_available = false
-				end
-			end,
+				callback = function(args)
+					local lang = vim.treesitter.language.get_lang(vim.bo[args.buf].filetype)
+					if lang then
+						local ok = pcall(vim.treesitter.start, args.buf, lang)
+						vim.b[args.buf].treesitter_available = ok
+					else
+						vim.b[args.buf].treesitter_available = false
+					end
+				end,
 			})
 		end,
 	},

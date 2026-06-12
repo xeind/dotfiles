@@ -6,7 +6,7 @@ return {
 		config = function()
 			require("nightingale").setup({
 				compile = true,
-				transparent = true,
+				-- transparent = true,
 			})
 			vim.cmd("colorscheme nightingale")
 		end,

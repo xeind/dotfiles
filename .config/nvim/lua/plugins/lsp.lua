@@ -140,6 +140,35 @@ vim.g.lsp_servers = {
 		mason = false,
 	},
 
+	ts_ls = {
+		settings = {
+			typescript = {
+				inlayHints = {
+					includeInlayParameterNameHints = "all",
+					includeInlayFunctionParameterTypeHints = true,
+					includeInlayVariableTypeHints = false,
+					includeInlayPropertyDeclarationTypeHints = true,
+					includeInlayFunctionLikeReturnTypeHints = true,
+					includeInlayEnumMemberValueHints = true,
+				},
+				referencesCodeLens = { enabled = false },
+				implementationsCodeLens = { enabled = false },
+			},
+			javascript = {
+				inlayHints = {
+					includeInlayParameterNameHints = "all",
+					includeInlayFunctionParameterTypeHints = true,
+					includeInlayVariableTypeHints = false,
+					includeInlayPropertyDeclarationTypeHints = true,
+					includeInlayFunctionLikeReturnTypeHints = true,
+					includeInlayEnumMemberValueHints = true,
+				},
+				referencesCodeLens = { enabled = false },
+				implementationsCodeLens = { enabled = false },
+			},
+		},
+	},
+
 	cssls = {},
 
 	prismals = {
@@ -155,7 +184,6 @@ vim.g.lsp_servers = {
 }
 
 vim.g.other_mason_servers = {
-	"tsgo",
 	"eslint-lsp",
 }
 

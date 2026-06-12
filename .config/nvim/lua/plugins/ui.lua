@@ -88,6 +88,7 @@ return {
 					-- Toggles
 					map("n", "<leader>tb", gitsigns.toggle_current_line_blame, { desc = "Toggle line blame" })
 					map("n", "<leader>tw", gitsigns.toggle_word_diff, { desc = "Toggle word diff" })
+					map("n", "<leader>G", gitsigns.toggle_signs, { desc = "Toggle git signs" })
 
 					-- Text object
 					map({ "o", "x" }, "ih", gitsigns.select_hunk, { desc = "Select Git hunk" })
@@ -127,6 +128,7 @@ return {
 		---@type oil.SetupOpts
 		opts = {
 			float = {
+				border = "rounded",
 				preview_split = "auto",
 			},
 			columns = {
@@ -369,11 +371,11 @@ return {
 			})
 
 			-- Git status cache
-			local git_cache = { 
-				ahead_count = 0, 
-				behind_count = 0, 
-				added = 0, 
-				changed = 0, 
+			local git_cache = {
+				ahead_count = 0,
+				behind_count = 0,
+				added = 0,
+				changed = 0,
 				removed = 0,
 				branch = "",
 			}
@@ -391,7 +393,7 @@ return {
 						end
 					end
 				)
-				
+
 				local behind_cmd = vim.system(
 					{ "git", "rev-list", "--count", "@{upstream}..HEAD" },
 					{ text = true },
@@ -423,13 +425,13 @@ return {
 				if branch == "" then
 					return ""
 				end
-				
+
 				-- Truncate branch name
 				branch = string.sub(branch, 1, 20)
-				
+
 				-- Build status string
 				local parts = { "󰘬 " .. branch }
-				
+
 				-- Add ahead/behind if non-zero
 				if git_cache.ahead_count > 0 or git_cache.behind_count > 0 then
 					local sync_info = ""
@@ -441,7 +443,7 @@ return {
 					end
 					table.insert(parts, sync_info)
 				end
-				
+
 				-- Add diff stats if dirty
 				local has_changes = git_cache.added > 0 or git_cache.changed > 0 or git_cache.removed > 0
 				if has_changes then
@@ -457,7 +459,7 @@ return {
 					end
 					table.insert(parts, diff_str)
 				end
-				
+
 				return table.concat(parts, " ")
 			end
 
@@ -484,7 +486,7 @@ return {
 					trailing_cache, mixed_cache = "", ""
 					return
 				end
-				
+
 				-- Check trailing spaces
 				for i = 1, fn.line("$") do
 					if fn.match(fn.getline(i), [[\v\s+$]]) ~= -1 then
@@ -551,7 +553,7 @@ return {
 			local function format_relative_time(timestamp)
 				local now = os.time()
 				local diff = now - timestamp
-				
+
 				if diff < 60 then
 					return "now"
 				elseif diff < 3600 then
@@ -573,7 +575,7 @@ return {
 			local function get_blame_color(timestamp)
 				local now = os.time()
 				local diff = now - timestamp
-				
+
 				if diff < 86400 then -- < 1 day
 					return { fg = "#FFD700" } -- Gold
 				elseif diff < 604800 then -- < 1 week
@@ -590,13 +592,13 @@ return {
 				if not author or author == "" then
 					return "??"
 				end
-				
+
 				-- Split by spaces
 				local parts = {}
 				for part in author:gmatch("%S+") do
 					table.insert(parts, part)
 				end
-				
+
 				if #parts == 1 then
 					-- Single name: take first 2 chars or just first char
 					return string.upper(string.sub(parts[1], 1, 2))
@@ -612,25 +614,25 @@ return {
 				if vim.fn.mode() ~= "n" then
 					return
 				end
-				
+
 				local bufnr = vim.api.nvim_get_current_buf()
 				local line = vim.api.nvim_win_get_cursor(0)[1]
-				
+
 				-- Check if already cached for this line
 				if blame_cache[bufnr] and blame_cache[bufnr][line] then
 					return
 				end
-				
+
 				-- Check if this is a git repo
 				if not vim.b.gitsigns_status_dict then
 					return
 				end
-				
+
 				local filepath = vim.api.nvim_buf_get_name(bufnr)
 				if filepath == "" then
 					return
 				end
-				
+
 				-- Run git blame async
 				vim.system(
 					{ "git", "blame", "-L", string.format("%d,%d", line, line), "--porcelain", filepath },
@@ -639,33 +641,33 @@ return {
 						if result.code ~= 0 then
 							return
 						end
-						
+
 						local output = result.stdout
 						local author = output:match("author (.-)\n") or "Unknown"
-						
+
 						-- Skip uncommitted/staged lines ("Not Committed Yet" or empty hash)
 						if author == "Not Committed Yet" or output:match("^0{40}") then
 							return
 						end
-						
+
 						local timestamp = tonumber(output:match("author%-time (%d+)")) or os.time()
-						
+
 						local initials = get_initials(author)
 						local time_str = format_relative_time(timestamp)
 						local color = get_blame_color(timestamp)
-						
+
 						-- Initialize cache for buffer if needed
 						if not blame_cache[bufnr] then
 							blame_cache[bufnr] = {}
 						end
-						
+
 						-- LRU cache management
 						local cache = blame_cache[bufnr]
 						local cache_count = 0
 						for _ in pairs(cache) do
 							cache_count = cache_count + 1
 						end
-						
+
 						-- Remove oldest if cache is full
 						if cache_count >= BLAME_CACHE_SIZE then
 							local oldest_line = nil
@@ -680,14 +682,14 @@ return {
 								cache[oldest_line] = nil
 							end
 						end
-						
+
 						-- Store with timestamp for LRU
 						cache[line] = {
 							text = initials .. " " .. time_str,
 							color = color,
 							cached_at = os.time(),
 						}
-						
+
 						-- Force lualine refresh
 						vim.schedule(function()
 							vim.cmd("redrawstatus")
@@ -703,7 +705,7 @@ return {
 					blame_debounce_timer:stop()
 					blame_debounce_timer = nil
 				end
-				
+
 				-- Set new timer
 				blame_debounce_timer = vim.defer_fn(function()
 					update_blame()
@@ -712,13 +714,13 @@ return {
 
 			-- Autocmds for blame updates
 			local blame_augroup = vim.api.nvim_create_augroup("LualineGitBlame", { clear = true })
-			
+
 			vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
 				group = blame_augroup,
 				callback = function()
 					local bufnr = vim.api.nvim_get_current_buf()
 					local line = vim.api.nvim_win_get_cursor(0)[1]
-					
+
 					-- Only update if line changed
 					if last_blame_line[bufnr] ~= line then
 						last_blame_line[bufnr] = line
@@ -748,11 +750,11 @@ return {
 			local function get_blame_text()
 				local bufnr = vim.api.nvim_get_current_buf()
 				local line = vim.api.nvim_win_get_cursor(0)[1]
-				
+
 				if blame_cache[bufnr] and blame_cache[bufnr][line] then
 					return blame_cache[bufnr][line].text
 				end
-				
+
 				return ""
 			end
 
@@ -760,11 +762,11 @@ return {
 			local function get_blame_color_for_lualine()
 				local bufnr = vim.api.nvim_get_current_buf()
 				local line = vim.api.nvim_win_get_cursor(0)[1]
-				
+
 				if blame_cache[bufnr] and blame_cache[bufnr][line] then
 					return blame_cache[bufnr][line].color
 				end
-				
+
 				return { fg = "#808080" } -- Default gray
 			end
 
@@ -962,8 +964,8 @@ return {
 						},
 					},
 					lualine_b = {
-						{ 
-							get_git_combined, 
+						{
+							get_git_combined,
 							color = { gui = "italic,bold" },
 						},
 						{ virtual_env, color = { fg = "black", bg = "#F1CA81" } },
@@ -982,24 +984,24 @@ return {
 							end,
 						},
 					},
-				lualine_x = {
-					-- { get_active_lsp },
-					{ "diagnostics", sources = { "nvim_diagnostic" } },
-					{
-						function()
-							if vim.b.treesitter_available == false then
-								return "󰁪 " -- Alert circle icon for missing parser
-							end
-							return ""
-						end,
-						color = { fg = "#FF6B6B" }, -- Red color for visibility
-					},
-					-- {
-					-- 	function()
-					-- 		return trailing_cache
-					-- 	end,
-					-- 	color = "WarningMsg",
-					-- },
+					lualine_x = {
+						-- { get_active_lsp },
+						{ "diagnostics", sources = { "nvim_diagnostic" } },
+						{
+							function()
+								if vim.b.treesitter_available == false then
+									return "󰁪 " -- Alert circle icon for missing parser
+								end
+								return ""
+							end,
+							color = { fg = "#FF6B6B" }, -- Red color for visibility
+						},
+						-- {
+						-- 	function()
+						-- 		return trailing_cache
+						-- 	end,
+						-- 	color = "WarningMsg",
+						-- },
 						{
 							function()
 								return mixed_cache
