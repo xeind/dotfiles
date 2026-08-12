@@ -336,7 +336,7 @@ return {
 		"lervag/vimtex",
 		-- lazy = false, -- we don't want to lazy load VimTeX
 		ft = { "tex", "plaintex", "bib" },
-		-- tag = "v2.15", -- uncomment to pin to a specific release
+		tag = "v2.18", -- last release before VimTeX required nvim 0.12.4; unpin after upgrading nvim
 		init = function()
 			-- VimTeX configuration goes here, e.g.
 			vim.g.vimtex_view_method = "skim"

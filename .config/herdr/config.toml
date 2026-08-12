@@ -1,0 +1,89 @@
+onboarding = false
+[keys]
+split_vertical = "prefix+|"
+close_tab = "prefix+ampersand"
+rename_tab = "prefix+comma"
+detach = "prefix+d"
+goto = "prefix+f"
+settings = ""
+# prefix+s too: tmux session picker muscle memory (settings is unbound below)
+workspace_picker = ["prefix+w", "prefix+s"]
+copy_mode = "prefix+["
+focus_pane_left  = ["prefix+h", "prefix+ctrl+h"]
+focus_pane_down  = ["prefix+j", "prefix+ctrl+j"]
+focus_pane_up    = ["prefix+k", "prefix+ctrl+k"]
+focus_pane_right = ["prefix+l", "prefix+ctrl+l"]
+previous_workspace = "ctrl+alt+k"
+next_workspace = "ctrl+alt+j"
+# prefix+a is the jump-agent.sh custom command below (blocked agent first)
+previous_agent = "prefix+shift+a"
+new_worktree = "prefix+shift+g"
+
+# lazygit popup, same as tmux prefix+g
+[[keys.command]]
+key = "prefix+g"
+type = "popup"
+command = "lazygit"
+width = "80%"
+height = "80%"
+
+# jump to the blocked (red) agent, same as tmux prefix+a
+[[keys.command]]
+key = "prefix+a"
+type = "shell"
+command = "~/.config/herdr/jump-agent.sh"
+
+# move focused space up/down in the sidebar
+[[keys.command]]
+key = "prefix+shift+up"
+type = "shell"
+command = "~/.config/herdr/move-space.sh up"
+
+[[keys.command]]
+key = "prefix+shift+down"
+type = "shell"
+command = "~/.config/herdr/move-space.sh down"
+
+# vallow popup, same as tmux prefix+F
+[[keys.command]]
+key = "prefix+shift+f"
+type = "popup"
+command = "vallow"
+width = "80%"
+height = "80%"
+
+[experimental]
+# resurrect-style: keep pane screen history across server restarts
+pane_history = true
+
+# Nightingale for Herdr
+# Herdr has no custom theme files: pick the closest built-in, then override
+# every token. Append this to ~/.config/herdr/config.toml.
+
+[theme]
+name = "kanagawa"
+
+[theme.custom]
+accent = "#c6b18e"
+panel_bg = "#181616"
+# sidebar_bg = "#202020"  # uncomment for an opaque desktop sidebar
+surface0 = "#202020"
+surface1 = "#2a2a2a"
+surface_dim = "#1c1c1c"
+overlay0 = "#3a3a47"  # was #727169; kept below accent so unfocused borders stay dimmer
+overlay1 = "#909398"
+text = "#C8C093"
+subtext0 = "#ababab"
+mauve = "#a584c0"
+green = "#98BB6C"
+yellow = "#E6C384"
+red = "#E46876"
+blue = "#85a8da"
+teal = "#7cd0bf"
+peach = "#f5a284"
+
+[ui]
+pane_gaps = false
+tab_bar_position = "bottom"
+# attention queue: neediest agent first, so prefix+a lands on it
+agent_panel_sort = "priority"
