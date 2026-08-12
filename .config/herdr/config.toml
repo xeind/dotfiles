@@ -13,11 +13,16 @@ focus_pane_left  = ["prefix+h", "prefix+ctrl+h"]
 focus_pane_down  = ["prefix+j", "prefix+ctrl+j"]
 focus_pane_up    = ["prefix+k", "prefix+ctrl+k"]
 focus_pane_right = ["prefix+l", "prefix+ctrl+l"]
-previous_workspace = "ctrl+alt+k"
-next_workspace = "ctrl+alt+j"
+previous_workspace = "alt+k"
+next_workspace = "alt+j"
 # prefix+a is the jump-agent.sh custom command below (blocked agent first)
 previous_agent = "prefix+shift+a"
 new_worktree = "prefix+shift+g"
+last_pane = "prefix+semicolon"
+# tmux pain-control muscle memory: move tab left/right
+# needs the release after 0.8.0 (feat #2561) — uncomment on upgrade
+# move_tab_previous = "prefix+<"
+# move_tab_next = "prefix+>"
 
 # lazygit popup, same as tmux prefix+g
 [[keys.command]]
@@ -51,6 +56,13 @@ type = "popup"
 command = "vallow"
 width = "80%"
 height = "80%"
+
+# copy visible tokens, same as tmux-fingers prefix+y
+[[keys.command]]
+key = "prefix+y"
+type = "plugin_action"
+command = "rmarganti.herdr-pluck.pluck"
+description = "pluck visible token"
 
 [experimental]
 # resurrect-style: keep pane screen history across server restarts
@@ -87,3 +99,10 @@ pane_gaps = false
 tab_bar_position = "bottom"
 # attention queue: neediest agent first, so prefix+a lands on it
 agent_panel_sort = "priority"
+# tmux status-right port: blocked-agent count, zoom flag, date
+# needs the release after 0.8.0 (feat #2586) — uncomment on upgrade
+# tab_bar_right = [
+#   { type = "command", command = "~/.config/herdr/needs-count.sh", interval_seconds = 10 },
+#   { type = "zoom" },
+#   { type = "datetime", format = "%m/%d/%y" },
+# ]
