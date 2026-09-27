@@ -128,13 +128,14 @@ function cling() {
 # Example aliases
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
-alias ls='lsd'
-alias ll='ls -lah'
+alias l='eza -l --colour=always --icons=always'
+alias ls='eza -l --colour=always --icons=always'
+alias ll='eza -lah --colour=always --icons=always --group-directories-first'
+alias la='eza -a --colour=always --icons=always'
 # alias c="open $1 -a \"Visual Studio Code\""
 
 # alias claire='clear'
 
-source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
 
 # Keybinds
 bindkey '^E' end-of-line                # Ctrl + E: Move cursor to the end of the line
@@ -179,6 +180,9 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 # opencode
 export PATH=/Users/xein/.opencode/bin:$PATH
 
-#eval "$(~/.local/bin/mise activate)"
+eval "$(~/.local/bin/mise activate zsh)"
 
 export PATH="$HOME/.go/bin:$PATH"
+
+# nvim-Packer
+# alias vi-pack='NVIM_APPNAME=nvim-pack nvim'
