@@ -26,3 +26,10 @@
   plus-empty-line-marker-style  = syntax "#2B3328"
   line-numbers-plus-style       = "#76946A"
   line-numbers-zero-style       = "#727169"
+	navigate = true
+[core]
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[merge]
+	conflictStyle = zdiff3
