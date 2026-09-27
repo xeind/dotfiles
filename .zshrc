@@ -142,9 +142,10 @@ bindkey '^E' end-of-line                # Ctrl + E: Move cursor to the end of th
 bindkey '^A' beginning-of-line          # Ctrl + A: Move cursor to the start of the line
 bindkey '^N' menu-complete              # Ctrl + N: Move to the next suggestion
 bindkey '^P' reverse-menu-complete      # Ctrl + P: Move to the previous suggestion
-bindkey '^R' history-incremental-search-backward  # Ctrl + R: Reverse history search
 # bindkey '^[[Z' forward-char
 
+# fzf: Ctrl + R history, Ctrl + T files, Alt + C cd
+source <(fzf --zsh)
 
 # Tmux config
 export TMUX_CONF="$HOME/.config/tmux/tmux.conf"
