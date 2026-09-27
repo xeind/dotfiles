@@ -1,6 +1,16 @@
 [tools]
 ruby = "3.2.2"
-node = "lts"
+node = "22"
+go = "latest"
+pnpm = "latest"
+bun = "latest"
+neovim = "latest"
+lazygit = "latest"
+"npm:donsetch" = "latest"
+"npm:fallow" = "latest"
+"npm:eas-cli" = "latest"
+"npm:@typescript/native-preview" = "7.0.0-dev.20260707.2"
+yarn = "1"
 
 [settings]
 idiomatic_version_file_enable_tools = ["ruby"]
