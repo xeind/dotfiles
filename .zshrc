@@ -145,7 +145,6 @@ bindkey '^P' reverse-menu-complete      # Ctrl + P: Move to the previous suggest
 bindkey '^R' history-incremental-search-backward  # Ctrl + R: Reverse history search
 # bindkey '^[[Z' forward-char
 
-export PATH="$HOME/.local/bin:$PATH"
 
 # Tmux config
 export TMUX_CONF="$HOME/.config/tmux/tmux.conf"
@@ -155,7 +154,6 @@ export TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 # alias tmuxa='tmux attach || tmux new-session'
 
 alias skim='/Applications/Skim.app/Contents/MacOS/Skim'
-export PATH="/usr/local/texlive/2025/bin/universal-darwin:$PATH"
 
 # _fix_cursor() {
 #    echo -ne '\e[5 q'
@@ -167,20 +165,8 @@ export EDITOR=nvim
 alias vi="$EDITOR"
 alias nvim="$EDITOR"
 
-# bun completions
-[ -s "/Users/xein/.bun/_bun" ] && source "/Users/xein/.bun/_bun"
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# opencode
-export PATH=/Users/xein/.opencode/bin:$PATH
-
-eval "$(~/.local/bin/mise activate zsh)"
-
-export PATH="$HOME/.go/bin:$PATH"
+eval "$(mise activate zsh)"
 

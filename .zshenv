@@ -1,4 +1,5 @@
-. "$HOME/.cargo/env"
+# Drop duplicate PATH and fpath entries in every shell, nested ones included.
+typeset -U path fpath
 
 # GITHUB_TOKEN for Codex/OpenCode's github MCP server: pulled fresh from gh's
 # keychain-backed credential on every shell start (login, interactive, non-interactive,
