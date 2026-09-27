@@ -45,7 +45,7 @@ a running app recreates a default folder within seconds, and
 ## New Mac
 
 ```sh
-git clone git@github.com:xeind/dotfiles.git ~/.dotfiles
+git clone https://github.com/xeind/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles && brew bundle && stow -v .
 mise trust ~/.dotfiles && mise install
 ```
