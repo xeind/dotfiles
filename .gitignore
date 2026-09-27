@@ -18,3 +18,11 @@ __pycache__/
 .config/tmux/plugins/
 .config/yazi/flavors/
 .config/zed/prompts/
+.config/karabiner/assets/
+.config/karabiner/.fallow/
+.config/karabiner/.editorconfig
+.config/karabiner/.prettierrc
+.config/karabiner/.gitignore
+.config/zed/conversations/
+.config/zed/rules/
+.config/zed/themes/
