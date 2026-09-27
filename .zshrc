@@ -184,5 +184,3 @@ eval "$(~/.local/bin/mise activate zsh)"
 
 export PATH="$HOME/.go/bin:$PATH"
 
-# nvim-Packer
-# alias vi-pack='NVIM_APPNAME=nvim-pack nvim'
