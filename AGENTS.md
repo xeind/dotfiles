@@ -75,6 +75,16 @@ Runtimes and CLIs go through mise (`mise use -g <tool>`, or the
 `uv tool install`, GUI apps through Homebrew. Agent CLIs (Claude Code,
 Codex, opencode, pi, cursor-agent) keep their own installers and
 updaters. A tool that asks for a PATH line gets a symlink in
-`~/.local/bin` instead.
+`~/.local/bin` instead. PATH is set only in `.zprofile`.
+`update_tools` (`.local/bin/update_tools`) runs every updater.
+
+Exceptions in `.config/mise/config.toml`, each on purpose:
+- `node = "22"`: n8n lives in node 22's npm globals and would vanish
+  from PATH on a newer node.
+- `@kitlangton/stack` stays an npm global: mise's trust policy rejects
+  its dependency `@effect/platform-node@4.0.0-beta.64`. Leave the check on.
+- `@typescript/native-preview` is pinned because it publishes only dev
+  builds, which mise skips; bump the pin by hand.
+- deno comes from Homebrew because yt-dlp depends on it.
 
 Agent instructions and skills live in `~/.agents`, outside this repo.
