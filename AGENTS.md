@@ -42,6 +42,14 @@ link it the same way. Quit the app first and stow in the same command:
 a running app recreates a default folder within seconds, and
 `stow --adopt` would then pull that default over the real config.
 
+## New Mac
+
+```sh
+git clone git@github.com:xeind/dotfiles.git ~/.dotfiles
+cd ~/.dotfiles && brew bundle && stow -v .
+mise trust ~/.dotfiles && mise install
+```
+
 ## Recovery
 
 - **Link turned into a plain file**: `stow -n -v .` reports the
@@ -72,7 +80,8 @@ a running app recreates a default folder within seconds, and
 
 Runtimes and CLIs go through mise (`mise use -g <tool>`, or the
 `github:`, `npm:`, `cargo:`, `go:` backends), Python tools through
-`uv tool install`, GUI apps through Homebrew. Agent CLIs (Claude Code,
+`uv tool install`, GUI apps through Homebrew, recorded in `Brewfile`
+(`brew bundle dump --force --tap --formula --cask --mas`). Agent CLIs (Claude Code,
 Codex, opencode, pi, cursor-agent) keep their own installers and
 updaters. A tool that asks for a PATH line gets a symlink in
 `~/.local/bin` instead. PATH is set only in `.zprofile`.
