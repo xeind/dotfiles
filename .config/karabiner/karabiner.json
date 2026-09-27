@@ -606,12 +606,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: previous-display",
+                                "description": "Window Management: move-to-previous-display",
                                 "from": {
                                     "key_code": "y",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/previous-display" }],
+                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-to-previous-display" }],
                                 "type": "basic"
                             },
                             {
@@ -622,12 +622,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: next-display",
+                                "description": "Window Management: move-to-next-display",
                                 "from": {
                                     "key_code": "o",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/next-display" }],
+                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-to-next-display" }],
                                 "type": "basic"
                             },
                             {
@@ -814,12 +814,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: move-up",
+                                "description": "Window Management: move-top",
                                 "from": {
                                     "key_code": "up_arrow",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-up" }],
+                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-top" }],
                                 "type": "basic"
                             },
                             {
@@ -830,12 +830,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: move-down",
+                                "description": "Window Management: move-bottom",
                                 "from": {
                                     "key_code": "down_arrow",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-down" }],
+                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-bottom" }],
                                 "type": "basic"
                             },
                             {
@@ -1501,6 +1501,38 @@
                                         "value": 1
                                     }
                                 ],
+                                "description": "Open Notification Center",
+                                "from": {
+                                    "key_code": "n",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "osascript -e 'tell application \"System Events\" to tell process \"MenuBarAgent\"' -e 'repeat with g in every group of menu bar 1' -e 'set mi to menu bar item 1 of g' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_s",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
+                                "description": "Dismiss Notifications",
+                                "from": {
+                                    "key_code": "m",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "shell_command": "osascript ~/.config/raycast/scripts/dismiss-notifications.applescript" }],
+                                "type": "basic"
+                            },
+                            {
+                                "conditions": [
+                                    {
+                                        "name": "hyper_sublayer_s",
+                                        "type": "variable_if",
+                                        "value": 1
+                                    }
+                                ],
                                 "description": "Open x-apple.systempreferences:com.apple.preference",
                                 "from": {
                                     "key_code": "p",
@@ -1517,12 +1549,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open raycast://extensions/yakitrak/do-not-disturb/toggle?launchType=background",
+                                "description": "Toggle Do Not Disturb",
                                 "from": {
                                     "key_code": "d",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open raycast://extensions/yakitrak/do-not-disturb/toggle?launchType=background" }],
+                                "to": [{ "key_code": "f19" }],
                                 "type": "basic"
                             },
                             {
@@ -1533,12 +1565,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open raycast://extensions/raycast/system/open-camera",
+                                "description": "Open raycast://extensions/raycast/raycast/open-camera",
                                 "from": {
                                     "key_code": "c",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open raycast://extensions/raycast/system/open-camera" }],
+                                "to": [{ "shell_command": "open raycast://extensions/raycast/raycast/open-camera" }],
                                 "type": "basic"
                             },
                             {
@@ -1549,12 +1581,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open raycast://script-commands/recording-mode",
+                                "description": "Recording Mode (hide menu bar)",
                                 "from": {
                                     "key_code": "r",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open raycast://script-commands/recording-mode" }],
+                                "to": [{ "shell_command": "osascript ~/.config/raycast/scripts/recording-mode.applescript" }],
                                 "type": "basic"
                             },
                             {
@@ -1565,12 +1597,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Open raycast://script-commands/undo-recording-mode",
+                                "description": "Undo Recording Mode (show menu bar)",
                                 "from": {
                                     "key_code": "t",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open raycast://script-commands/undo-recording-mode" }],
+                                "to": [{ "shell_command": "osascript ~/.config/raycast/scripts/undo-recording-mode.applescript" }],
                                 "type": "basic"
                             }
                         ]
@@ -1962,22 +1994,6 @@
                                     "modifiers": { "optional": ["any"] }
                                 },
                                 "to": [{ "shell_command": "open raycast://extensions/thomas/color-picker/pick-color" }],
-                                "type": "basic"
-                            },
-                            {
-                                "conditions": [
-                                    {
-                                        "name": "hyper_sublayer_r",
-                                        "type": "variable_if",
-                                        "value": 1
-                                    }
-                                ],
-                                "description": "Open raycast://script-commands/dismiss-notifications",
-                                "from": {
-                                    "key_code": "j",
-                                    "modifiers": { "optional": ["any"] }
-                                },
-                                "to": [{ "shell_command": "open raycast://script-commands/dismiss-notifications" }],
                                 "type": "basic"
                             },
                             {

@@ -83,8 +83,8 @@ const rules: KarabinerRules[] = [
       spacebar: open("-b com.apple.exposelauncher"),
       1: raycastWindow("top-left-sixth"),
       3: raycastWindow("top-right-sixth"),
-      y: raycastWindow("previous-display"),
-      o: raycastWindow("next-display"),
+      y: raycastWindow("move-to-previous-display"),
+      o: raycastWindow("move-to-next-display"),
       k: raycastWindow("top-half"),
       j: raycastWindow("bottom-half"),
       h: raycastWindow("left-half"),
@@ -96,8 +96,8 @@ const rules: KarabinerRules[] = [
       d: raycastWindow("bottom-right-quarter"),
       s: raycastWindow("center"),
       x: raycastWindow("reasonable-size"),
-      up_arrow: raycastWindow("move-up"),
-      down_arrow: raycastWindow("move-down"),
+      up_arrow: raycastWindow("move-top"),
+      down_arrow: raycastWindow("move-bottom"),
       right_arrow: raycastWindow("move-right"),
       left_arrow: raycastWindow("move-left"),
       z: raycastWindow("bottom-left-sixth"),
@@ -285,13 +285,29 @@ const rules: KarabinerRules[] = [
           },
         ],
       },
+      n: {
+        to: [{ shell_command: "osascript -e 'tell application \"System Events\" to tell process \"MenuBarAgent\"' -e 'repeat with g in every group of menu bar 1' -e 'set mi to menu bar item 1 of g' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'" }],
+        description: "Open Notification Center",
+      },
+      m: {
+        to: [{ shell_command: "osascript ~/.config/raycast/scripts/dismiss-notifications.applescript" }],
+        description: "Dismiss Notifications",
+      },
       p: open("x-apple.systempreferences:com.apple.preference"),
-      d: open(
-        "raycast://extensions/yakitrak/do-not-disturb/toggle?launchType=background"
-      ),
-      c: open("raycast://extensions/raycast/system/open-camera"),
-      r: open("raycast://script-commands/recording-mode"),
-      t: open("raycast://script-commands/undo-recording-mode"),
+      d: {
+        // F19 is bound to "Turn Do Not Disturb On/Off" in System Settings
+        to: [{ key_code: "f19" }],
+        description: "Toggle Do Not Disturb",
+      },
+      c: open("raycast://extensions/raycast/raycast/open-camera"),
+      r: {
+        to: [{ shell_command: "osascript ~/.config/raycast/scripts/recording-mode.applescript" }],
+        description: "Recording Mode (hide menu bar)",
+      },
+      t: {
+        to: [{ shell_command: "osascript ~/.config/raycast/scripts/undo-recording-mode.applescript" }],
+        description: "Undo Recording Mode (show menu bar)",
+      },
     },
 
     // v = "moVe" which isn't "m" because we want it to be on the left hand
@@ -364,7 +380,6 @@ const rules: KarabinerRules[] = [
     // r = "Raycast"
     r: {
       c: open("raycast://extensions/thomas/color-picker/pick-color"),
-      j: open("raycast://script-commands/dismiss-notifications"),
       e: open(
         "raycast://extensions/raycast/emoji-symbols/search-emoji-symbols"
       ),

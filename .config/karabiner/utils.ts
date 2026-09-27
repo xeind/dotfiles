@@ -220,6 +220,29 @@ export function raycastWindow(name: string): LayerCommand {
 }
 
 /**
+ * Tinycast registers no URL scheme, so a command is triggered by sending the
+ * global shortcut bound to it in Tinycast's Settings -> Shortcuts.
+ * The chord is these modifiers plus the same key as the sublayer leaf.
+ */
+const TINYCAST_MODIFIERS = [
+    "left_control",
+    "left_option",
+    "left_shift",
+] as const;
+
+export function tinycast(key_code: KeyCode, name: string): LayerCommand {
+    return {
+        to: [
+            {
+                key_code,
+                modifiers: [...TINYCAST_MODIFIERS],
+            },
+        ],
+        description: `Tinycast: ${name}`,
+    };
+}
+
+/**
  * Shortcut for "Open an app" command (of which there are a bunch)
  */
 export function app(name: string): LayerCommand {

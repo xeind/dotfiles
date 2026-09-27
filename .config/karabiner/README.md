@@ -120,7 +120,7 @@ The _Hyper Key_, or `Ctrl+Opt+Shift+Cmd`, acts as a universal layer key, unlocki
 | k   | Brightness Down    | `display_brightness_decrement`                  |
 | l   | Lock MacBook       | Cmd+Ctrl+Q                                      |
 | p   | System Preferences | Open macOS System Preferences                   |
-| d   | Toggle DND         | Raycast Do-Not-Disturb extension                |
+| d   | Toggle DND         | F19 → macOS "Turn Do Not Disturb On/Off" hotkey |
 | c   | Open Camera        | Raycast System → Camera                         |
 | r   | Recording Mode On  | `raycast://script-commands/recording-mode`      |
 | t   | Recording Mode Off | `raycast://script-commands/undo-recording-mode` |

@@ -124,7 +124,7 @@ return {
 			keymap = {},
 			previewers = {
 				builtin = {
-					treesitter = { enabled = false },
+					treesitter = { enabled = true },
 				},
 			},
 			files = {

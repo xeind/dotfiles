@@ -1,0 +1,12 @@
+{
+  "$schema": "https://opencode.ai/tui.json",
+  "theme": "nightingale",
+  "keybinds": {
+    "messages_half_page_up": "shift+up",
+    "messages_half_page_down": "shift+down"
+  },
+  "cursor": {
+    "style": "block",
+    "blinking": false
+  }
+}

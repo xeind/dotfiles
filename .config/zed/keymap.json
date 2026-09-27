@@ -10,21 +10,21 @@
     "context": "Workspace",
     "bindings": {
       // "shift shift": "file_finder::Toggle"
-    },
+    }
   },
   {
     "context": "Editor && vim_mode == insert",
     "bindings": {
       // "j k": "vim::NormalBefore"
-    },
+    }
   },
   // Space leader mappings (nvim-style)
   {
     "context": "Editor && VimControl && !menu",
     "bindings": {
       "space w": "workspace::Save",
-      "space q": "pane::CloseActiveItem",
-    },
+      "space q": "pane::CloseActiveItem"
+    }
   },
   // ctrl-w pane navigation in terminal and agent panel
   {
@@ -36,8 +36,8 @@
       "ctrl-w j": "workspace::ActivatePaneDown",
       "ctrl-w v": "pane::SplitRight",
       "ctrl-w s": "pane::SplitDown",
-      "ctrl-w q": "pane::CloseActiveItem",
-    },
+      "ctrl-w q": "pane::CloseActiveItem"
+    }
   },
   {
     "context": "AssistantPanel || ContextEditor",
@@ -48,32 +48,34 @@
       "ctrl-w j": "workspace::ActivatePaneDown",
       "ctrl-w v": "pane::SplitRight",
       "ctrl-w s": "pane::SplitDown",
-      "ctrl-w q": "pane::CloseActiveItem",
-    },
+      "ctrl-w q": "pane::CloseActiveItem"
+    }
   },
   // Half-page scroll + center cursor (like nvim)
   {
     "context": "Editor && VimControl && !menu",
     "bindings": {
-      "ctrl-d": ["action::Sequence", ["vim::ScrollDown", "editor::ScrollCursorCenter"]],
-      "ctrl-u": ["action::Sequence", ["vim::ScrollUp", "editor::ScrollCursorCenter"]]
+      "ctrl-d": [
+        "action::Sequence",
+        ["vim::ScrollDown", "editor::ScrollCursorCenter"]
+      ],
+      "ctrl-u": [
+        "action::Sequence",
+        ["vim::ScrollUp", "editor::ScrollCursorCenter"]
+      ]
     }
   },
-  // Make d delete (to black hole register) and x cut (default vim d behavior)
   {
     "context": "Editor && VimControl && vim_mode == normal",
     "bindings": {
       "ctrl-shift-d": "vim::PushDelete",
-      "d": ["workspace::SendKeystrokes", "\" _ ctrl-shift-d"],
-      "x": ["workspace::SendKeystrokes", "ctrl-shift-d"],
-    },
+      "x": ["workspace::SendKeystrokes", "\" _ x"]
+    }
   },
   {
     "context": "Editor && VimControl && vim_mode == visual",
     "bindings": {
-      "ctrl-shift-d": "vim::VisualDelete",
-      "d": ["workspace::SendKeystrokes", "\" _ ctrl-shift-d"],
-      "x": ["workspace::SendKeystrokes", "ctrl-shift-d"],
-    },
-  },
+      "ctrl-shift-d": "vim::VisualDelete"
+    }
+  }
 ]

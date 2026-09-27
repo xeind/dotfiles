@@ -1,19 +1,22 @@
-theme = /Users/xein/.local/share/nvim/lazy/nightingale.nvim/extras/ghostty/nightingale
+theme = nightingale
 # theme = Kanagawa Dragon
-# background-opacity = .98
-background-blur-radius = 22
+# background-opacity = .96
+# background-blur-radius = 22
 
 font-family = TX-02 Condensed
-font-size = 14
-font-feature= -calt, aalt
+# font-family = BerkeleyMono Nerd Font
+font-size = 12
+font-feature = -calt
+font-feature = ss01
+font-feature = ss05
 font-thicken = false
 
-window-height = 32
-window-width = 117
+window-height = 24
+window-width = 104
 window-padding-color = extend-always
 window-title-font-family = TX-02
 window-inherit-font-size = false
-window-save-state = never
+window-save-state = always
 # window-padding-x = 8
 # window-padding-y = 8
 
@@ -25,7 +28,6 @@ macos-titlebar-proxy-icon = hidden
 
 alpha-blending = linear
 cursor-invert-fg-bg = true
-# cursor-color =  #99B3BB
 
 mouse-hide-while-typing = true
 macos-icon = custom-style
