@@ -60,6 +60,11 @@ a running app recreates a default folder within seconds, and
   `LG_CONFIG_FILE` points at it.
 - Zed's Context7 key is optional and stored in the Keychain as
   `context7-api-key-zed`; `settings.json` carries no key.
+- mise resolves `~/.config/mise` to its path in this repo and refuses
+  an untrusted config, so node and ruby vanish. On a new Mac run
+  `mise trust ~/.dotfiles` after the first stow.
+- Git's global config is `.config/git/config`; `~/.gitconfig` must not
+  exist, or git writes there instead.
 - Karabiner's `karabiner.json` is built from `rules.ts` (`yarn build`
   in `.config/karabiner`). Edit the TypeScript, then rebuild.
 
