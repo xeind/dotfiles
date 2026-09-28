@@ -12,9 +12,9 @@ const theme = ($nu.default-config-dir | path join "nightingale.nu")
 source $theme
 
 # Aliases from .zshrc. `ls` stays nu's own table; `l` is the eza view.
-alias l = ^eza -l --colour=always --icons=always
-alias ll = ^eza -lah --colour=always --icons=always --group-directories-first
-alias la = ^eza -a --colour=always --icons=always
+alias l = eza -l --colour=always --icons=always
+alias ll = eza -lah --colour=always --icons=always --group-directories-first
+alias la = eza -a --colour=always --icons=always
 alias vi = nvim
 alias skim = ^/Applications/Skim.app/Contents/MacOS/Skim
 
