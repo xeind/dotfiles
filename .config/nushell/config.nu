@@ -74,15 +74,28 @@ $env.config.keybindings ++= [
 # falling back to the zsh completions oh-my-zsh already has.
 $env.CARAPACE_BRIDGES = "zsh,fish,bash"
 
-# mise (per-folder versions), starship (prompt) and carapace each
-# generate a nu script. They go in nu's autoload folder, outside this
-# repo, and load after this file.
-let autoload = ($nu.data-dir | path join "vendor" "autoload")
+# Tools generate nu init scripts into the autoload folder (outside this
+# repo), loaded after this file. A tool that fails keeps its last script.
+const autoload = ($nu.data-dir | path join "vendor" "autoload")
 mkdir $autoload
-if (which mise | is-not-empty) { ^mise activate nu | save --force ($autoload | path join "mise.nu") }
-if (which starship | is-not-empty) { ^starship init nu | save --force ($autoload | path join "starship.nu") }
-if (which carapace | is-not-empty) { ^carapace _carapace nushell | save --force ($autoload | path join "carapace.nu") }
+
+def --wrapped init-script [tool: string, ...args: string] {
+  if (which $tool | is-empty) { return null }
+  let r = (run-external $tool ...$args | complete)
+  if $r.exit_code == 0 { return $r.stdout }
+  print -e $"($tool) init failed, keeping its previous script: ($r.stderr | str trim)"
+  null
+}
+
+def save-init [file: string] {
+  let script = $in
+  if $script != null { $script | save --force ($autoload | path join $file) }
+}
+
+init-script mise activate nu | save-init mise.nu
+init-script starship init nu | save-init starship.nu
+init-script carapace _carapace nushell | save-init carapace.nu
 # atuin: Ctrl+R history, shared with zsh. Up stays nu's own history.
-if (which atuin | is-not-empty) { ^atuin init nu --disable-up-arrow | save --force ($autoload | path join "atuin.nu") }
+init-script atuin init nu --disable-up-arrow | save-init atuin.nu
 # zoxide: `z <part of a path>` jumps to a folder visited before
-if (which zoxide | is-not-empty) { ^zoxide init nushell | save --force ($autoload | path join "zoxide.nu") }
+init-script zoxide init nushell | save-init zoxide.nu
