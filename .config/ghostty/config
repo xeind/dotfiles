@@ -32,8 +32,9 @@ cursor-invert-fg-bg = true
 mouse-hide-while-typing = true
 macos-icon = custom-style
 
-shell-integration = zsh
+# nu via login zsh; integration off since "nushell" adds args the wrapper rejects
+command = /Users/xein/.local/bin/terminal_shell
+shell-integration = none
 cursor-style-blink = false
-shell-integration-features = no-cursor
 
 keybind = shift+enter=text:\n

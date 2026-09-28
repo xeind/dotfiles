@@ -1,0 +1,5 @@
+#!/bin/zsh
+# Login zsh (PATH, XDG, mise) then nu; `-c` calls stay in zsh, missing nu falls back to zsh.
+while [[ $1 == -l || $1 == --login || $1 == -i ]]; do shift; done
+(( $# )) && exec /bin/zsh -l "$@"
+exec /bin/zsh -l -c 'command -v nu >/dev/null && exec nu; exec /bin/zsh -l'

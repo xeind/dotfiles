@@ -1,5 +1,5 @@
-# Nushell, on trial beside zsh. zsh stays the login shell: start nu by
-# typing `nu`, and it inherits PATH, keys and env from that zsh.
+# Nushell, opened by new terminal tabs through a login zsh (terminal_shell),
+# so it inherits PATH, keys and env from that zsh.
 # Set up to feel like .zshrc: same aliases, keys, fzf widgets, and a
 # starship prompt laid out like p10k (.config/starship.toml).
 

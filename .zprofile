@@ -6,6 +6,7 @@ path=(
   $HOME/.local/bin     # own scripts, agent CLIs
   $HOME/.cargo/bin     # rustup, cargo install
   $HOME/.go/bin        # go install
+  /Applications/Ghostty.app/Contents/MacOS(N)  # ghostty CLI; shell integration is off
   $path
 )
 eval "$(mise activate zsh --shims)"   # non-interactive shells, IDEs, agents

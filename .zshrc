@@ -91,9 +91,6 @@ source $ZSH/oh-my-zsh.sh
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
-# You may need to manually set your language environment
-export LANG=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
 
 function cling() {
     local folders=()
@@ -154,8 +151,6 @@ eval "$(atuin init zsh --disable-up-arrow)"
 # zoxide: `z <part of a path>` jumps to a folder visited before
 eval "$(zoxide init zsh)"
 
-# Tmux config
-export TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 
 # export TERM="xterm-256color"
 # alias tmux="tmux -2 -f $TMUX_CONFIG_HOME/tmux/tmux.conf"
@@ -169,7 +164,6 @@ alias skim='/Applications/Skim.app/Contents/MacOS/Skim'
 #
 # precmd_functions+=(_fix_cursor)
 
-export EDITOR=nvim
 alias vi="$EDITOR"
 alias nvim="$EDITOR"
 

@@ -64,6 +64,10 @@ type = "plugin_action"
 command = "rmarganti.herdr-pluck.pluck"
 description = "pluck visible token"
 
+[terminal]
+# nu via login zsh; herdr's own -c helpers (prefix+e) stay in zsh
+default_shell = "/Users/xein/.local/bin/terminal_shell"
+
 [experimental]
 # resurrect-style: keep pane screen history across server restarts
 pane_history = false  # saved history came back re-escaped on each restart
