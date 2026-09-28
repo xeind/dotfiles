@@ -26,3 +26,4 @@ __pycache__/
 .config/zed/conversations/
 .config/zed/rules/
 .config/zed/themes/
+.config/nushell/history.*

@@ -63,9 +63,10 @@ mise trust ~/.dotfiles && mise install
 
 ## Gotchas
 
-- lazygit on macOS reads `~/Library/Application Support/lazygit`, so
-  `.config/lazygit/config.yml` here is inactive unless
-  `LG_CONFIG_FILE` points at it.
+- `.zshenv` sets `XDG_CONFIG_HOME=~/.config`; without it lazygit and
+  nushell read `~/Library/Application Support` and ignore this repo.
+- Nushell is on trial beside zsh, which stays the login shell. Its
+  config folder also holds `history.sqlite3*`, gitignored: keep it so.
 - Zed's Context7 key is optional and stored in the Keychain as
   `context7-api-key-zed`; `settings.json` carries no key.
 - mise resolves `~/.config/mise` to its path in this repo and refuses
