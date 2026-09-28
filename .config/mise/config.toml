@@ -14,6 +14,7 @@ yarn = "1"
 nushell = "latest"
 starship = "latest"
 carapace = "latest"
+atuin = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["ruby"]

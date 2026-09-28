@@ -25,14 +25,8 @@ def cling [...paths: path] {
 }
 
 # fzf widgets, as zsh's `fzf --zsh` binds them:
-# Ctrl+R history, Ctrl+T insert a file path, Alt+C cd into a folder.
-def fzf-history [] {
-  let picked = (history | get command | reverse | uniq | str join (char nul)
-    | ^fzf --read0 --scheme=history --height=40% --reverse --query (commandline)
-    | complete | get stdout | str trim)
-  if ($picked | is-not-empty) { commandline edit --replace $picked }
-}
-
+# Ctrl+T insert a file path, Alt+C cd into a folder.
+# Ctrl+R belongs to atuin, loaded below.
 def fzf-file [] {
   let picked = (^fzf --walker=file,follow,hidden --walker-skip=.git,node_modules --scheme=path --height=40% --reverse
     | complete | get stdout | str trim)
@@ -65,8 +59,6 @@ def --env sudo-escape [] {
 $env.config.keybindings ++= [
   { name: sudo_escape modifier: none keycode: escape mode: emacs
     event: [ { send: esc } { send: executehostcommand cmd: "sudo-escape" } ] }
-  { name: fzf_history modifier: control keycode: char_r mode: [emacs vi_insert vi_normal]
-    event: { send: executehostcommand cmd: "fzf-history" } }
   { name: fzf_file modifier: control keycode: char_t mode: [emacs vi_insert vi_normal]
     event: { send: executehostcommand cmd: "fzf-file" } }
   { name: fzf_cd modifier: alt keycode: char_c mode: [emacs vi_insert vi_normal]
@@ -90,3 +82,5 @@ mkdir $autoload
 if (which mise | is-not-empty) { ^mise activate nu | save --force ($autoload | path join "mise.nu") }
 if (which starship | is-not-empty) { ^starship init nu | save --force ($autoload | path join "starship.nu") }
 if (which carapace | is-not-empty) { ^carapace _carapace nushell | save --force ($autoload | path join "carapace.nu") }
+# atuin: Ctrl+R history, shared with zsh. Up stays nu's own history.
+if (which atuin | is-not-empty) { ^atuin init nu --disable-up-arrow | save --force ($autoload | path join "atuin.nu") }

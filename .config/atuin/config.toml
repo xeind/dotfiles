@@ -1,0 +1,15 @@
+# atuin: shell history for zsh and nushell (Ctrl+R).
+# History stays local; sync runs only after `atuin register`/`login`.
+
+# Enter runs the picked command; Tab puts it on the line to edit.
+enter_accept = true
+
+# mise installs and updates atuin (update_tools).
+update_check = false
+
+# Key widgets run as host commands in nushell; keep them out of history.
+history_filter = [
+  "^sudo-escape$",
+  "^fzf-file$",
+  "^fzf-cd$",
+]

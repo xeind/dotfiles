@@ -144,8 +144,12 @@ bindkey '^N' menu-complete              # Ctrl + N: Move to the next suggestion
 bindkey '^P' reverse-menu-complete      # Ctrl + P: Move to the previous suggestion
 # bindkey '^[[Z' forward-char
 
-# fzf: Ctrl + R history, Ctrl + T files, Alt + C cd
+# fzf: Ctrl + T files, Alt + C cd
 source <(fzf --zsh)
+
+# atuin: Ctrl + R history, shared with nushell. Loads after fzf to take
+# Ctrl + R; Up stays zsh's own history.
+eval "$(atuin init zsh --disable-up-arrow)"
 
 # Tmux config
 export TMUX_CONF="$HOME/.config/tmux/tmux.conf"
