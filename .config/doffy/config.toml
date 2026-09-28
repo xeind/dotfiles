@@ -1,0 +1,67 @@
+theme = "dark"
+tag_font = "rounded"
+tag_placement = "beside"
+alphabet = "asdfgqwertzxcvb"
+confirm_with_enter = true
+animation = true
+animation_duration_percent = 50
+tag_fill = "sweep_left"
+stable_labels = false
+
+[tag_placement_rules.web]
+
+[tag_placement_rules.native]
+
+[tag_actions]
+destructive = [
+    "close",
+    "dismiss",
+    "cancel",
+    "delete",
+    "remove",
+    "discard",
+    "trash",
+    "unsubscribe",
+    "block",
+    "unfollow",
+    "×",
+]
+confirm = [
+    "send",
+    "save",
+    "submit",
+    "post",
+    "confirm",
+    "ok",
+    "done",
+    "apply",
+]
+
+[hotkeys]
+click = "ctrl-cmd-f1"
+scroll = "ctrl-cmd-f2"
+search = "ctrl-cmd-f3"
+
+[keys.scroll]
+down = "j"
+up = "k"
+down_fast = "shift-j"
+up_fast = "shift-k"
+half_down = "d"
+half_up = "u"
+left = "h"
+right = "l"
+left_fast = "shift-h"
+right_fast = "shift-l"
+top = "g"
+bottom = "shift-g"
+next_area = "tab"
+previous_area = "shift-tab"
+choose_area = "space"
+
+[scroll]
+line = 3
+fast = 30
+half_page = 15
+
+[applications]

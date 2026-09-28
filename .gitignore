@@ -27,3 +27,8 @@ __pycache__/
 .config/zed/rules/
 .config/zed/themes/
 .config/nushell/history.*
+.config/gh/hosts.yml
+.config/linearmouse/*
+!.config/linearmouse/linearmouse.json
+.config/openlogi/*
+!.config/openlogi/config.toml
