@@ -47,7 +47,24 @@ def --env fzf-cd [] {
   if ($picked | is-not-empty) { cd $picked }
 }
 
+# Esc Esc toggles `sudo ` in front of the line, or of the last command
+# when the line is empty: oh-my-zsh's sudo plugin. Reedline has no
+# two-key sequences, so every Esc still does its usual job (close a
+# menu) and records its time; a second Esc within 500ms toggles.
+def --env sudo-escape [] {
+  let now = (date now)
+  let last = ($env.SUDO_ESCAPE_LAST? | default ($now - 1day))
+  $env.SUDO_ESCAPE_LAST = $now
+  if ($now - $last) > 500ms { return }
+  $env.SUDO_ESCAPE_LAST = ($now - 1day)
+  let line = (commandline)
+  let line = if ($line | is-empty) { history | last | get command } else { $line }
+  commandline edit --replace (if ($line | str starts-with "sudo ") { $line | str substring 5.. } else { $"sudo ($line)" })
+}
+
 $env.config.keybindings ++= [
+  { name: sudo_escape modifier: none keycode: escape mode: emacs
+    event: [ { send: esc } { send: executehostcommand cmd: "sudo-escape" } ] }
   { name: fzf_history modifier: control keycode: char_r mode: [emacs vi_insert vi_normal]
     event: { send: executehostcommand cmd: "fzf-history" } }
   { name: fzf_file modifier: control keycode: char_t mode: [emacs vi_insert vi_normal]
