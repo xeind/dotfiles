@@ -21,16 +21,16 @@ style = "76"
 format = "[$branch]($style)"
 
 [git_status]
-style = "178"
-format = "([$ahead_behind$stashed$conflicted$staged$modified$untracked]($style))"
-ahead = " ⇡${count}"
-behind = " ⇣${count}"
-diverged = " ⇣${behind_count}⇡${ahead_count}"
-stashed = " *${count}"
-conflicted = " ~${count}"
-staged = " +${count}"
-modified = " !${count}"
-untracked = " ?${count}"
+# Colors per symbol, as p10k: green 76, yellow 178, blue 39, red 196.
+format = "($ahead_behind$stashed$conflicted$staged$modified$untracked)"
+ahead = "[ ⇡${count}](76)"
+behind = "[ ⇣${count}](76)"
+diverged = "[ ⇣${behind_count}⇡${ahead_count}](76)"
+stashed = "[ *${count}](76)"
+conflicted = "[ ~${count}](196)"
+staged = "[ +${count}](178)"
+modified = "[ !${count}](178)"
+untracked = "[ ?${count}](39)"
 
 [character]
 success_symbol = "[❯](15)"
