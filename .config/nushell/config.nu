@@ -49,11 +49,12 @@ def --env sudo-escape [] {
   let now = (date now)
   let last = ($env.SUDO_ESCAPE_LAST? | default ($now - 1day))
   $env.SUDO_ESCAPE_LAST = $now
-  if ($now - $last) > 500ms { return }
-  $env.SUDO_ESCAPE_LAST = ($now - 1day)
-  let line = (commandline)
-  let line = if ($line | is-empty) { history | last | get command } else { $line }
-  commandline edit --replace (if ($line | str starts-with "sudo ") { $line | str substring 5.. } else { $"sudo ($line)" })
+  if ($now - $last) <= 500ms {
+    $env.SUDO_ESCAPE_LAST = ($now - 1day)
+    let line = (commandline)
+    let line = if ($line | is-empty) { history | last | get command? | default "" } else { $line }
+    commandline edit --replace (if ($line | str starts-with "sudo ") { $line | str substring 5.. } else if $line == "sudo" { "" } else { $"sudo ($line)" })
+  }
 }
 
 $env.config.keybindings ++= [
