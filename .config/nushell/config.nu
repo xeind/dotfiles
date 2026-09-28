@@ -31,7 +31,7 @@ def fzf-file [] {
   let picked = (^fzf --walker=file,follow,hidden --walker-skip=.git,node_modules --scheme=path --height=40% --reverse
     | complete | get stdout | str trim)
   if ($picked | is-not-empty) {
-    commandline edit --insert (if ($picked =~ '\s') { $"`($picked)`" } else { $picked })
+    commandline edit --insert ($picked | to nuon)
   }
 }
 
