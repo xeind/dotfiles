@@ -9,7 +9,7 @@
 exec python3 - <<'EOF'
 import json, os, socket
 
-sock_path = os.path.expanduser("~/.config/herdr/herdr.sock")
+sock_path = os.environ.get("HERDR_SOCKET_PATH") or os.path.expanduser("~/.config/herdr/herdr.sock")
 
 # attention queue: blocked needs a decision, done finished unseen, idle is
 # ready for input, working needs nothing.

@@ -5,7 +5,7 @@
 exec python3 - <<'EOF'
 import json, os, socket
 
-sock_path = os.path.expanduser("~/.config/herdr/herdr.sock")
+sock_path = os.environ.get("HERDR_SOCKET_PATH") or os.path.expanduser("~/.config/herdr/herdr.sock")
 
 s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 try:

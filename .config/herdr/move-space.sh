@@ -8,7 +8,7 @@ exec python3 - "$1" <<'EOF'
 import json, os, socket, sys
 
 direction = sys.argv[1] if len(sys.argv) > 1 else "down"
-sock_path = os.path.expanduser("~/.config/herdr/herdr.sock")
+sock_path = os.environ.get("HERDR_SOCKET_PATH") or os.path.expanduser("~/.config/herdr/herdr.sock")
 
 def call(method, params):
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
