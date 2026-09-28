@@ -1,6 +1,6 @@
 [tools]
 ruby = "3.2.2"
-node = "22"
+node = "lts"
 go = "latest"
 pnpm = "latest"
 bun = "latest"
