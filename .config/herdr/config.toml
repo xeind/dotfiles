@@ -28,7 +28,7 @@ last_pane = "prefix+semicolon"
 [[keys.command]]
 key = "prefix+g"
 type = "popup"
-command = "lazygit"
+command = "~/.config/herdr/lazygit-popup.sh"
 width = "80%"
 height = "80%"
 
