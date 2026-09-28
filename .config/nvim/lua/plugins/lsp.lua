@@ -107,39 +107,6 @@ vim.g.lsp_servers = {
 		},
 	},
 
-	ruby_lsp = {
-		mason = false,
-		cmd = { os.getenv("HOME") .. "/.local/share/mise/shims/ruby-lsp" },
-		init_options = {
-			enabledFeatures = {
-				codeActions = true,
-				codeLens = true,
-				completion = true,
-				definition = true,
-				diagnostics = true,
-				documentHighlights = true,
-				documentLink = true,
-				documentSymbols = true,
-				foldingRanges = true,
-				formatting = true,
-				hover = true,
-				inlayHint = true,
-				onTypeFormatting = true,
-				selectionRanges = true,
-				semanticHighlighting = true,
-				signatureHelp = true,
-				typeHierarchy = true,
-				workspaceSymbol = true,
-			},
-			experimentalFeaturesEnabled = false,
-		},
-	},
-
-	rubocop = {
-		cmd = { os.getenv("HOME") .. "/.local/share/mise/shims/rubocop", "--lsp" },
-		mason = false,
-	},
-
 	ts_ls = {
 		settings = {
 			typescript = {
@@ -241,6 +208,8 @@ return {
 				ensure_installed = lsp_server_names,
 				automatic_enable = true,
 			})
+			-- nu ships its own server; mason only enables what it installs
+			vim.lsp.enable("nushell")
 
 			local function setup_document_highlight(bufnr)
 				local highlight_augroup = vim.api.nvim_create_augroup("LspDocumentHighlight", { clear = false })

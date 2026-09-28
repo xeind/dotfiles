@@ -42,6 +42,7 @@ return {
 					"bash",
 					"sh",
 					"zsh",
+					"nu",
 					-- C/C++
 					"c",
 					"cpp",

@@ -2,6 +2,10 @@ return {
 	{
 		"ibhagwan/fzf-lua",
 		cmd = "FzfLua",
+		-- ignore nu's FZF_DEFAULT_OPTS (nightingale.nu); keep fzf-lua's own colors
+		init = function()
+			vim.env.FZF_DEFAULT_OPTS = nil
+		end,
 		-- event = "VeryLazy",
 		dependencies = {
 			{ "nvim-tree/nvim-web-devicons" },
