@@ -75,7 +75,7 @@ git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.oh-my-zsh/cu
 - Zed's Context7 key is optional and stored in the Keychain as
   `context7-api-key-zed`; `settings.json` carries no key.
 - mise resolves `~/.config/mise` to its path in this repo and refuses
-  an untrusted config, so node and ruby vanish. On a new Mac run
+  an untrusted config, so node, go and bun vanish. On a new Mac run
   `mise trust ~/.dotfiles` after the first stow.
 - Git's global config is `.config/git/config`; `~/.gitconfig` must not
   exist, or git writes there instead.

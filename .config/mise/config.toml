@@ -1,14 +1,11 @@
 [tools]
-ruby = "3.2.2"
 node = "lts"
 go = "latest"
 pnpm = "latest"
 bun = "latest"
 neovim = "0.12.2"
 lazygit = "latest"
-"npm:donsetch" = "latest"
 "npm:fallow" = "latest"
-"npm:eas-cli" = "latest"
 "npm:@typescript/native-preview" = "7.0.0-dev.20260707.2"
 yarn = "1"
 nushell = "latest"
@@ -16,7 +13,3 @@ starship = "latest"
 carapace = "latest"
 atuin = "latest"
 zoxide = "latest"
-
-[settings]
-idiomatic_version_file_enable_tools = ["ruby"]
-legacy_version_file = true
