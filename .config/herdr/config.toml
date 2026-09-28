@@ -66,7 +66,7 @@ description = "pluck visible token"
 
 [experimental]
 # resurrect-style: keep pane screen history across server restarts
-pane_history = true
+pane_history = false  # saved history came back re-escaped on each restart
 
 # Nightingale for Herdr
 # Herdr has no custom theme files: pick the closest built-in, then override
