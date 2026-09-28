@@ -558,12 +558,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: top-left-sixth",
+                                "description": "Window: top-left-sixth",
                                 "from": {
                                     "key_code": "1",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/top-left-sixth" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=top-left-sixth" }],
                                 "type": "basic"
                             },
                             {
@@ -574,12 +574,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: top-right-sixth",
+                                "description": "Window: top-right-sixth",
                                 "from": {
                                     "key_code": "3",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/top-right-sixth" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=top-right-sixth" }],
                                 "type": "basic"
                             },
                             {
@@ -606,12 +606,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: move-to-previous-display",
+                                "description": "Window: previous-display",
                                 "from": {
                                     "key_code": "y",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-to-previous-display" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=previous-display" }],
                                 "type": "basic"
                             },
                             {
@@ -622,12 +622,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: move-to-next-display",
+                                "description": "Window: next-display",
                                 "from": {
                                     "key_code": "o",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-to-next-display" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=next-display" }],
                                 "type": "basic"
                             },
                             {
@@ -638,12 +638,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: top-half",
+                                "description": "Window: top-half",
                                 "from": {
                                     "key_code": "k",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/top-half" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=top-half" }],
                                 "type": "basic"
                             },
                             {
@@ -654,12 +654,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: bottom-half",
+                                "description": "Window: bottom-half",
                                 "from": {
                                     "key_code": "j",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/bottom-half" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=bottom-half" }],
                                 "type": "basic"
                             },
                             {
@@ -670,12 +670,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: left-half",
+                                "description": "Window: left-half",
                                 "from": {
                                     "key_code": "h",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/left-half" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=left-half" }],
                                 "type": "basic"
                             },
                             {
@@ -686,12 +686,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: right-half",
+                                "description": "Window: right-half",
                                 "from": {
                                     "key_code": "l",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/right-half" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=right-half" }],
                                 "type": "basic"
                             },
                             {
@@ -702,12 +702,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: maximize",
+                                "description": "Window: maximize",
                                 "from": {
                                     "key_code": "f",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/maximize" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=maximize" }],
                                 "type": "basic"
                             },
                             {
@@ -718,12 +718,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: top-right-quarter",
+                                "description": "Window: top-right",
                                 "from": {
                                     "key_code": "e",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/top-right-quarter" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=top-right" }],
                                 "type": "basic"
                             },
                             {
@@ -734,12 +734,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: top-left-quarter",
+                                "description": "Window: top-left",
                                 "from": {
                                     "key_code": "q",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/top-left-quarter" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=top-left" }],
                                 "type": "basic"
                             },
                             {
@@ -750,12 +750,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: bottom-left-quarter",
+                                "description": "Window: bottom-left",
                                 "from": {
                                     "key_code": "a",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/bottom-left-quarter" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=bottom-left" }],
                                 "type": "basic"
                             },
                             {
@@ -766,12 +766,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: bottom-right-quarter",
+                                "description": "Window: bottom-right",
                                 "from": {
                                     "key_code": "d",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/bottom-right-quarter" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=bottom-right" }],
                                 "type": "basic"
                             },
                             {
@@ -782,12 +782,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: center",
+                                "description": "Window: center",
                                 "from": {
                                     "key_code": "s",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/center" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=center" }],
                                 "type": "basic"
                             },
                             {
@@ -798,12 +798,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: reasonable-size",
+                                "description": "Window: specified",
                                 "from": {
                                     "key_code": "x",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/reasonable-size" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=specified" }],
                                 "type": "basic"
                             },
                             {
@@ -814,12 +814,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: move-top",
+                                "description": "Window: move-up",
                                 "from": {
                                     "key_code": "up_arrow",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-top" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=move-up" }],
                                 "type": "basic"
                             },
                             {
@@ -830,12 +830,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: move-bottom",
+                                "description": "Window: move-down",
                                 "from": {
                                     "key_code": "down_arrow",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-bottom" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=move-down" }],
                                 "type": "basic"
                             },
                             {
@@ -846,12 +846,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: move-right",
+                                "description": "Window: move-right",
                                 "from": {
                                     "key_code": "right_arrow",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-right" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=move-right" }],
                                 "type": "basic"
                             },
                             {
@@ -862,12 +862,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: move-left",
+                                "description": "Window: move-left",
                                 "from": {
                                     "key_code": "left_arrow",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/move-left" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=move-left" }],
                                 "type": "basic"
                             },
                             {
@@ -878,12 +878,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: bottom-left-sixth",
+                                "description": "Window: bottom-left-sixth",
                                 "from": {
                                     "key_code": "z",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/bottom-left-sixth" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=bottom-left-sixth" }],
                                 "type": "basic"
                             },
                             {
@@ -894,12 +894,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: bottom-right-sixth",
+                                "description": "Window: bottom-right-sixth",
                                 "from": {
                                     "key_code": "c",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/bottom-right-sixth" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=bottom-right-sixth" }],
                                 "type": "basic"
                             },
                             {
@@ -910,12 +910,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: almost-maximize",
+                                "description": "Window: almost-maximize",
                                 "from": {
                                     "key_code": "return_or_enter",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/almost-maximize" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=almost-maximize" }],
                                 "type": "basic"
                             },
                             {
@@ -926,12 +926,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: restore",
+                                "description": "Window: restore",
                                 "from": {
                                     "key_code": "delete_or_backspace",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/restore" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=restore" }],
                                 "type": "basic"
                             },
                             {
@@ -942,12 +942,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: make-larger",
+                                "description": "Window: larger",
                                 "from": {
                                     "key_code": "equal_sign",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/make-larger" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=larger" }],
                                 "type": "basic"
                             },
                             {
@@ -958,12 +958,12 @@
                                         "value": 1
                                     }
                                 ],
-                                "description": "Window Management: make-smaller",
+                                "description": "Window: smaller",
                                 "from": {
                                     "key_code": "hyphen",
                                     "modifiers": { "optional": ["any"] }
                                 },
-                                "to": [{ "shell_command": "open -g raycast://extensions/raycast/window-management/make-smaller" }],
+                                "to": [{ "shell_command": "open -g rectangle://execute-action?name=smaller" }],
                                 "type": "basic"
                             },
                             {

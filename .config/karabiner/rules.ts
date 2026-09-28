@@ -1,6 +1,6 @@
 import fs from "fs";
 import { KarabinerRules } from "./types";
-import { createHyperSubLayers, app, open, raycastWindow } from "./utils";
+import { createHyperSubLayers, app, open, rectangle } from "./utils";
 
 const rules: KarabinerRules[] = [
   // Define the Hyper key itself
@@ -78,34 +78,34 @@ const rules: KarabinerRules[] = [
       c: app("Zed"),
     },
 
-    // w = "Window" via raycast.app
+    // w = "Window" via Rectangle.app
     w: {
       spacebar: open("-b com.apple.exposelauncher"),
-      1: raycastWindow("top-left-sixth"),
-      3: raycastWindow("top-right-sixth"),
-      y: raycastWindow("move-to-previous-display"),
-      o: raycastWindow("move-to-next-display"),
-      k: raycastWindow("top-half"),
-      j: raycastWindow("bottom-half"),
-      h: raycastWindow("left-half"),
-      l: raycastWindow("right-half"),
-      f: raycastWindow("maximize"),
-      e: raycastWindow("top-right-quarter"),
-      q: raycastWindow("top-left-quarter"),
-      a: raycastWindow("bottom-left-quarter"),
-      d: raycastWindow("bottom-right-quarter"),
-      s: raycastWindow("center"),
-      x: raycastWindow("reasonable-size"),
-      up_arrow: raycastWindow("move-top"),
-      down_arrow: raycastWindow("move-bottom"),
-      right_arrow: raycastWindow("move-right"),
-      left_arrow: raycastWindow("move-left"),
-      z: raycastWindow("bottom-left-sixth"),
-      c: raycastWindow("bottom-right-sixth"),
-      return_or_enter: raycastWindow("almost-maximize"),
-      delete_or_backspace: raycastWindow("restore"),
-      equal_sign: raycastWindow("make-larger"),
-      hyphen: raycastWindow("make-smaller"),
+      1: rectangle("top-left-sixth"),
+      3: rectangle("top-right-sixth"),
+      y: rectangle("previous-display"),
+      o: rectangle("next-display"),
+      k: rectangle("top-half"),
+      j: rectangle("bottom-half"),
+      h: rectangle("left-half"),
+      l: rectangle("right-half"),
+      f: rectangle("maximize"),
+      e: rectangle("top-right"),
+      q: rectangle("top-left"),
+      a: rectangle("bottom-left"),
+      d: rectangle("bottom-right"),
+      s: rectangle("center"),
+      x: rectangle("specified"),
+      up_arrow: rectangle("move-up"),
+      down_arrow: rectangle("move-down"),
+      right_arrow: rectangle("move-right"),
+      left_arrow: rectangle("move-left"),
+      z: rectangle("bottom-left-sixth"),
+      c: rectangle("bottom-right-sixth"),
+      return_or_enter: rectangle("almost-maximize"),
+      delete_or_backspace: rectangle("restore"),
+      equal_sign: rectangle("larger"),
+      hyphen: rectangle("smaller"),
       semicolon: {
         description: "Window: Hide",
         to: [
