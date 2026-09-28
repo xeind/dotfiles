@@ -48,6 +48,9 @@ a running app recreates a default folder within seconds, and
 git clone https://github.com/xeind/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles && brew bundle && stow -v .
 mise trust ~/.dotfiles && mise install
+# zsh prompt: oh-my-zsh loads powerlevel10k from its custom themes
+RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.oh-my-zsh/custom/themes/powerlevel10k
 ```
 
 ## Recovery
