@@ -22,8 +22,6 @@ brew "gmp"
 brew "ffmpeg-full"
 # Command-line tools for fly.io services
 brew "flyctl"
-# Console program to recover files based on their headers and footers
-brew "foremost"
 # Command-line fuzzy finder written in Go
 brew "fzf"
 # GitHub command-line tool
@@ -34,8 +32,6 @@ brew "git"
 brew "git-delta"
 # Git extension for versioning large files
 brew "git-lfs"
-# Update of iperf: measures TCP, UDP, and SCTP bandwidth
-brew "iperf3"
 # Asynchronous event library
 brew "libevent"
 # Deep clean and optimize your Mac
@@ -44,8 +40,6 @@ brew "mole"
 brew "redis"
 # Search tool like grep and The Silver Searcher
 brew "ripgrep"
-# Blazing-fast modern Lua linter
-brew "selene"
 # Organize software neatly under a single directory tree (e.g. /usr/local)
 brew "stow"
 # Display directories as trees (with optional color/HTML output)
@@ -58,16 +52,10 @@ brew "tree-sitter-cli"
 brew "typst"
 # Clean C library for processing UTF-8 Unicode data
 brew "utf8proc"
-# Internet file retriever
-brew "wget"
-# Generate your Xcode project from a spec file and your folder structure
-brew "xcodegen"
 # Blazing fast terminal file manager written in Rust, based on async I/O
 brew "yazi"
 # Feature-rich command-line audio/video downloader
 brew "yt-dlp"
-# Programming language designed for robustness, optimality, and clarity
-brew "zig"
 # mouseless terminal interaction
 brew "morantron/tmux-fingers/tmux-fingers", trusted: true
 # Android SDK component
