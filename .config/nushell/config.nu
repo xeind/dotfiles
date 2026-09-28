@@ -94,7 +94,9 @@ def save-init [file: string] {
 
 init-script mise activate nu | save-init mise.nu
 init-script starship init nu | save-init starship.nu
-init-script carapace _carapace nushell | save-init carapace.nu
+# carapace 1.8 still passes spans positionally, which nu 0.116 deprecates.
+let carapace = (init-script carapace _carapace nushell)
+if $carapace != null { $carapace | str replace "{|spans|" "{|place| let spans = $place.command" | save-init carapace.nu }
 # atuin: Ctrl+R history, shared with zsh. Up stays nu's own history.
 init-script atuin init nu --disable-up-arrow | save-init atuin.nu
 # zoxide: `z <part of a path>` jumps to a folder visited before
