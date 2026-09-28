@@ -84,8 +84,8 @@ $env.config.menus = ($env.config.menus | each {|m|
     text: $c.fg2
     selected_text: { fg: $c.fg2 bg: $c.selection attr: b }
     description_text: $c.gray
-    match_text: { fg: $c.search }
-    selected_match_text: { fg: $c.search bg: $c.selection attr: b }
+    match_text: { attr: u }
+    selected_match_text: { bg: $c.selection attr: bu }
   }
 })
 
