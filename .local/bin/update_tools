@@ -15,11 +15,9 @@ run mise self-update --yes
 run mise upgrade                 # runtimes and npm: tools
 run rustup update
 run uv tool upgrade --all
-run pipx upgrade-all
 run claude update
 run opencode upgrade
 run pi update self
-run cursor-agent update
 
 if (( ${#failed} )); then
   print -P "%F{red}Failed:%f"
