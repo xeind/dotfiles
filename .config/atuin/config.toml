@@ -4,6 +4,9 @@
 # Enter runs the picked command; Tab puts it on the line to edit.
 enter_accept = true
 
+# Esc/Ctrl+C gives back the typed line instead of an empty one.
+exit_mode = "return-query"
+
 # mise installs and updates atuin (update_tools).
 update_check = false
 
