@@ -15,6 +15,7 @@ nushell = "latest"
 starship = "latest"
 carapace = "latest"
 atuin = "latest"
+zoxide = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["ruby"]

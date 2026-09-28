@@ -84,3 +84,5 @@ if (which starship | is-not-empty) { ^starship init nu | save --force ($autoload
 if (which carapace | is-not-empty) { ^carapace _carapace nushell | save --force ($autoload | path join "carapace.nu") }
 # atuin: Ctrl+R history, shared with zsh. Up stays nu's own history.
 if (which atuin | is-not-empty) { ^atuin init nu --disable-up-arrow | save --force ($autoload | path join "atuin.nu") }
+# zoxide: `z <part of a path>` jumps to a folder visited before
+if (which zoxide | is-not-empty) { ^zoxide init nushell | save --force ($autoload | path join "zoxide.nu") }

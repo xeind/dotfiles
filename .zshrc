@@ -151,6 +151,9 @@ source <(fzf --zsh)
 # Ctrl + R; Up stays zsh's own history.
 eval "$(atuin init zsh --disable-up-arrow)"
 
+# zoxide: `z <part of a path>` jumps to a folder visited before
+eval "$(zoxide init zsh)"
+
 # Tmux config
 export TMUX_CONF="$HOME/.config/tmux/tmux.conf"
 
