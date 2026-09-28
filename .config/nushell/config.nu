@@ -102,20 +102,41 @@ $env.config.keybindings ++= [
     event: { until: [ { send: menu name: completion_menu } { send: menuprevious } ] } }
 ]
 
+# Prompt path colored as p10k does it: `~`, the current folder and project
+# roots (p10k's anchor files) bold tan, the rest teal. starship prints it.
+const anchor_files = [.bzr .citc .git .hg .node-version .python-version .go-version .ruby-version .lua-version .java-version .perl-version .php-version .tool-versions .mise.toml .shorten_folder_marker .svn .terraform CVS Cargo.toml composer.json go.mod package.json stack.yaml]
+$env.config.hooks.pre_prompt ++= [{||
+  let home = ($env.PWD == $nu.home-dir or ($env.PWD | str starts-with $"($nu.home-dir)/"))
+  let base = if $home { $nu.home-dir } else { "/" }
+  let names = if $env.PWD == $base { [] } else { $env.PWD | path relative-to $base | path split }
+  let tan = (ansi -e "1;38;5;11m")
+  let teal = (ansi -e "38;5;14m")
+  mut dir = $base
+  mut out = if $home { $"($tan)~(ansi reset)" } else { "" }
+  for i in 0..<($names | length) {
+    $dir = ($dir | path join ($names | get $i))
+    let d = $dir
+    let anchor = ($i == ($names | length) - 1) or ($anchor_files | any {|f| $d | path join $f | path exists })
+    $out += $"($teal)/(if $anchor { $tan } else { $teal })($names | get $i)(ansi reset)"
+  }
+  $env.PROMPT_DIR = if ($out | is-empty) { $"($tan)/(ansi reset)" } else { $out }
+}]
+
 # Completions for other CLIs (git, brew, mise...) through carapace,
 # falling back to the zsh completions oh-my-zsh already has.
 $env.CARAPACE_BRIDGES = "zsh,fish,bash"
 
 # Tools generate nu init scripts into the autoload folder (outside this
-# repo), loaded after this file. A tool that fails keeps its last script.
+# repo), loaded after this file. Only missing scripts are generated;
+# update_tools deletes them after upgrades.
 const autoload = ($nu.data-dir | path join "vendor" "autoload")
 mkdir $autoload
 
-def --wrapped init-script [tool: string, ...args: string] {
-  if (which $tool | is-empty) { return null }
+def --wrapped init-script [file: string, tool: string, ...args: string] {
+  if ($autoload | path join $file | path exists) or (which $tool | is-empty) { return null }
   let r = (run-external $tool ...$args | complete)
   if $r.exit_code == 0 { return $r.stdout }
-  print -e $"($tool) init failed, keeping its previous script: ($r.stderr | str trim)"
+  print -e $"($tool) init failed: ($r.stderr | str trim)"
   null
 }
 
@@ -124,12 +145,12 @@ def save-init [file: string] {
   if $script != null { $script | save --force ($autoload | path join $file) }
 }
 
-init-script mise activate nu | save-init mise.nu
-init-script starship init nu | save-init starship.nu
+init-script mise.nu mise activate nu | save-init mise.nu
+init-script starship.nu starship init nu | save-init starship.nu
 # carapace 1.8 still passes spans positionally, which nu 0.116 deprecates.
-let carapace = (init-script carapace _carapace nushell)
+let carapace = (init-script carapace.nu carapace _carapace nushell)
 if $carapace != null { $carapace | str replace "{|spans|" "{|place| let spans = $place.command" | save-init carapace.nu }
 # atuin: Ctrl+R history, shared with zsh. Up stays nu's own history.
-init-script atuin init nu --disable-up-arrow | save-init atuin.nu
+init-script atuin.nu atuin init nu --disable-up-arrow | save-init atuin.nu
 # zoxide: `z <part of a path>` jumps to a folder visited before
-init-script zoxide init nushell | save-init zoxide.nu
+init-script zoxide.nu zoxide init nushell | save-init zoxide.nu

@@ -3,18 +3,12 @@
 # time on the right. Colors are the same 256-color numbers p10k sets.
 
 add_newline = false
-format = "$directory($git_branch$git_status )$character"
+format = "${env_var.PROMPT_DIR}($git_branch$git_status )$character"
 right_format = "$status$cmd_duration$jobs$time"
 
-[directory]
-style = "14"
-before_repo_root_style = "14"
-repo_root_style = "bold 11"
-truncation_length = 100
-truncate_to_repo = false
-read_only = " "
-format = "[$path]($style)[$read_only]($read_only_style) "
-repo_root_format = "[$before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "
+# Path colored in config.nu (p10k anchors), passed as PROMPT_DIR.
+[env_var.PROMPT_DIR]
+format = "$env_value "
 
 [git_branch]
 style = "76"
