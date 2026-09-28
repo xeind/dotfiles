@@ -18,6 +18,37 @@ alias la = eza -a --colour=always --icons=always
 alias vi = nvim
 alias skim = ^/Applications/Skim.app/Contents/MacOS/Skim
 
+# `ls` plus a git column in repos, in the prompt's symbols: + staged,
+# ! modified, ? untracked, with counts on folders. --ignored adds gray !.
+def ls-git [pattern: glob = ".", --all (-a), --ignored] {
+  let files = (if $all { ls -a $pattern } else { ls $pattern })
+  let top = (do -i { ^git rev-parse --show-toplevel } | complete)
+  if $top.exit_code != 0 { return $files }
+  let root = ($top.stdout | str trim)
+  let changes = (^git status --porcelain=v1 --untracked-files=all ...(if $ignored { [--ignored] } else { [] }) -z
+    | split row (char nul)
+    | where {|l| ($l | str length) > 3 and ($l | str substring 2..2) == " " }
+    | each {|l|
+      let x = ($l | str substring 0..0)
+      let y = ($l | str substring 1..1)
+      {path: ($root | path join ($l | str substring 3.. | str trim --right --char "/"))
+       staged: ($x not-in [" " "?" "!"]) modified: ($y in [M D]) untracked: ($x == "?") ignored: ($x == "!")}
+    })
+  let kinds = [[flag symbol color]; [staged "+" 178] [modified "!" 178] [untracked "?" 39] [ignored "!" 244]]
+  $files | insert git {|f|
+    let full = ($f.name | path expand --no-symlink)
+    let mine = ($changes | where {|c| $c.path == $full or ($c.path | str starts-with $"($full)/") })
+    $kinds | each {|k|
+      let n = ($mine | where {|c| $c | get $k.flag } | length)
+      if $n > 0 {
+        let text = (if $f.type == dir and $k.flag != ignored { $"($k.symbol)($n)" } else { $k.symbol })
+        $"(ansi -e $'38;5;($k.color)m')($text)(ansi reset)"
+      }
+    } | compact | str join " "
+  } | reject type | metadata set --path-columns [name]
+}
+alias lg = ls-git
+
 # Open files' folders (or folders) in Cling.
 def cling [...paths: path] {
   let folders = $paths | each {|p| if ($p | path type) == dir { $p } else { $p | path dirname } }
