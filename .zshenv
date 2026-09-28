@@ -1,6 +1,10 @@
 # Drop duplicate PATH and fpath entries in every shell, nested ones included.
 typeset -U path fpath
 
+# XDG config dir: macOS tools such as lazygit and nushell otherwise read
+# ~/Library/Application Support, outside this repo.
+export XDG_CONFIG_HOME="$HOME/.config"
+
 # GITHUB_TOKEN for Codex/OpenCode's github MCP server: pulled fresh from gh's
 # keychain-backed credential on every shell start (login, interactive, non-interactive,
 # scripts) rather than a static secret sitting in a file. Sourced here (not .zshrc)
