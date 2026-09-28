@@ -12,6 +12,8 @@ lazygit = "latest"
 "npm:@typescript/native-preview" = "7.0.0-dev.20260707.2"
 yarn = "1"
 nushell = "latest"
+starship = "latest"
+carapace = "latest"
 
 [settings]
 idiomatic_version_file_enable_tools = ["ruby"]

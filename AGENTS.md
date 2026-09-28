@@ -67,6 +67,8 @@ mise trust ~/.dotfiles && mise install
   nushell read `~/Library/Application Support` and ignore this repo.
 - Nushell is on trial beside zsh, which stays the login shell. Its
   config folder also holds `history.sqlite3*`, gitignored: keep it so.
+- `.config/starship.toml` is nushell's prompt only; zsh uses p10k
+  (`.p10k.zsh`). The starship config copies p10k's layout and colors.
 - Zed's Context7 key is optional and stored in the Keychain as
   `context7-api-key-zed`; `settings.json` carries no key.
 - mise resolves `~/.config/mise` to its path in this repo and refuses

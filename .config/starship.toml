@@ -1,0 +1,57 @@
+# Prompt for nushell, laid out like the p10k "lean" prompt zsh uses
+# (.p10k.zsh): one line, dir + git on the left, status, duration and
+# time on the right. Colors are the same 256-color numbers p10k sets.
+
+add_newline = false
+format = "$directory($git_branch$git_status )$character"
+right_format = "$status$cmd_duration$jobs$time"
+
+[directory]
+style = "14"
+before_repo_root_style = "14"
+repo_root_style = "bold 11"
+truncation_length = 100
+truncate_to_repo = false
+read_only = " "
+format = "[$path]($style)[$read_only]($read_only_style) "
+repo_root_format = "[$before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "
+
+[git_branch]
+style = "76"
+format = "[$branch]($style)"
+
+[git_status]
+style = "178"
+format = "([$ahead_behind$stashed$conflicted$staged$modified$untracked]($style))"
+ahead = " ⇡${count}"
+behind = " ⇣${count}"
+diverged = " ⇣${behind_count}⇡${ahead_count}"
+stashed = " *${count}"
+conflicted = " ~${count}"
+staged = " +${count}"
+modified = " !${count}"
+untracked = " ?${count}"
+
+[character]
+success_symbol = "[❯](15)"
+error_symbol = "[❯](196)"
+
+[status]
+disabled = false
+style = "160"
+symbol = "✘"
+format = "[$symbol$status]($style) "
+
+[cmd_duration]
+min_time = 3_000
+style = "101"
+format = "[$duration]($style) "
+
+[jobs]
+style = "70"
+
+[time]
+disabled = false
+style = "250"
+time_format = "%H:%M:%S"
+format = "[$time]($style)"
