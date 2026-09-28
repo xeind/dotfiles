@@ -22,4 +22,3 @@ export CONTEXT7_API_KEY="$(security find-generic-password -a "$USER" -s "context
 export EDITOR=nvim
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
-export TMUX_CONF="$HOME/.config/tmux/tmux.conf"
