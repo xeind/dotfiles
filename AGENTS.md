@@ -88,8 +88,9 @@ updaters. A tool that asks for a PATH line gets a symlink in
 `update_tools` (`.local/bin/update_tools`) runs every updater.
 
 Exceptions in `.config/mise/config.toml`, each on purpose:
-- `node = "22"`: n8n lives in node 22's npm globals and would vanish
-  from PATH on a newer node.
+- `node = "22"`: `stack` lives in node 22's npm globals and would
+  vanish from PATH on a newer node.
+- `neovim = "0.12.2"`: held back on purpose; bump by hand.
 - `@kitlangton/stack` stays an npm global: mise's trust policy rejects
   its dependency `@effect/platform-node@4.0.0-beta.64`. Leave the check on.
 - `@typescript/native-preview` is pinned because it publishes only dev
