@@ -9,8 +9,9 @@ export XDG_CONFIG_HOME="$HOME/.config"
 # keychain-backed credential on every shell start (login, interactive, non-interactive,
 # scripts) rather than a static secret sitting in a file. Sourced here (not .zshrc)
 # so it's set even when codex/opencode are launched outside an interactive shell.
-if command -v gh >/dev/null 2>&1; then
-  export GITHUB_TOKEN="$(gh auth token 2>/dev/null)"
+# Full path: .zshenv runs before .zprofile puts Homebrew on PATH.
+if [[ -x /opt/homebrew/bin/gh ]]; then
+  export GITHUB_TOKEN="$(/opt/homebrew/bin/gh auth token 2>/dev/null)"
 fi
 
 # CONTEXT7_API_KEY for the context7 MCP server: pulled fresh from macOS Keychain
