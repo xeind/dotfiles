@@ -39,7 +39,8 @@ $env.config.color_config = ($env.config.color_config | merge {
   float: $c.orange
   filesize: $c.cyan2
   duration: $c.orange
-  datetime: $c.purple3
+  # changed within the hour stands out; anything older fades
+  datetime: {|d| if ((date now) - $d) < 1hr { $c.purple3 } else { $c.gray } }
   range: $c.yellow6
   string: $c.fg2
   nothing: $c.gray
