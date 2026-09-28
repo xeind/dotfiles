@@ -166,16 +166,6 @@ return {
 			"mason-org/mason.nvim",
 			"neovim/nvim-lspconfig",
 			"saghen/blink.cmp",
-
-			-- Allows extra capabilities provided by nvim-cmp
-			"hrsh7th/nvim-cmp",
-			"hrsh7th/cmp-path",
-			"hrsh7th/cmp-buffer",
-			"hrsh7th/cmp-nvim-lsp",
-			"hrsh7th/cmp-cmdline",
-
-			-- Tailwind
-			"jcha0713/cmp-tw2css",
 		},
 		event = { "BufReadPre", "BufNewFile" },
 		config = function(_)
@@ -229,7 +219,7 @@ return {
 				vim.api.nvim_create_autocmd("LspDetach", {
 					group = vim.api.nvim_create_augroup("kickstart-lsp-detach", { clear = true }),
 					callback = function(event2)
-						vim.lsp.buf.clear_references()
+						vim.lsp.util.buf_clear_references(event2.buf)
 						vim.api.nvim_clear_autocmds({
 							group = "LspDocumentHighlight",
 							buffer = event2.buf,
@@ -293,19 +283,7 @@ return {
 				end,
 			})
 
-			vim.lsp.set_log_level("off") -- Disable logging
-
-			vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, {
-				border = "rounded",
-				max_height = math.floor(vim.o.lines * 0.5),
-				max_width = math.floor(vim.o.columns * 0.4),
-			})
-
-			vim.lsp.handlers["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, {
-				border = "rounded",
-				max_height = math.floor(vim.o.lines * 0.5),
-				max_width = math.floor(vim.o.columns * 0.4),
-			})
+			vim.lsp.log.set_level("off") -- Disable logging
 
 			-- wrappers to allow for toggling
 			local def_virtual_text = {
@@ -391,32 +369,6 @@ return {
 					print("Virtual lines disabled (current line highlighting off)")
 				end
 			end, { desc = "Toggle virtual lines diagnostics (current line)" })
-
-			-- Completion in command mode
-			local cmp = require("cmp")
-
-			-- cmp.setup({
-			-- 	window = {
-			-- 		completion = cmp.config.window.bordered(),
-			-- 		documentation = cmp.config.window.bordered(),
-			-- 	},
-			-- })
-
-			cmp.setup.cmdline("/", {
-				mapping = cmp.mapping.preset.cmdline(),
-				sources = {
-					{ name = "buffer", max_item_count = 5 },
-				},
-			})
-
-			cmp.setup.cmdline(":", {
-				mapping = cmp.mapping.preset.cmdline(),
-				sources = cmp.config.sources({
-					{ name = "path", max_item_count = 5 },
-				}, {
-					{ name = "cmdline", max_item_count = 5 },
-				}),
-			})
 		end,
 	},
 	{
@@ -428,23 +380,12 @@ return {
 				-- Load luvit types when the `vim.uv` word is found
 				{ path = "${3rd}/luv/library", words = { "vim%.uv" } },
 			},
-			sources = {
-				-- add lazydev to your completion providers
-				default = { "lazydev" },
-				providers = {
-					lazydev = {
-						name = "LazyDev",
-						module = "lazydev.integrations.blink",
-						score_offset = 100, -- show at a higher priority than lsp
-					},
-				},
-			},
 		},
 	},
 
 	{
 		"saghen/blink.cmp",
-		event = "InsertEnter",
+		event = { "InsertEnter", "CmdlineEnter" },
 		-- dependencies = { "rafamadriz/friendly-snippets" },
 		version = "v1.*",
 
@@ -466,6 +407,9 @@ return {
 			keymap = {
 				preset = "default",
 			},
+
+			-- open the : and / menu while typing, as nvim-cmp did
+			cmdline = { completion = { menu = { auto_show = true } } },
 
 			signature = {
 				enabled = true,

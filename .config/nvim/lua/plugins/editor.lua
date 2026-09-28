@@ -2,7 +2,7 @@ return {
 	{
 		"ibhagwan/fzf-lua",
 		cmd = "FzfLua",
-		-- ignore nu's FZF_DEFAULT_OPTS (nightingale.nu); keep fzf-lua's own colors
+		-- ignore nu's FZF_DEFAULT_OPTS; fzf_colors below sets the same colors in every shell
 		init = function()
 			vim.env.FZF_DEFAULT_OPTS = nil
 		end,
@@ -120,6 +120,19 @@ return {
 			},
 		},
 		opts = {
+			-- nightingale picker colors, same as nightingale.nu's FZF_DEFAULT_OPTS
+			fzf_colors = {
+				fg = "#C4B28A",
+				["bg+"] = "#444444",
+				hl = "#7ebcfd",
+				["hl+"] = "#7ebcfd",
+				info = "#909398",
+				prompt = "#7ebcfd",
+				pointer = "#D27E99",
+				marker = "#D27E99",
+				spinner = "#D27E99",
+				header = "#f5a284",
+			},
 			winopts = {
 				preview = {
 					scrollbar = false, -- Clean look, no scrollbar
@@ -226,7 +239,7 @@ return {
 					vue = { "prettierd" },
 					typst = { "typstyle" },
 					markdown = { "prettierd" },
-					latex = { "latexindent" },
+					tex = { "tex-fmt" },
 					ruby = { "rubocop" },
 					eruby = { "erb_format" },
 					--	typescriptreact = { "typescript_tool",  },

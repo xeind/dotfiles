@@ -19,10 +19,6 @@ key.set("n", "te", ":tabedit")
 key.set("n", "<tab>", ":tabnext<Return>", opts)
 key.set("n", "<s-tab>", ":tabprev<Return>", opts)
 
--- Split window
-key.set("n", "ss", ":split<Return>", opts)
-key.set("n", "sv", ":vsplit<Return>", opts)
-
 -- Resize window
 key.set("n", "<C-w><left>", "<C-w><")
 key.set("n", "<C-w><right>", "<C-w>>")

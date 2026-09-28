@@ -121,48 +121,6 @@ api.nvim_create_autocmd("FileType", {
 	end,
 })
 
--- IDE-like highlight references under cursor using LSP (with debouncing)
-local lsp_debounce_timer = nil
-local lsp_debounce_delay = 100 -- milliseconds
-
-api.nvim_create_autocmd("CursorMoved", {
-	desc = "Highlight LSP references under cursor (debounced)",
-	group = augroup("lsp_reference_highlight"),
-	callback = function()
-		-- Cancel previous timer if it exists
-		if lsp_debounce_timer then
-			vim.fn.timer_stop(lsp_debounce_timer)
-		end
-
-		-- Set new timer
-		lsp_debounce_timer = vim.fn.timer_start(lsp_debounce_delay, function()
-			if vim.fn.mode() ~= "i" then
-				local clients = vim.lsp.get_clients({ bufnr = 0 })
-				local supports_highlight = false
-				for _, client in ipairs(clients) do
-					if client.server_capabilities.documentHighlightProvider then
-						supports_highlight = true
-						break
-					end
-				end
-
-				if supports_highlight then
-					vim.lsp.buf.clear_references()
-					vim.lsp.buf.document_highlight()
-				end
-			end
-		end)
-	end,
-})
-
-api.nvim_create_autocmd("CursorMovedI", {
-	desc = "Clear LSP highlights in insert mode",
-	group = augroup("lsp_reference_highlight"),
-	callback = function()
-		vim.lsp.buf.clear_references()
-	end,
-})
-
 -- Open help in vertical split
 api.nvim_create_autocmd("FileType", {
 	desc = "Open help in vertical split",
