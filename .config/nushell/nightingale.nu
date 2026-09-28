@@ -14,6 +14,17 @@ let c = {
 
 $env.config.highlight_resolved_externals = true
 
+# File names in `ls` tables and path completions. zsh's LS_COLORS comes
+# from oh-my-zsh in .zshrc, which nu tabs never load.
+def rgb [hex: string] {
+  $hex | str substring 1.. | split chars | chunks 2 | each { str join | into int --radix 16 } | str join ";" | $"38;2;($in)"
+}
+$env.LS_COLORS = ([
+  $"di=1;(rgb $c.blue)"  $"ln=(rgb $c.cyan)"  $"ex=(rgb $c.green)"
+  $"or=(rgb $c.red)"  $"mi=(rgb $c.red)"  $"so=(rgb $c.purple)"  $"pi=(rgb $c.yellow3)"
+  $"bd=(rgb $c.orange)"  $"cd=(rgb $c.orange)"
+] | str join ":")
+
 $env.config.color_config = ($env.config.color_config | merge {
   # values in tables and output
   separator: $c.gray2
