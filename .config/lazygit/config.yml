@@ -1,25 +1,51 @@
+# Theme: extras/lazygit/nightingale.yml from xeind/nightingale.nvim
 os:
   editPreset: "nvim-remote"
 gui:
   nerdFontsVersion: 3
   theme:
+    # Selected line background
     selectedLineBgColor:
-      - "#323232"
+      - "#363636" # bg_highlight
+
+    # Active searching border
     searchingActiveBorderColor:
-      - "#98BB6C"
+      - "#98BB6C" # green
       - "bold"
+
+    # Options/menu text
     optionsTextColor:
-      - "#7FB4CA"
+      - "#7cd0bf" # cyan
+
+    # Inactive border
     inactiveBorderColor:
-      - "#54546D"
+      - "#585858" # gray2 / border2
+
+    # Default foreground
     defaultFgColor:
-      - "#C5C9C5"
+      - "#DCD7BA" # fg2
+
+    # Cherry picked commit colors
     cherryPickedCommitFgColor:
-      - "#7FB4CA"
+      - "#85a8da" # blue (function color)
     cherryPickedCommitBgColor:
-      - "#2D4F67"
+      - "#2a2a2a" # bg3
+
+    # Active border
     activeBorderColor:
-      - "#98BB6C"
+      - "#98BB6C" # green
       - "bold"
+
+    # Unstaged changes
     unstagedChangesColor:
-      - "#C4746E"
+      - "#ee5d43" # red (error color)
+
+    # Untracked files
+    untrackChangesColor:
+      - "#ee5d43" # red
+
+    # Staged changes
+    markedBaseCommitFgColor:
+      - "#85a8da" # blue
+    markedBaseCommitBgColor:
+      - "#2a2a2a" # bg3
