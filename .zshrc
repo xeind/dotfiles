@@ -97,7 +97,7 @@ function cling() {
     for arg in "$@"; do
         if [ -d "$arg" ]; then
             folders+=("$arg")
-        else [ -f "$arg" ]
+        elif [ -f "$arg" ]; then
             folders+=("$(dirname "$arg")")
         fi
     done
