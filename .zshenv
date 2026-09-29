@@ -25,3 +25,10 @@ fi
 export EDITOR=nvim
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
+
+# nu habit: `^cmd` (nu's "run the external command") runs cmd in zsh too.
+command_not_found_handler() {
+  if [[ $1 == '^'?* ]]; then "${1#^}" "${@:2}"; return; fi
+  print -u2 "zsh: command not found: $1"
+  return 127
+}
