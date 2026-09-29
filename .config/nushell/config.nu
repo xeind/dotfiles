@@ -122,6 +122,9 @@ $env.config.hooks.pre_prompt ++= [{||
   $env.PROMPT_DIR = if ($out | is-empty) { $"($tan)/(ansi reset)" } else { $out }
 }]
 
+# Keep the right prompt (status, duration, time) on past lines, as p10k does.
+$env.TRANSIENT_PROMPT_COMMAND_RIGHT = {|| do $env.PROMPT_COMMAND_RIGHT }
+
 # Completions for other CLIs (git, brew, mise...) through carapace,
 # falling back to the zsh completions oh-my-zsh already has.
 $env.CARAPACE_BRIDGES = "zsh,fish,bash"
