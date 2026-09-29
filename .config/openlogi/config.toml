@@ -16,6 +16,7 @@ smooth_scroll = false
 vertical_scroll_sensitivity = 14
 ui_scale = "normal"
 device_view_mode = "grid"
+mouse_profile_target = "pointer"
 
 [devices.0b034.bindings]
 Thumbwheel = "NextTab"
@@ -55,6 +56,7 @@ hires_wheel = true
 thumbwheel = true
 haptic_feedback = false
 haptic_panel = false
+dpi_gestures = true
 
 [devices."serial:2405lz512ed8".links."direct:046d:b034".capabilities]
 buttons = true
@@ -65,6 +67,7 @@ hires_wheel = true
 thumbwheel = true
 haptic_feedback = false
 haptic_panel = false
+dpi_gestures = true
 
 [devices."serial:2405lz512ed8".bindings]
 ThumbwheelScrollUp = "PrevTab"
