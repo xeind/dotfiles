@@ -20,9 +20,8 @@ previous_agent = "prefix+shift+a"
 new_worktree = "prefix+shift+g"
 last_pane = "prefix+semicolon"
 # tmux pain-control muscle memory: move tab left/right
-# needs the release after 0.8.0 (feat #2561) — uncomment on upgrade
-# move_tab_previous = "prefix+<"
-# move_tab_next = "prefix+>"
+move_tab_previous = "prefix+<"
+move_tab_next = "prefix+>"
 
 # lazygit popup, same as tmux prefix+g
 [[keys.command]]
@@ -104,9 +103,8 @@ tab_bar_position = "bottom"
 # attention queue: neediest agent first, so prefix+a lands on it
 agent_panel_sort = "priority"
 # tmux status-right port: blocked-agent count, zoom flag, date
-# needs the release after 0.8.0 (feat #2586) — uncomment on upgrade
-# tab_bar_right = [
-#   { type = "command", command = "~/.config/herdr/needs-count.sh", interval_seconds = 10 },
-#   { type = "zoom" },
-#   { type = "datetime", format = "%m/%d/%y" },
-# ]
+tab_bar_right = [
+  { type = "command", command = "~/.config/herdr/needs-count.sh", interval_seconds = 10 },
+  { type = "zoom" },
+  { type = "datetime", format = "%m/%d/%y" },
+]
