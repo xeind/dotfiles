@@ -25,11 +25,12 @@ links into the parent folder, `~`. `.stow-local-ignore` keeps repo-only
 files (this one included) out of `~`; `.gitignore` keeps app state out
 of git.
 
-**Folder links.** Karabiner and Zed are linked as whole folders
-(`~/.config/karabiner`, `~/.config/zed`) because both replace their
-settings file on save, which turns a file link back into a plain file.
-Their state (backups, node_modules, conversations, prompts) lives in
-the repo folder and is gitignored.
+**Folder links.** atuin, Karabiner, LinearMouse, mise, nushell,
+OpenLogi and Zed are linked as whole folders (`~/.config/<app>`)
+because each rewrites its own files, which turns a file link back into
+a plain file. Their state (backups, history, sockets, conversations)
+lives in the repo folder and is gitignored. clangd's config sits at
+`Library/Preferences/clangd`, the only path clangd reads on macOS.
 
 ## Adding a config
 
@@ -51,6 +52,10 @@ mise trust ~/.dotfiles && mise install
 # zsh prompt: oh-my-zsh loads powerlevel10k from its custom themes
 RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.oh-my-zsh/custom/themes/powerlevel10k
+git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+# herdr agent-state hooks: prefix+a and the tab bar's blocked count need them
+herdr integration install claude && herdr integration install codex && herdr integration install pi
 ```
 
 ## Recovery
@@ -68,8 +73,17 @@ git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ~/.oh-my-zsh/cu
 
 - `.zshenv` sets `XDG_CONFIG_HOME=~/.config`; without it lazygit and
   nushell read `~/Library/Application Support` and ignore this repo.
-- Nushell is on trial beside zsh, which stays the login shell. Its
+- New Ghostty tabs and herdr panes run `.local/bin/terminal_shell`:
+  a login zsh (PATH, XDG, keys) that execs nu, so `.zshrc` never runs
+  there. Put env vars every shell needs in `.zshenv`. zsh stays the
+  login shell and the shell agents run commands in.
+- nu writes its tool init scripts (mise, starship, carapace, atuin,
+  zoxide) to `~/Library/Application Support/nushell/vendor/autoload`
+  only when missing; `update_tools` deletes them after upgrades. Its
   config folder also holds `history.sqlite3*`, gitignored: keep it so.
+- Headless nvim loads lazy.nvim, which can update plugins and rewrite
+  `lazy-lock.json`. Copy the lockfile before any nvim run and compare
+  after.
 - `.config/starship.toml` is nushell's prompt only; zsh uses p10k
   (`.p10k.zsh`). The starship config copies p10k's layout and colors.
 - Zed's Context7 key is optional and stored in the Keychain as
