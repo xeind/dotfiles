@@ -37,7 +37,8 @@ if not agents:
 def rank(agent):
     return RANK.get(agent["agent_status"], len(RANK))
 
-ordered = sorted(enumerate(agents), key=lambda p: (rank(p[1]), p[0]))
+# within a tier, the latest state change first (what just finished or blocked)
+ordered = sorted(enumerate(agents), key=lambda p: (rank(p[1]), -p[1].get("state_change_seq", 0), p[0]))
 ids = [a["pane_id"] for _, a in ordered]
 
 current = os.environ.get("HERDR_ACTIVE_PANE_ID")
