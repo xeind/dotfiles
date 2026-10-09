@@ -1,6 +1,6 @@
 import fs from "fs";
 import { KarabinerRules } from "./types";
-import { createHyperSubLayers, app, open, rectangle } from "./utils";
+import { createHyperSubLayers, app, open, rectangle, tinycast } from "./utils";
 
 const rules: KarabinerRules[] = [
   // Define the Hyper key itself
@@ -299,7 +299,7 @@ const rules: KarabinerRules[] = [
         to: [{ key_code: "f19" }],
         description: "Toggle Do Not Disturb",
       },
-      c: open("raycast://extensions/raycast/raycast/open-camera"),
+      c: tinycast("c", "Open Camera"),
       r: {
         to: [{ shell_command: "osascript ~/.config/raycast/scripts/recording-mode.applescript" }],
         description: "Recording Mode (hide menu bar)",
@@ -377,12 +377,9 @@ const rules: KarabinerRules[] = [
       },
     },
 
-    // r = "Raycast"
+    // r = launcher (Tinycast)
     r: {
-      c: open("raycast://extensions/thomas/color-picker/pick-color"),
-      e: open(
-        "raycast://extensions/raycast/emoji-symbols/search-emoji-symbols"
-      ),
+      e: tinycast("e", "Search Emoji"),
     },
   }),
 ];
