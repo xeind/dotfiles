@@ -247,6 +247,13 @@ const rules: KarabinerRules[] = [
       },
     },
 
+    // f = "Finder"
+    f: {
+      p: tinycast("p", "Copy Path"),
+      o: tinycast("o", "Open in Finder"),
+      r: tinycast("r", "Reveal Copied Path"),
+    },
+
     // s = "System"
     s: {
       u: {
