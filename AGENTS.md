@@ -29,8 +29,7 @@ of git.
 OpenLogi and Zed are linked as whole folders (`~/.config/<app>`)
 because each rewrites its own files, which turns a file link back into
 a plain file. Their state (backups, history, sockets, conversations)
-lives in the repo folder and is gitignored. clangd's config sits at
-`Library/Preferences/clangd`, the only path clangd reads on macOS.
+lives in the repo folder and is gitignored.
 
 ## Adding a config
 
