@@ -72,6 +72,8 @@ cask "gcloud-cli"
 cask "ghostty"
 # Cross-platform Git credential storage for multiple hosting providers
 cask "git-credential-manager"
+# Desktop automation with Lua: reacts to display, Wi-Fi and app events
+cask "hammerspoon"
 # Local-first alternative to Logitech Options+ for HID++ devices
 cask "openlogi"
 # Menu bar app to find and kill processes running on open ports
