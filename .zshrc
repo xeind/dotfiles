@@ -20,10 +20,13 @@ function cling() {
     open -a Cling "${folders[@]}"
 }
 
-alias l='eza -l --colour=always --icons=always'
-alias ls='eza -l --colour=always --icons=always'
-alias ll='eza -lah --colour=always --icons=always --group-directories-first'
-alias la='eza -a --colour=always --icons=always'
+# Claude Code snapshots this shell for its tools; colour codes and icons break parsing of ls output.
+if [[ -z $CLAUDECODE ]]; then
+  alias l='eza -l --colour=always --icons=always'
+  alias ls='eza -l --colour=always --icons=always'
+  alias ll='eza -lah --colour=always --icons=always --group-directories-first'
+  alias la='eza -a --colour=always --icons=always'
+fi
 
 # Keybinds
 bindkey '^E' end-of-line                # Ctrl + E: Move cursor to the end of the line

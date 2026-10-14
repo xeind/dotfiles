@@ -8,6 +8,8 @@ brew "openssl@3"
 brew "bat"
 # Resource monitor. C++ version and continuation of bashtop and bpytop
 brew "btop"
+# GNU File, Shell, and Text utilities (gtimeout for agent shells)
+brew "coreutils"
 # Modern, maintained replacement for ls
 brew "eza"
 # Like neofetch, but much faster because written mostly in C
