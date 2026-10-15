@@ -78,6 +78,12 @@ export function createHyperSubLayer(
         ...(Object.keys(commands) as (keyof typeof commands)[]).map(
             (command_key): Manipulator => ({
                 ...commands[command_key],
+                // Log first: Karabiner repeats only the last event while a
+                // key is held, and that must stay the real command.
+                to: [
+                    logUsage(sublayer_key, command_key),
+                    ...commands[command_key]!.to,
+                ],
                 type: "basic" as const,
                 from: {
                     key_code: command_key,
@@ -152,6 +158,18 @@ export function createHyperSubLayers(subLayers: {
 
 function generateSubLayerVariableName(key: KeyCode) {
     return `hyper_sublayer_${key}`;
+}
+
+/**
+ * Every sublayer command appends "timestamp<TAB>layer<TAB>key" to this log,
+ * so scripts/usage_report.sh can rank shortcuts by month.
+ */
+export const USAGE_LOG_DIR = `${process.env.HOME}/.local/state/karabiner`;
+
+function logUsage(layer: KeyCode, key: KeyCode): To {
+    return {
+        shell_command: `printf '%s\\t${layer}\\t${key}\\n' "$(date +%FT%T)" >> ${USAGE_LOG_DIR}/usage.log`,
+    };
 }
 
 /**

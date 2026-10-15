@@ -1,6 +1,13 @@
 import fs from "fs";
 import { KarabinerRules } from "./types";
-import { createHyperSubLayers, app, open, rectangle, tinycast } from "./utils";
+import {
+  createHyperSubLayers,
+  app,
+  open,
+  rectangle,
+  tinycast,
+  USAGE_LOG_DIR,
+} from "./utils";
 
 const rules: KarabinerRules[] = [
   // Define the Hyper key itself
@@ -395,6 +402,8 @@ const rules: KarabinerRules[] = [
     },
   }),
 ];
+
+fs.mkdirSync(USAGE_LOG_DIR, { recursive: true });
 
 fs.writeFileSync(
   "karabiner.json",

@@ -121,6 +121,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tb\\tx\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open https://x.com"
                   }
                 ],
@@ -144,6 +147,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tb\\ty\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open https://youtube.com"
                   }
@@ -169,6 +175,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tb\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open https://facebook.com"
                   }
                 ],
@@ -192,6 +201,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tb\\tg\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open https://github.com"
                   }
@@ -217,6 +229,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tb\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open https://reddit.com"
                   }
                 ],
@@ -240,6 +255,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tb\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open https://chatgpt.com"
                   }
@@ -265,6 +283,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tb\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open https://mail.google.com/mail/u/0/#inbox"
                   }
                 ],
@@ -289,6 +310,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tb\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open https://photos.google.com/u/3/"
                   }
                 ],
@@ -312,6 +336,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tb\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open https://linkedin.com"
                   }
@@ -412,6 +439,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\to\\t1\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -a 'Bitwarden.app'"
                   }
                 ],
@@ -435,6 +465,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\to\\tb\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -a 'Firefox.app'"
                   }
@@ -460,6 +493,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\to\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -a 'Zen Browser.app'"
                   }
                 ],
@@ -483,6 +519,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\to\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -a 'Discord.app'"
                   }
@@ -508,6 +547,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\to\\tt\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -a 'Ghostty.app'"
                   }
                 ],
@@ -531,6 +573,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\to\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -a 'Obsidian.app'"
                   }
@@ -556,6 +601,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\to\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -a 'Finder.app'"
                   }
                 ],
@@ -579,6 +627,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\to\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -a 'Things3.app'"
                   }
@@ -604,6 +655,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\to\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -a 'Skim.app'"
                   }
                 ],
@@ -628,6 +682,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\to\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -a 'Helium.app'"
                   }
                 ],
@@ -651,6 +708,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\to\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -a 'Zed.app'"
                   }
@@ -751,6 +811,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\t1\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=top-left-sixth"
                   }
                 ],
@@ -774,6 +837,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\t3\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=top-right-sixth"
                   }
@@ -799,6 +865,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\tspacebar\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -b com.apple.exposelauncher"
                   }
                 ],
@@ -822,6 +891,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\ty\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=previous-display"
                   }
@@ -847,6 +919,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\to\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=next-display"
                   }
                 ],
@@ -870,6 +945,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tk\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=top-half"
                   }
@@ -895,6 +973,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\tj\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=bottom-half"
                   }
                 ],
@@ -918,6 +999,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=left-half"
                   }
@@ -943,6 +1027,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=right-half"
                   }
                 ],
@@ -966,6 +1053,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=maximize"
                   }
@@ -991,6 +1081,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\te\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=top-right"
                   }
                 ],
@@ -1014,6 +1107,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=top-left"
                   }
@@ -1039,6 +1135,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\ta\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=bottom-left"
                   }
                 ],
@@ -1062,6 +1161,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=bottom-right"
                   }
@@ -1087,6 +1189,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\ts\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=center"
                   }
                 ],
@@ -1110,6 +1215,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tx\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=specified"
                   }
@@ -1135,6 +1243,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\tup_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=move-up"
                   }
                 ],
@@ -1158,6 +1269,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tdown_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=move-down"
                   }
@@ -1183,6 +1297,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\tright_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=move-right"
                   }
                 ],
@@ -1206,6 +1323,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tleft_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=move-left"
                   }
@@ -1231,6 +1351,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=bottom-left-sixth"
                   }
                 ],
@@ -1254,6 +1377,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=bottom-right-sixth"
                   }
@@ -1279,6 +1405,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\treturn_or_enter\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=almost-maximize"
                   }
                 ],
@@ -1302,6 +1431,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tdelete_or_backspace\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=restore"
                   }
@@ -1327,6 +1459,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\tequal_sign\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open -g rectangle://execute-action?name=larger"
                   }
                 ],
@@ -1350,6 +1485,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\thyphen\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "open -g rectangle://execute-action?name=smaller"
                   }
@@ -1375,6 +1513,9 @@
               {
                 "description": "Window: Hide",
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tsemicolon\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "h",
                     "modifiers": [
@@ -1402,6 +1543,9 @@
               {
                 "description": "Window: Previous Tab",
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tu\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "tab",
                     "modifiers": [
@@ -1431,6 +1575,9 @@
                 "description": "Window: Next Tab",
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\ti\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "tab",
                     "modifiers": [
                       "right_control"
@@ -1457,6 +1604,9 @@
               {
                 "description": "Window: Next Window",
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "grave_accent_and_tilde",
                     "modifiers": [
@@ -1485,6 +1635,9 @@
                 "description": "Window: Back",
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tw\\tb\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "open_bracket",
                     "modifiers": [
                       "right_command"
@@ -1511,6 +1664,9 @@
               {
                 "description": "Window: Forward",
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tw\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "close_bracket",
                     "modifiers": [
@@ -1614,6 +1770,9 @@
                 "description": "Screenshot all-purpose",
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tc\\ta\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "f12",
                     "modifiers": [
                       "left_control",
@@ -1641,6 +1800,9 @@
               {
                 "description": "Screenshot area",
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tc\\tw\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "f11",
                     "modifiers": [
@@ -1670,6 +1832,9 @@
                 "description": "Screenshot window",
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tc\\te\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "f10",
                     "modifiers": [
                       "left_control",
@@ -1697,6 +1862,9 @@
               {
                 "description": "Screenshot screen",
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tc\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "f9",
                     "modifiers": [
@@ -1726,6 +1894,9 @@
                 "description": "Scrollshot",
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tc\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "f8",
                     "modifiers": [
                       "left_control",
@@ -1753,6 +1924,9 @@
               {
                 "description": "OCR Text",
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tc\\ts\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "f7",
                     "modifiers": [
@@ -1782,6 +1956,9 @@
                 "description": "Open Clipboard",
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tc\\tk\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "f6",
                     "modifiers": [
                       "left_control",
@@ -1810,6 +1987,9 @@
                 "description": "Close all Overlays",
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tc\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "f5",
                     "modifiers": [
                       "left_control",
@@ -1837,6 +2017,9 @@
               {
                 "description": "Open Clipboard History",
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tc\\tdelete_or_backspace\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "f4",
                     "modifiers": [
@@ -1940,6 +2123,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tf\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "p",
                     "modifiers": [
                       "left_control",
@@ -1969,6 +2155,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tf\\to\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "o",
                     "modifiers": [
                       "left_control",
@@ -1997,6 +2186,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tf\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "r",
                     "modifiers": [
@@ -2102,6 +2294,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\ts\\tu\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "volume_increment"
                   }
                 ],
@@ -2124,6 +2319,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\ts\\tj\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "volume_decrement"
                   }
@@ -2148,6 +2346,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\ts\\ti\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "display_brightness_increment"
                   }
                 ],
@@ -2171,6 +2372,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\ts\\tk\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "display_brightness_decrement"
                   }
                 ],
@@ -2193,6 +2397,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\ts\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "q",
                     "modifiers": [
@@ -2221,6 +2428,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\ts\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "osascript -e 'tell application \"System Events\" to tell process \"MenuBarAgent\"' -e 'repeat with g in every group of menu bar 1' -e 'set mi to menu bar item 1 of g' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'"
                   }
                 ],
@@ -2244,6 +2454,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\ts\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "osascript ~/.config/raycast/scripts/dismiss-notifications.applescript"
                   }
@@ -2269,6 +2482,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\ts\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "shell_command": "open x-apple.systempreferences:com.apple.preference"
                   }
                 ],
@@ -2293,6 +2509,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\ts\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "f19"
                   }
                 ],
@@ -2316,6 +2535,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\ts\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "c",
                     "modifiers": [
@@ -2346,6 +2568,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\ts\\tv\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "v",
                     "modifiers": [
                       "left_control",
@@ -2373,6 +2598,19 @@
                 ]
               },
               {
+                "to": [
+                  {
+                    "shell_command": "printf '%s\\ts\\ta\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "key_code": "a",
+                    "modifiers": [
+                      "left_control",
+                      "left_option",
+                      "left_shift"
+                    ]
+                  }
+                ],
                 "description": "Mole: Toggle Awake",
                 "type": "basic",
                 "from": {
@@ -2383,26 +2621,19 @@
                     ]
                   }
                 },
-                "to": [
-                  {
-                    "key_code": "a",
-                    "modifiers": [
-                      "left_control",
-                      "left_option",
-                      "left_shift"
-                    ]
-                  }
-                ],
                 "conditions": [
                   {
-                    "name": "hyper_sublayer_s",
                     "type": "variable_if",
+                    "name": "hyper_sublayer_s",
                     "value": 1
                   }
                 ]
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\ts\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "osascript ~/.config/raycast/scripts/recording-mode.applescript"
                   }
@@ -2427,6 +2658,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\ts\\tt\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "shell_command": "osascript ~/.config/raycast/scripts/undo-recording-mode.applescript"
                   }
@@ -2527,6 +2761,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tv\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "left_arrow"
                   }
                 ],
@@ -2549,6 +2786,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tv\\tj\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "down_arrow"
                   }
@@ -2573,6 +2813,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tv\\tk\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "up_arrow"
                   }
                 ],
@@ -2595,6 +2838,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tv\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "right_arrow"
                   }
@@ -2619,6 +2865,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tv\\tu\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "page_down"
                   }
                 ],
@@ -2641,6 +2890,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tv\\ti\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "page_up"
                   }
@@ -2665,6 +2917,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tv\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "pointing_button": "button1"
                   }
                 ],
@@ -2687,6 +2942,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tv\\te\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "pointing_button": "button2"
                   }
@@ -2711,6 +2969,9 @@
               {
                 "description": "Move Word Left",
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tv\\tb\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "left_arrow",
                     "modifiers": [
@@ -2739,6 +3000,9 @@
                 "description": "Move Word Right",
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tv\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "right_arrow",
                     "modifiers": [
                       "left_option"
@@ -2766,6 +3030,9 @@
                 "description": "Delete Word",
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tv\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "delete_or_backspace",
                     "modifiers": [
                       "left_option"
@@ -2791,6 +3058,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tv\\tspacebar\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "f1",
                     "modifiers": [
@@ -2819,6 +3089,9 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\tv\\ts\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
                     "key_code": "f2",
                     "modifiers": [
                       "left_control",
@@ -2845,6 +3118,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tv\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "f3",
                     "modifiers": [
@@ -2947,6 +3223,9 @@
               },
               {
                 "to": [
+                  {
+                    "shell_command": "printf '%s\\tr\\te\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
                   {
                     "key_code": "e",
                     "modifiers": [
