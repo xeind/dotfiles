@@ -2612,7 +2612,7 @@
                     ]
                   }
                 ],
-                "description": "Mole: Toggle Awake",
+                "description": "Tinycast: Toggle Awake",
                 "type": "basic",
                 "from": {
                   "key_code": "a",
