@@ -15,8 +15,20 @@
     --blue-soft: #5ea2ff;
     --sans: "Geist", -apple-system, sans-serif;
     --mono: "Geist Mono", ui-monospace, monospace;
-    --key: 28px;
-    --gap: 5px;
+    --key: 25px;
+    --gap: 4px;
+    /* Sequential blue, dark surface: lightness rises with use. h0 = bound but unused. */
+    --h0: #1b2a45; --h0t: #7f9bc8;
+    --h1: #184f95; --h1t: #e8f1ff;
+    --h2: #2a78d6; --h2t: #ffffff;
+    --h3: #5598e7; --h3t: #0b1b33;
+    --h4: #9ec5f4; --h4t: #0b1b33;
+    /* Command families: small marks only (glyphs, layer chips, stripes, activity dots). */
+    --f-launch: #2dd4bf;
+    --f-window: #a78bfa;
+    --f-move: #f5a524;
+    --f-capture: #f472b6;
+    --f-system: #798296;
   }
 
   * { box-sizing: border-box; margin: 0; }
@@ -46,26 +58,18 @@
 
   .card {
     width: 368px;
-    padding: 18px 20px 16px;
+    padding: 14px 20px 12px;
     border-radius: 30px;
     background: var(--card);
     border: 1px solid rgba(255, 255, 255, 0.07);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.04),
       0 18px 40px -12px rgba(0, 0, 0, 0.65);
-    opacity: 0;
-    transform: translateY(4px) scale(0.985);
-  }
-
-  .card.open {
-    opacity: 1;
-    transform: none;
-    transition: opacity 120ms ease-out, transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   /* Header */
 
-  .header { display: flex; align-items: center; gap: 10px; height: 30px; }
+  .header { display: flex; align-items: center; gap: 10px; height: 28px; }
 
   .header-icon {
     width: 22px;
@@ -109,8 +113,8 @@
 
   .close {
     margin-left: auto;
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: #2c2c2c;
     display: grid;
@@ -123,26 +127,26 @@
 
   /* Total */
 
-  .total { display: flex; align-items: baseline; gap: 8px; margin-top: 16px; }
+  .total { display: flex; align-items: baseline; gap: 7px; margin-top: 10px; }
 
   .total-number {
-    font-size: 34px;
+    font-size: 26px;
     font-weight: 500;
-    letter-spacing: -0.045em;
+    letter-spacing: -0.04em;
     line-height: 1;
     font-variant-numeric: tabular-nums;
   }
 
-  .total-unit { font-size: 12.5px; font-weight: 500; letter-spacing: 0.04em; color: var(--muted); }
+  .total-unit { font-size: 11.5px; font-weight: 500; letter-spacing: 0.04em; color: var(--muted); }
 
   .delta {
     margin-left: auto;
     align-self: center;
     font-family: var(--mono);
-    font-size: 12.5px;
+    font-size: 11.5px;
     font-weight: 500;
-    padding: 5px 9px;
-    border-radius: 8px;
+    padding: 3px 8px;
+    border-radius: 7px;
   }
 
   .delta.up { color: #3ddc84; background: #0f3a21; }
@@ -152,63 +156,76 @@
 
   .keyboard {
     width: calc(10 * var(--key) + 9 * var(--gap));
-    margin: 18px auto 0;
+    margin: 10px auto 0;
     display: flex;
     flex-direction: column;
     gap: var(--gap);
   }
 
   .row { display: flex; gap: var(--gap); }
-  .row-1 { padding-left: 14px; }
-  .row-2 { padding-left: 42px; }
+  .row-1 { padding-left: calc(var(--key) * 0.5); }
+  .row-2 { padding-left: calc(var(--key) * 1.5 + var(--gap)); }
   .row-3 { justify-content: center; }
 
   .key {
-    --heat: 0%;
     width: var(--key);
     height: var(--key);
-    border-radius: 7px;
+    border-radius: 6px;
     display: grid;
     place-items: center;
     font-family: var(--mono);
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 500;
     color: #4a4a4a;
     background: #262626;
     border: 1px solid rgba(255, 255, 255, 0.035);
-    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
     outline: 2px solid transparent;
-    outline-offset: 2px;
+    outline-offset: 1.5px;
   }
 
-  .key.space { width: 136px; }
-  .key.bound { color: #979797; background: #2c2c2c; border-color: rgba(255, 255, 255, 0.06); cursor: pointer; }
-
-  .key.used {
-    color: #fff;
-    background: color-mix(in oklab, var(--blue) var(--heat), #2c2c2c);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
+  .key.space { width: 112px; }
+  .key.h0, .key.h1, .key.h2, .key.h3, .key.h4 { cursor: pointer; border-color: rgba(255, 255, 255, 0.08); }
+  .h0 { background: var(--h0); color: var(--h0t); }
+  .h1 { background: var(--h1); color: var(--h1t); }
+  .h2 { background: var(--h2); color: var(--h2t); }
+  .h3 { background: var(--h3); color: var(--h3t); }
+  .h4 { background: var(--h4); color: var(--h4t); }
 
   .key.selected { outline-color: #e6e6e6; }
+
+  .heat-legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-top: 3px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    color: var(--faint);
+  }
+
+  .heat-legend i { width: 10px; height: 10px; border-radius: 3px; }
+  .heat-legend span:first-child { margin-right: 3px; }
+  .heat-legend span:last-child { margin-left: 3px; }
 
   /* Detail strip: fixed height, so selecting a key never shifts the layout. */
 
   .detail {
     display: flex;
     align-items: center;
-    gap: 11px;
-    height: 54px;
-    margin-top: 14px;
-    padding: 0 12px;
-    border-radius: 14px;
+    gap: 10px;
+    height: 46px;
+    margin-top: 10px;
+    padding: 0 10px;
+    border-radius: 12px;
     background: var(--raised);
     border: 1px solid #313131;
   }
 
   .detail .chip {
-    min-width: 30px;
-    height: 30px;
+    min-width: 28px;
+    height: 28px;
     border-radius: 8px;
     font-size: 12px;
     color: #8fbaff;
@@ -222,105 +239,110 @@
 
   .detail-title {
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 10.5px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--muted);
   }
 
-  .detail-value { margin-top: 3px; font-size: 13.5px; }
+  .detail-value { margin-top: 2px; font-size: 13px; }
   .detail.empty .detail-value { color: var(--faint); margin: 0; }
 
-  /* Overview ranking */
-
-  .ranking { margin-top: 14px; }
-
-  .entry {
-    display: grid;
-    grid-template-columns: 54px 1fr 80px 32px;
-    align-items: center;
-    gap: 10px;
-    height: 44px;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .entry:last-child { border-bottom: 0; }
-
-  .chips { display: flex; gap: 5px; }
+  .chips { display: flex; gap: 4px; }
 
   .chip {
-    min-width: 24px;
-    height: 24px;
-    padding: 0 5px;
-    border-radius: 6px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 4px;
+    border-radius: 5px;
     display: grid;
     place-items: center;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 10.5px;
     color: #a3a3a3;
     background: #2a2a2a;
     border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+    box-shadow: inset 0 -1.5px 0 rgba(0, 0, 0, 0.35);
   }
 
-  .entry-label, .cell-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .entry-label { font-size: 14.5px; letter-spacing: -0.01em; }
+  .empty-list { padding: 14px 0 4px; text-align: center; font-size: 13px; color: var(--muted); }
 
-  .bar { height: 4px; border-radius: 999px; background: #353535; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: inherit; background: var(--blue); }
+  /* Binding list: overview ranking and layer pages. Scrolls inside the card. */
 
-  .entry-count, .cell-count {
+  .list {
+    margin-top: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .list::-webkit-scrollbar { width: 4px; }
+  .list::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
+
+  .item {
+    display: grid;
+    grid-template-columns: 18px 1fr auto 40px 36px;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 30px;
+    padding: 0 6px;
+    border-radius: 8px;
+    text-align: left;
+  }
+
+  .fam-launch { --fam: var(--f-launch); }
+  .fam-window { --fam: var(--f-window); }
+  .fam-move { --fam: var(--f-move); }
+  .fam-capture { --fam: var(--f-capture); }
+  .fam-system { --fam: var(--f-system); }
+
+  .item { --fam-bg: color-mix(in srgb, var(--fam) 16%, #242424); }
+
+  .item .chip.layer { color: var(--fam); background: var(--fam-bg); border-color: color-mix(in srgb, var(--fam) 22%, transparent); }
+
+  .item:hover { background: #262626; }
+  .item.selected { background: #2c2c2c; }
+  .item-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; letter-spacing: -0.01em; }
+  .item.unused .item-label, .item.unused .item-count { color: #5f5f5f; }
+
+  .item .chips { gap: 3px; }
+  .item .chip { min-width: 18px; height: 18px; font-size: 10px; border-radius: 5px; }
+
+  .bar { display: block; height: 3px; border-radius: 999px; background: #353535; overflow: hidden; }
+  .bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--blue); }
+  .item.unused .bar { background: transparent; }
+
+  .item-count {
     font-family: var(--mono);
-    font-size: 12.5px;
+    font-size: 11.5px;
     color: #a3a3a3;
     text-align: right;
     font-variant-numeric: tabular-nums;
   }
 
-  .empty-list { padding: 16px 0 4px; text-align: center; font-size: 13.5px; color: var(--muted); }
+  /* Icons: 18 px slot shared by app icons, site marks, monograms and layer glyphs. */
 
-  /* Layer grid */
-
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px 8px;
-    margin-top: 10px;
-  }
-
-  .cell {
-    display: grid;
-    grid-template-columns: 24px 1fr auto;
-    align-items: center;
-    gap: 8px;
-    height: 34px;
-    padding: 0 8px 0 5px;
-    border-radius: 9px;
-    text-align: left;
-  }
-
-  .cell:hover { background: #262626; }
-  .cell.selected { background: #2a2a2a; }
-  .cell-label { font-size: 13.5px; letter-spacing: -0.01em; }
-  .cell.unused .cell-label, .cell.unused .cell-count { color: #5f5f5f; }
-
-  .more {
-    margin-top: 4px;
-    padding-left: 5px;
-    font-size: 11px;
+  .icon { width: 18px; height: 18px; display: grid; place-items: center; color: var(--fam, #8a8a8a); }
+  .icon img { width: 18px; height: 18px; border-radius: 4.5px; display: block; }
+  .icon svg { width: 16px; height: 16px; }
+  .icon.site svg { fill: currentColor; }
+  .icon.mono {
+    border-radius: 5px;
+    font-family: var(--mono);
+    font-size: 10px;
     font-weight: 500;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--faint);
+    background: var(--fam-bg);
+    color: var(--fam);
   }
 
   /* Insights page */
 
-  .pill.updated { padding: 0 10px; }
+  .pill.updated { padding: 0 10px; white-space: nowrap; }
 
   .delta.peak { color: var(--blue-soft); background: #1b2c52; font-size: 11.5px; letter-spacing: 0.04em; }
 
-  .insight-list { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+  .insight-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 
   .insight {
     display: flex;
@@ -368,7 +390,7 @@
 
   /* Activity page */
 
-  .activity { margin-top: 14px; }
+  .activity { margin-top: 10px; }
 
   .chart { display: block; width: 100%; height: auto; }
   .chart text { font: 500 9.5px var(--mono); letter-spacing: 0.06em; fill: var(--muted); }
@@ -377,16 +399,22 @@
   .chart .peak-line { stroke: #606060; stroke-dasharray: 3 3; }
   .dots { fill: none; stroke-width: 3.6; stroke-linecap: round; }
   .dots.blue { stroke: var(--blue); }
+  .dots.f-launch { stroke: var(--f-launch); }
+  .dots.f-window { stroke: var(--f-window); }
+  .dots.f-move { stroke: var(--f-move); }
+  .dots.f-capture { stroke: var(--f-capture); }
+  .dots.f-system { stroke: var(--f-system); }
   .dots.grey { stroke: #565656; }
 
   .chart-legend {
     display: flex;
     align-items: center;
-    gap: 12px;
-    height: 16px;
+    gap: 4px 10px;
+    flex-wrap: wrap;
+    min-height: 16px;
     margin-top: 8px;
     font-family: var(--mono);
-    font-size: 10.5px;
+    font-size: 10px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--muted);
@@ -396,13 +424,83 @@
 
   .swatch { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; }
 
+  /* Data state, about panel, error state */
+
+  .info {
+    width: 14px;
+    height: 14px;
+    align-self: center;
+    border: 1px solid #3a3a3a;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font: 500 9px var(--mono);
+    color: var(--muted);
+  }
+
+  .info:hover, .info[aria-expanded="true"] { background: #2c2c2c; color: var(--text); }
+
+  .about {
+    margin-top: 8px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    background: var(--raised);
+    border: 1px solid #313131;
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+
+  .about p:first-child { color: #cfcfcf; }
+
+  .status {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+    color: var(--faint);
+    line-height: 1.4;
+  }
+
+  .status[data-level="warn"], .status[data-level="error"] { color: #f5b942; }
+
+  .problem {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--raised);
+    border: 1px solid #313131;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #cfcfcf;
+  }
+
+  .item-label .note { color: var(--faint); }
+
+  button:focus-visible, .list:focus-visible { outline: 2px solid var(--blue-soft); outline-offset: 1px; }
+  .key:disabled { cursor: default; }
+
+  .bin { fill: transparent; }
+  .bin:hover, .bin:focus { fill: rgba(255, 255, 255, 0.07); outline: none; }
+
+  .bin-readout {
+    min-height: 26px;
+    margin-top: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1.3;
+    letter-spacing: 0.04em;
+    color: #b5b5b5;
+  }
+
   /* Footer: the keys that work on this page */
 
   .footer {
     display: flex;
     gap: 8px;
-    margin-top: 14px;
-    padding-top: 12px;
+    margin-top: 10px;
+    padding-top: 9px;
     border-top: 1px solid var(--line);
     font-size: 11px;
     font-weight: 500;
@@ -425,10 +523,6 @@
     color: #9a9a9a;
     background: #2a2a2a;
     border: 1px solid rgba(255, 255, 255, 0.06);
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .card, .card.open { transform: none; transition: none; }
   }
 </style>
 </head>
@@ -455,18 +549,20 @@
   <section class="total" id="totals">
     <span class="total-number" id="total"></span>
     <span class="total-unit" id="total-unit"></span>
+    <button class="info" id="about-toggle" aria-label="About these counts" aria-expanded="false" title="About these counts (?)">i</button>
     <span class="delta" id="delta" hidden></span>
   </section>
 
+  <section class="about" id="about" hidden></section>
+
   <section class="keyboard" id="keyboard"></section>
 
-  <!-- Overview page -->
-  <section class="ranking" id="ranking"></section>
-
-  <!-- Layer page -->
+  <!-- Layer page: detail strip -->
   <section class="detail" id="detail" hidden></section>
-  <section class="grid" id="grid" hidden></section>
-  <p class="more" id="more" hidden></p>
+
+  <!-- Overview and layer pages: the binding list -->
+  <section class="list" id="list" tabindex="0" aria-label="Bindings"></section>
+  <p class="problem" id="problem" role="alert" hidden></p>
 
   <!-- Insights page -->
   <section id="insights" hidden></section>
@@ -474,10 +570,364 @@
   <!-- Activity page -->
   <section class="activity" id="activity" hidden></section>
 
+  <p class="status" id="status"></p>
+
   <footer class="footer" id="footer"></footer>
 </main>
 
+<script id="hyperdash-model">
+// Pure logic: no DOM access, so tests/model.test.mjs can run this block in node:vm.
+var HyperdashModel = (() => {
+  // Layers grouped into command families. Legend order keeps neighbours distinct for colour-blind readers.
+  const FAMILY_OF = { o: "launch", b: "launch", r: "launch", w: "window", v: "move", c: "capture", s: "system", f: "system" };
+  const FAMILIES = ["window", "launch", "system", "move", "capture"];
+  const familyOf = (layer) => FAMILY_OF[layer] || "system";
+
+  const PAGE_KEYS = { i: "insights", a: "activity" };
+  const NAMED_KEYS = {
+    ArrowUp: "up_arrow", ArrowDown: "down_arrow", ArrowLeft: "left_arrow", ArrowRight: "right_arrow",
+    Enter: "return_or_enter", Backspace: "delete_or_backspace",
+    " ": "spacebar", ";": "semicolon", "=": "equal_sign", "-": "hyphen",
+  };
+  const NAMED_VALUES = new Set(Object.values(NAMED_KEYS));
+  const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const INSIGHT_STATUSES = ["ok", "stale", "running", "missing-tool", "failed"];
+  const LOG_STATUSES = ["ok", "missing", "unreadable"];
+  const BINDINGS_STATUSES = ["ok", "missing", "invalid"];
+
+  const pad = (n, width = 2) => String(n).padStart(width, "0");
+
+  // "YYYY-MM-DDTHH:MM:SS" in local time, the same shape the log and insights use.
+  function localStamp(date) {
+    return `${pad(date.getFullYear(), 4)}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+      + `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  }
+
+  // Log line validity. Swift's Parsing.swift is the reference; keep both in step:
+  //  - lines split on "\n" or "\r\n"; zero-length lines are ignored and not counted;
+  //  - exactly 3 tab-separated fields;
+  //  - a real local timestamp YYYY-MM-DDTHH:MM:SS: year >= 1970, an existing day, and a local time
+  //    that survives a round trip (a time skipped by a daylight saving change is invalid);
+  //  - layer and key non-empty, matching ^[a-z0-9_]+$;
+  //  - a valid line after `now` is ignored: not rejected, and it sets no first or last event.
+  const TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
+  const NAME = /^[a-z0-9_]+$/;
+  const LINE_BREAK = /\r?\n/;
+
+  function isValidTimestamp(text) {
+    const match = typeof text === "string" ? TIMESTAMP.exec(text) : null;
+    if (!match) return false;
+    const [year, month, day, hour, minute, second] = match.slice(1).map(Number);
+    if (year < 1970 || month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return false;
+    const date = new Date(year, month - 1, day, hour, minute, second);
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
+      && date.getHours() === hour && date.getMinutes() === minute && date.getSeconds() === second;
+  }
+
+  // Valid timestamps sort as strings, so the latest use is a string maximum.
+  function parseLog(text, now) {
+    const presses = [];
+    const lastUsed = {};
+    let rejected = 0;
+    let future = 0;
+    let firstEvent = null;
+    let lastEvent = null;
+    for (const line of text.split(LINE_BREAK)) {
+      if (line === "") continue;
+      const fields = line.split("\t");
+      if (fields.length !== 3 || !isValidTimestamp(fields[0]) || !NAME.test(fields[1]) || !NAME.test(fields[2])) {
+        rejected += 1;
+        continue;
+      }
+      const [time, layer, key] = fields;
+      if (time > now) { future += 1; continue; }
+      const bin = Number(time.slice(11, 13)) * 2 + (Number(time.slice(14, 16)) >= 30 ? 1 : 0);
+      presses.push({ month: time.slice(0, 7), layer, key, bin });
+      const id = `${layer} ${key}`;
+      if (!(id in lastUsed) || time > lastUsed[id]) lastUsed[id] = time;
+      if (firstEvent === null || time < firstEvent) firstEvent = time;
+      if (lastEvent === null || time > lastEvent) lastEvent = time;
+    }
+    return { presses, rejected, future, lastUsed, firstEvent, lastEvent };
+  }
+
+  // Input shapes from the host. A bad bindings list or log text is an error state, not an exception.
+  const isText = (value) => typeof value === "string";
+
+  function normalizeBindings(list) {
+    return list
+      .filter((b) => b && typeof b === "object" && isText(b.layer) && isText(b.key) && b.layer !== "" && b.key !== "")
+      .map((b) => ({ ...b, label: isText(b.label) && b.label !== "" ? b.label : b.key }));
+  }
+
+  function normalizeInsights(raw) {
+    if (!raw || typeof raw !== "object" || raw.version !== 2 || !Array.isArray(raw.insights)) return null;
+    const insights = raw.insights
+      .filter((item) => item && typeof item === "object" && isText(item.title) && isText(item.detail))
+      .map((item) => ({
+        kind: isText(item.kind) ? item.kind : "peak",
+        title: item.title,
+        detail: item.detail,
+        keys: Array.isArray(item.keys)
+          ? item.keys.filter((pair) => Array.isArray(pair) && pair.length === 2 && isText(pair[0]) && isText(pair[1]))
+          : [],
+        value: typeof item.value === "number" ? item.value : 0,
+      }))
+      .slice(0, 5);
+    return {
+      generated: isValidTimestamp(raw.generated) ? raw.generated : null,
+      month: isText(raw.month) && /^\d{4}-\d{2}$/.test(raw.month) ? raw.month : null,
+      recordingSince: isValidTimestamp(raw.recordingSince) ? raw.recordingSince : null,
+      rejectedLines: Number.isInteger(raw.rejectedLines) && raw.rejectedLines >= 0 ? raw.rejectedLines : 0,
+      insights,
+    };
+  }
+
+  function normalizeHealth(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const log = raw.log && LOG_STATUSES.includes(raw.log.status)
+      ? {
+        status: raw.log.status,
+        bytes: Number.isFinite(raw.log.bytes) ? raw.log.bytes : null,
+        modified: isValidTimestamp(raw.log.modified) ? raw.log.modified : null,
+      }
+      : null;
+    const insights = raw.insights && INSIGHT_STATUSES.includes(raw.insights.status)
+      ? { status: raw.insights.status, message: isText(raw.insights.message) ? raw.insights.message : null }
+      : null;
+    const bindings = raw.bindings && BINDINGS_STATUSES.includes(raw.bindings.status) ? { status: raw.bindings.status } : null;
+    return { log, bindings, insights };
+  }
+
+  function validatePayload(data) {
+    if (!data || typeof data !== "object") return { ok: false, error: "No data was passed to the dashboard." };
+    if (!Array.isArray(data.bindings)) return { ok: false, error: "The bindings list is not an array." };
+    if (!isText(data.log)) return { ok: false, error: "The usage log is not text." };
+    return {
+      ok: true,
+      bindings: normalizeBindings(data.bindings),
+      log: data.log,
+      insights: normalizeInsights(data.insights),
+      health: normalizeHealth(data.health),
+    };
+  }
+
+  // Months
+
+  const monthOf = (stamp) => stamp.slice(0, 7);
+
+  function previousMonth(month) {
+    const [year, index] = month.split("-").map(Number);
+    return index === 1 ? `${pad(year - 1, 4)}-12` : `${pad(year, 4)}-${pad(index - 1)}`;
+  }
+
+  function listMonths(presses, now) {
+    const current = monthOf(now);
+    const first = presses.reduce((min, p) => (p.month < min ? p.month : min), current);
+    const result = [];
+    let [year, month] = first.split("-").map(Number);
+    while (true) {
+      const id = `${pad(year, 4)}-${pad(month)}`;
+      result.push(id);
+      if (id >= current) break;
+      month += 1;
+      if (month > 12) { month = 1; year += 1; }
+    }
+    return result;
+  }
+
+  // A month is complete when it has ended and recording began on or before its first instant.
+  function isMonthComplete(month, firstEvent, now) {
+    return month < monthOf(now) && firstEvent !== null && firstEvent <= `${month}-01T00:00:00`;
+  }
+
+  // The month-on-month percentage is only meaningful when both months are complete.
+  function compareMonths({ month, total, previousTotal, firstEvent, now }) {
+    const comparable = previousTotal > 0
+      && isMonthComplete(month, firstEvent, now)
+      && isMonthComplete(previousMonth(month), firstEvent, now);
+    return { comparable, percent: comparable ? Math.round(((total - previousTotal) / previousTotal) * 100) : null };
+  }
+
+  // Counting and rows
+
+  function countCombos(presses, month) {
+    const counts = {};
+    for (const p of presses) {
+      if (p.month !== month) continue;
+      const id = `${p.layer} ${p.key}`;
+      counts[id] = (counts[id] || 0) + 1;
+    }
+    return counts;
+  }
+
+  function sumCounts(counts, layer) {
+    let total = 0;
+    for (const id in counts) if (layer === null || id.split(" ")[0] === layer) total += counts[id];
+    return total;
+  }
+
+  // Bound rows come first, then logged combos with no current binding, so totals and rankings agree.
+  function buildRows(bindings, counts, layer) {
+    const known = new Set(bindings.map((b) => `${b.layer} ${b.key}`));
+    const rows = [];
+    for (const b of bindings) {
+      if (layer !== null && b.layer !== layer) continue;
+      rows.push({ ...b, count: counts[`${b.layer} ${b.key}`] || 0, historical: false });
+    }
+    for (const id in counts) {
+      if (known.has(id)) continue;
+      const [l, k] = id.split(" ");
+      if (layer !== null && l !== layer) continue;
+      rows.push({ layer: l, key: k, label: `${l.toUpperCase()} ${k.length === 1 ? k.toUpperCase() : k}`, count: counts[id], historical: true });
+    }
+    return rows.sort((a, b) => b.count - a.count);
+  }
+
+  // Activity: presses per half-hour bin.
+
+  function buildActivity(presses, month, highlight, capacity) {
+    const all = new Array(48).fill(0);
+    const hit = new Array(48).fill(0);
+    const byFamily = {};
+    const familyTotals = {};
+    for (const family of FAMILIES) { byFamily[family] = new Array(48).fill(0); familyTotals[family] = 0; }
+    let total = 0;
+    let hitTotal = 0;
+    for (const p of presses) {
+      if (p.month !== month || !(p.bin >= 0 && p.bin < 48)) continue;
+      all[p.bin] += 1;
+      total += 1;
+      const family = familyOf(p.layer);
+      byFamily[family][p.bin] += 1;
+      familyTotals[family] += 1;
+      if (p.layer === highlight) { hit[p.bin] += 1; hitTotal += 1; }
+    }
+    let peakHour = 0;
+    let peakCount = -1;
+    for (let hour = 0; hour < 24; hour++) {
+      const count = all[2 * hour] + all[2 * hour + 1];
+      if (count > peakCount) { peakHour = hour; peakCount = count; }
+    }
+    const perDot = Math.max(1, Math.ceil(Math.max(...all) / capacity));
+    return { all, hit, byFamily, familyTotals, total, hitTotal, peakHour, perDot };
+  }
+
+  const binTime = (bin) => `${pad(Math.floor(bin / 2))}:${bin % 2 ? "30" : "00"}`;
+
+  // Exact counts for one bin, with the family split spelled out in words.
+  function describeBin(activity, bin) {
+    const count = activity.all[bin];
+    const parts = [`${binTime(bin)}–${binTime(bin + 1)}`, `${count} ${count === 1 ? "press" : "presses"}`];
+    for (const family of FAMILIES) {
+      const n = activity.byFamily[family][bin];
+      if (n > 0) parts.push(`${family.toUpperCase()} ${n}`);
+    }
+    return parts.join(" · ");
+  }
+
+  // Data state
+
+  function formatWhen(stamp, now) {
+    const clock = stamp.slice(11, 16);
+    if (stamp.slice(0, 10) === now.slice(0, 10)) return clock;
+    return `${SHORT_MONTHS[Number(stamp.slice(5, 7)) - 1]} ${Number(stamp.slice(8, 10))} ${clock}`;
+  }
+
+  const ANALYSIS_TEXT = {
+    ok: "ANALYSIS OK", stale: "ANALYSIS STALE", running: "ANALYSIS RUNNING",
+    "missing-tool": "ANALYSIS TOOL MISSING", failed: "ANALYSIS FAILED",
+  };
+
+  // One status line. Inactivity is described by the last press; only the host's log status can say the log failed.
+  function describeHealth({ health, lastEvent, rejected, now }) {
+    const logStatus = health?.log?.status || null;
+    const logBad = logStatus === "missing" || logStatus === "unreadable";
+    const analysis = health?.insights?.status || null;
+    const bindingsStatus = health?.bindings?.status || "ok";
+    const parts = [];
+    if (logStatus) parts.push(`LOG ${logStatus.toUpperCase()}`);
+    if (!logBad) parts.push(lastEvent ? `LAST PRESS ${formatWhen(lastEvent, now).toUpperCase()}` : "NO PRESSES RECORDED");
+    if (rejected > 0) parts.push(`${rejected} BAD ${rejected === 1 ? "LINE" : "LINES"}`);
+    if (bindingsStatus !== "ok") parts.push(bindingsStatus === "invalid" ? "BINDINGS FILE INVALID · RUN YARN BUILD" : "BINDINGS FILE MISSING · RUN YARN BUILD");
+    if (analysis) parts.push(ANALYSIS_TEXT[analysis]);
+    const level = logBad || bindingsStatus !== "ok" || analysis === "failed" || analysis === "missing-tool" ? "error"
+      : analysis === "stale" || rejected > 0 ? "warn" : "ok";
+    return { text: parts.join(" · "), level };
+  }
+
+  function formatBytes(bytes) {
+    if (bytes === null || bytes === undefined) return null;
+    return bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes / 1024).toFixed(0)} kB` : `${(bytes / 1048576).toFixed(1)} MB`;
+  }
+
+  // The detail lines behind the "i" button.
+  function aboutLines({ health, insights, parsed, now }) {
+    const lines = ["Hyper sublayer activations · repeats and outcomes excluded"];
+    const log = [];
+    if (health?.log) log.push(`Log ${health.log.status}`);
+    const size = formatBytes(health?.log?.bytes);
+    if (size) log.push(size);
+    log.push(`${parsed.presses.length.toLocaleString("en-US")} ${parsed.presses.length === 1 ? "press" : "presses"}`);
+    if (parsed.rejected > 0) log.push(`${parsed.rejected} rejected ${parsed.rejected === 1 ? "line" : "lines"}`);
+    lines.push(log.join(" · "));
+    if (health?.bindings && health.bindings.status !== "ok") {
+      lines.push(`Bindings file ${health.bindings.status}: every logged combo shows as history`);
+    }
+    if (health?.insights) {
+      lines.push(`Analysis ${health.insights.status}${health.insights.message ? `: ${health.insights.message}` : ""}`);
+    }
+    const since = insights?.recordingSince || parsed.firstEvent;
+    if (since) lines.push(`Recording since ${formatWhen(since, now)}`);
+    return lines;
+  }
+
+  // Keys. Returns an action for the page to run, or null to leave the event to the browser.
+  // ctx: { page, layer, highlight, selected, aboutOpen, layers, heatHas(key) }.
+  function routeKey(ctx, event) {
+    if (event.metaKey || event.ctrlKey || event.altKey) return null;
+    const name = event.key;
+
+    if (name === "Escape") {
+      if (ctx.aboutOpen) return { type: "closeAbout" };
+      if (ctx.highlight !== null) return { type: "highlight", layer: ctx.highlight };
+      if (ctx.page !== null) return { type: "back" };
+      if (ctx.selected !== null) return { type: "select", key: null };
+      if (ctx.layer !== null) return { type: "back" };
+      return { type: "close" };
+    }
+    if (name === "?") return { type: "toggleAbout" };
+
+    if (name === "ArrowLeft" || name === "ArrowRight") {
+      const step = name === "ArrowLeft" ? -1 : 1;
+      if (event.shiftKey) return { type: "month", step };
+      if (ctx.layer === null && ctx.page !== "insights") return { type: "month", step };
+    }
+    if (ctx.page === "insights") return null;
+
+    const key = NAMED_KEYS[name] || (name.length === 1 ? name.toLowerCase() : "");
+    if (!/^[a-z0-9]$/.test(key) && !NAMED_VALUES.has(key)) return null;
+
+    if (ctx.page === "activity") {
+      return ctx.layers.includes(key) ? { type: "highlight", layer: key } : { type: "ignore" };
+    }
+    if (ctx.layer !== null) return { type: "select", key };
+    if (!/^[a-z0-9]$/.test(key)) return null;
+    if (ctx.heatHas(key)) return { type: "openLayer", layer: key };
+    return PAGE_KEYS[key] ? { type: "openPage", page: PAGE_KEYS[key] } : { type: "ignore" };
+  }
+
+  return {
+    FAMILIES, familyOf, localStamp, isValidTimestamp, parseLog, validatePayload, normalizeInsights, normalizeHealth,
+    monthOf, previousMonth, listMonths, isMonthComplete, compareMonths,
+    countCombos, sumCounts, buildRows, buildActivity, binTime, describeBin,
+    formatWhen, describeHealth, aboutLines, routeKey,
+  };
+})();
+</script>
+
 <script>
+const { FAMILIES, familyOf } = HyperdashModel;
 const LAYER_NAMES = {
   b: "Browse", o: "Open", w: "Window", c: "Capture",
   f: "Finder", s: "System", v: "Move", r: "Launcher",
@@ -496,20 +946,30 @@ const KEY_SYMBOLS = {
   up_arrow: "↑", down_arrow: "↓", left_arrow: "←", right_arrow: "→",
 };
 
-// Browser key names for the bindings you can select by typing.
-const TYPED_KEYS = { " ": "spacebar", ";": "semicolon", "=": "equal_sign", "-": "hyphen" };
-
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
 
-const GRID_SIZE = 6;
+const HEAT_STEPS = 5;
+
+
+// Layer glyphs: 24 px grid, 1.7 stroke, round caps, in the Lucide style.
+const lineIcon = (paths) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+const LAYER_GLYPHS = {
+  w: lineIcon('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18"/>'),
+  c: lineIcon('<path d="M4 8h3l1.5-2.5h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/>'),
+  f: lineIcon('<path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+  s: lineIcon('<path d="M20 7h-9M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>'),
+  v: lineIcon('<path d="M4.04 4.69a.5.5 0 0 1 .65-.65l16 6.5a.5.5 0 0 1-.06.95l-6.13 1.58a2 2 0 0 0-1.43 1.43l-1.58 6.13a.5.5 0 0 1-.95.06z"/>'),
+  r: lineIcon('<path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M19 15v5M16.5 17.5h5"/>'),
+  b: lineIcon('<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/>'),
+  o: lineIcon('<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>'),
+};
 
 const ICON_KEYBOARD = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="2.5" y="5.5" width="19" height="13" rx="3"/><path d="M6.5 9.5h.01M10 9.5h.01M13.5 9.5h.01M17 9.5h.01M8 14.5h8"/></svg>';
 const ICON_BACK = '<svg width="12" height="12" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>';
 
-const PAGE_KEYS = { i: "insights", a: "activity" };
 const PAGE_TITLES = { insights: "Insights", activity: "Activity" };
 
 const glyph = (paths) => `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
@@ -520,17 +980,28 @@ const INSIGHT_KINDS = {
   dormant: { color: "#a8a8a8", background: "#323232", icon: glyph('<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>') },
   peak: { color: "#8fbaff", background: "#1b356e", icon: glyph('<path d="M5 19v-6M12 19V5M19 19v-9"/>') },
   burst: { color: "#c9a2ff", background: "#33214f", icon: glyph('<path d="M13 3 5 14h6l-1 7 8-11h-6z"/>') },
+  unbound: { color: "#9aa7bd", background: "#2a2f3a", icon: glyph('<path d="M9 15l6-6M11 6.5 12.5 5a3.5 3.5 0 0 1 5 5L16 11.5M13 17.5 11.5 19a3.5 3.5 0 0 1-5-5L8 12.5"/>') },
 };
 
 // Activity chart geometry, in SVG user units (the viewBox is 1:1 with the card content).
 const CHART = { width: 326, top: 18, plot: 120, step: 4, height: 162 };
 
-const state = { monthIndex: 0, layer: null, selected: null, page: null, highlight: null };
+const NO_PARSE = { presses: [], rejected: 0, future: 0, lastUsed: {}, firstEvent: null, lastEvent: null };
+const BIN_HINT = "TAB · INSPECT 30-MINUTE BINS";
+
+const state = { monthIndex: 0, layer: null, selected: null, page: null, highlight: null, aboutOpen: false };
 let insightsData = null;
+let health = null;
+let dataError = null;
+let parsed = NO_PARSE;
+let layers = [];
+let icons = { apps: {}, sites: {} };
+const iconCache = new Map();
+let listScope = null;
 let bindings = [];
 let presses = [];
 let months = [];
-let lastUsed = new Map();
+let lastUsed = {};
 let view = null;
 const keyNodes = new Map();
 
@@ -573,80 +1044,61 @@ function timeAgo(timestamp) {
   return `${Math.floor(minutes / (60 * 24))}d ago`;
 }
 
-function listMonths() {
-  const now = new Date();
-  const current = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const first = presses.reduce((min, p) => (p.month < min ? p.month : min), current);
-  const result = [];
-  let [year, month] = first.split("-").map(Number);
-  while (true) {
-    const id = `${year}-${String(month).padStart(2, "0")}`;
-    result.push(id);
-    if (id >= current) break;
-    month += 1;
-    if (month > 12) { month = 1; year += 1; }
-  }
-  return result;
-}
-
-function countPresses(month) {
-  const counts = new Map();
-  for (const p of presses) {
-    if (p.month !== month) continue;
-    const id = `${p.layer} ${p.key}`;
-    counts.set(id, (counts.get(id) || 0) + 1);
-  }
-  return counts;
-}
-
 // The keyboard is built once; render() only changes classes.
 function buildKeyboard() {
   for (const [index, row] of KEY_ROWS.entries()) {
     const rowNode = element("div", `row row-${index}`);
     for (const key of row) {
-      const node = element("div", key === "spacebar" ? "key space" : "key", key === "spacebar" ? "space" : symbol(key));
+      const node = element("button", key === "spacebar" ? "key space" : "key", key === "spacebar" ? "space" : symbol(key));
+      node.tabIndex = -1; // typing selects keys; Tab stays short
       node.addEventListener("click", () => pressKey(key));
       keyNodes.set(key, node);
       rowNode.append(node);
     }
     $("keyboard").append(rowNode);
   }
+
+  const legend = element("div", "heat-legend");
+  legend.append(element("span", "", "LESS"));
+  for (let step = 0; step < HEAT_STEPS; step++) legend.append(element("i", `h${step}`));
+  legend.append(element("span", "", "MORE"));
+  $("keyboard").append(legend);
 }
 
-function buildView() {
-  const month = months[state.monthIndex];
-  const counts = countPresses(month);
-  const previous = state.monthIndex > 0 ? countPresses(months[state.monthIndex - 1]) : new Map();
-  const inScope = (layer) => state.layer === null || layer === state.layer;
-  const sum = (map) => [...map].reduce((total, [id, n]) => total + (inScope(id.split(" ")[0]) ? n : 0), 0);
+const nowStamp = () => HyperdashModel.localStamp(new Date());
 
-  const scoped = bindings
-    .filter((b) => inScope(b.layer))
-    .map((b) => ({ ...b, count: counts.get(`${b.layer} ${b.key}`) || 0 }))
-    .sort((a, b) => b.count - a.count);
+function buildView() {
+  const M = HyperdashModel;
+  const month = months[state.monthIndex];
+  const counts = M.countCombos(presses, month);
+  const rows = M.buildRows(bindings, counts, state.layer);
+  const total = M.sumCounts(counts, state.layer);
+  const previousTotal = M.sumCounts(M.countCombos(presses, M.previousMonth(month)), state.layer);
 
   // Heat per keyboard key: layer totals on the overview, key counts in a layer.
   const heat = new Map();
-  for (const b of scoped) {
-    const key = state.layer === null ? b.layer : b.key;
-    heat.set(key, (heat.get(key) || 0) + b.count);
+  for (const row of rows) {
+    const key = state.layer === null ? row.layer : row.key;
+    heat.set(key, (heat.get(key) || 0) + row.count);
   }
 
   return {
     month,
-    total: sum(counts),
-    previousTotal: sum(previous),
-    scoped,
-    used: scoped.filter((b) => b.count > 0),
+    total,
+    comparison: M.compareMonths({ month, total, previousTotal, firstEvent: parsed.firstEvent, now: nowStamp() }),
+    scoped: rows,
+    used: rows.filter((row) => row.count > 0),
     heat,
   };
 }
 
 function render() {
+  const M = HyperdashModel;
   view = buildView();
   const inLayer = state.layer !== null;
   const page = state.page;
-  const activity = page === "activity" ? buildActivity() : null;
+  const broken = dataError !== null;
+  const activity = !broken && page === "activity" ? buildActivity() : null;
 
   const icon = $("header-icon");
   if (inLayer || page) {
@@ -657,12 +1109,16 @@ function render() {
   }
   $("title").textContent = page ? PAGE_TITLES[page] : inLayer ? LAYER_NAMES[state.layer] || state.layer : "hyperdash";
 
-  // Insights describe one analysis run, so that page shows its age instead of a month.
-  $("month-pill").hidden = page === "insights";
-  $("updated").hidden = page !== "insights" || !insightsData?.generated;
-  if (!$("updated").hidden) $("updated-label").textContent = `UPDATED ${timeAgo(insightsData.generated).toUpperCase()}`;
-  $("totals").hidden = page === "insights";
-  $("keyboard").hidden = page !== null;
+  // Insights describe one analysis run: show its month and age instead of the month picker.
+  const insightsPage = page === "insights";
+  $("month-pill").hidden = insightsPage;
+  $("updated").hidden = !insightsPage || !insightsData?.generated;
+  if (!$("updated").hidden) {
+    const month = insightsData.month ? `${monthLabel(insightsData.month).slice(0, 3).toUpperCase()} · ` : "";
+    $("updated-label").textContent = `${month}UPDATED ${timeAgo(insightsData.generated).toUpperCase()}`;
+  }
+  $("totals").hidden = insightsPage || broken;
+  $("keyboard").hidden = page !== null || broken;
 
   $("month-label").textContent = monthLabel(view.month).toUpperCase();
   $("previous-month").disabled = state.monthIndex === 0;
@@ -672,6 +1128,7 @@ function render() {
   $("total-unit").textContent = (view.total === 1 ? "PRESS" : "PRESSES")
     + (inLayer ? ` · ${view.used.length} OF ${view.scoped.length} USED` : "");
 
+  // The percentage shows only when both months are complete (see compareMonths).
   const delta = $("delta");
   if (activity) {
     delta.hidden = activity.total === 0;
@@ -679,66 +1136,157 @@ function render() {
     delta.textContent = `PEAK ${hour}:00–${String(activity.peakHour + 1).padStart(2, "0")}:00`;
     delta.className = "delta peak";
   } else {
-    delta.hidden = view.previousTotal === 0;
-  }
-  if (!delta.hidden && !activity) {
-    const percent = Math.round(((view.total - view.previousTotal) / view.previousTotal) * 100);
-    delta.textContent = `${percent >= 0 ? "+" : "−"}${Math.abs(percent)}%`;
-    delta.className = `delta ${percent >= 0 ? "up" : "down"}`;
+    const { comparable, percent } = view.comparison;
+    delta.hidden = !comparable;
+    if (comparable) {
+      delta.textContent = `${percent >= 0 ? "+" : "−"}${Math.abs(percent)}%`;
+      delta.className = `delta ${percent >= 0 ? "up" : "down"}`;
+    }
   }
 
-  // Square root spreads the low counts so lightly used keys still show.
+  // Square root spreads the low counts; bins 1-4 split the used range, 0 is bound but unused.
   const max = Math.max(1, ...view.heat.values());
+  const rowByKey = inLayer ? new Map(view.scoped.map((row) => [row.key, row])) : null;
   for (const [key, node] of keyNodes) {
     const count = view.heat.get(key);
-    node.classList.toggle("bound", count !== undefined);
-    node.classList.toggle("used", count > 0);
-    node.classList.toggle("selected", inLayer && key === state.selected);
-    node.style.setProperty("--heat", count > 0 ? `${Math.round(30 + 70 * Math.sqrt(count / max))}%` : "0%");
+    const selected = inLayer && key === state.selected;
+    const step = count === undefined ? "" : count === 0 ? " h0" : ` h${1 + Math.min(3, Math.floor(Math.sqrt(count / max) * 4))}`;
+    node.className = `key${key === "spacebar" ? " space" : ""}${step}${selected ? " selected" : ""}`;
+    node.disabled = count === undefined;
+    node.setAttribute("aria-pressed", String(selected));
+    node.setAttribute("aria-label", count === undefined
+      ? `${key === "spacebar" ? "Space" : key.toUpperCase()}, not bound`
+      : `${inLayer ? rowByKey.get(key).label : `${LAYER_NAMES[key] || key} layer`}, ${plural(count, "press")}`);
   }
 
-  $("ranking").hidden = inLayer || page !== null;
-  $("detail").hidden = !inLayer;
-  $("grid").hidden = !inLayer;
-  $("insights").hidden = page !== "insights";
-  $("activity").hidden = page !== "activity";
-  if (inLayer) {
+  const listed = page === null && !broken;
+  $("list").hidden = !listed;
+  $("problem").hidden = !broken;
+  $("problem").textContent = broken ? `Cannot show the dashboard. ${dataError}` : "";
+  $("detail").hidden = !inLayer || broken;
+  $("insights").hidden = page !== "insights" || broken;
+  $("activity").hidden = page !== "activity" || broken;
+  if (broken) {
+    // Nothing else to draw.
+  } else if (inLayer) {
     renderDetail();
-    renderGrid();
-  } else {
-    $("more").hidden = true;
-    if (page === null) renderRanking();
-    else if (page === "insights") renderInsights();
-    else renderActivity(activity);
   }
+  if (listed) renderList(inLayer);
+  else if (!broken && page === "insights") renderInsights();
+  else if (!broken) renderActivity(activity);
+  renderStatus(broken);
   renderFooter();
 
   post({ action: "resize", height: document.body.scrollHeight });
 }
 
-function renderRanking() {
-  const ranking = $("ranking");
-  ranking.replaceChildren();
+// The status line and the "i" panel: what the counts mean and how fresh the data is.
+function renderStatus(broken) {
+  const M = HyperdashModel;
+  const now = nowStamp();
+  const status = $("status");
+  status.hidden = broken;
+  const line = M.describeHealth({ health, lastEvent: parsed.lastEvent, rejected: parsed.rejected, now });
+  status.textContent = line.text;
+  status.title = line.text;
+  status.dataset.level = line.level;
 
-  if (view.used.length === 0) {
-    ranking.append(element("p", "empty-list", `Nothing logged in ${monthLabel(view.month)} yet`));
+  $("about").hidden = !state.aboutOpen || broken;
+  $("about-toggle").setAttribute("aria-expanded", String(state.aboutOpen));
+  if (state.aboutOpen) {
+    $("about").replaceChildren(...M.aboutLines({ health, insights: insightsData, parsed, now }).map((text) => element("p", "", text)));
+  }
+}
+
+function emptyMessage() {
+  if (health?.log && health.log.status !== "ok") return `Usage log ${health.log.status} — nothing to show`;
+  if (parsed.presses.length === 0) return "No presses recorded yet";
+  return `Nothing logged in ${monthLabel(view.month)} yet`;
+}
+
+function monogram(text) {
+  return element("span", "icon mono", text.replace(/^www\./, "").charAt(0).toUpperCase());
+}
+
+// Icon nodes are built once per binding and cloned per row, so decoded images are reused.
+function iconFor(b) {
+  const id = `${b.layer} ${b.key}`;
+  let template = iconCache.get(id);
+  if (!template) {
+    const app = b.app && icons.apps[b.app];
+    const site = b.site && icons.sites[b.site];
+    if (app) {
+      template = element("span", "icon");
+      const image = element("img");
+      image.src = app;
+      template.append(image);
+    } else if (site?.svg) {
+      template = element("span", "icon site");
+      template.style.color = site.color || "#b5b5b5";
+      template.innerHTML = site.svg;
+    } else if (b.historical) {
+      template = element("span", "icon");
+      template.innerHTML = lineIcon('<circle cx="12" cy="12" r="8" stroke-dasharray="3 3.2"/>');
+    } else if (b.app || b.site) {
+      template = monogram(b.app || b.site);
+    } else {
+      template = element("span", "icon");
+      template.innerHTML = LAYER_GLYPHS[b.layer] || lineIcon('<circle cx="12" cy="12" r="3"/>');
+    }
+    iconCache.set(id, template);
+  }
+  return template.cloneNode(true);
+}
+
+// One compact row per binding. The overview ranks used combos; a layer page lists every binding.
+// Logged combos with no current binding show as historical rows, so totals and rankings agree.
+function renderList(inLayer) {
+  const list = $("list");
+  const scope = `${state.layer}|${view.month}`;
+  const scrollTop = scope === listScope ? list.scrollTop : 0;
+  listScope = scope;
+
+  const rows = inLayer ? view.scoped : view.used;
+  if (rows.length === 0) {
+    list.replaceChildren(element("p", "empty-list", emptyMessage()));
     return;
   }
 
-  const top = view.used.slice(0, 3);
-  for (const b of top) {
-    const chips = element("div", "chips");
-    chips.append(chip(b.layer), chip(b.key));
+  const top = Math.max(1, rows[0].count);
+  const fragment = document.createDocumentFragment();
+  let selected = null;
+  for (const b of rows) {
+    const item = element("button", `item fam-${familyOf(b.layer)}`);
+    item.tabIndex = -1; // the list is one Tab stop; typing selects bindings
+    item.dataset.layer = b.layer;
+    item.dataset.key = b.key;
+    if (b.count === 0) item.classList.add("unused");
+    if (inLayer && b.key === state.selected) { item.classList.add("selected"); selected = item; }
 
-    const bar = element("div", "bar");
-    const fill = element("div", "bar-fill");
-    fill.style.width = `${(b.count / top[0].count) * 100}%`;
+    const chips = element("span", "chips");
+    if (!inLayer) {
+      const layerChip = chip(b.layer);
+      layerChip.classList.add("layer");
+      chips.append(layerChip);
+    }
+    chips.append(chip(b.key));
+
+    const bar = element("span", "bar");
+    const fill = element("span", "bar-fill");
+    fill.style.width = `${(b.count / top) * 100}%`;
     bar.append(fill);
 
-    const entry = element("div", "entry");
-    entry.append(chips, element("span", "entry-label", b.label), bar, element("span", "entry-count", b.count.toLocaleString("en-US")));
-    ranking.append(entry);
+    const label = element("span", "item-label", b.label);
+    if (b.historical) {
+      label.append(element("span", "note", " · no longer bound"));
+      item.title = `${b.label} · no longer bound`;
+    }
+    item.append(iconFor(b), label, chips, bar, element("span", "item-count", b.count ? b.count.toLocaleString("en-US") : "–"));
+    fragment.append(item);
   }
+  list.replaceChildren(fragment);
+  list.scrollTop = scrollTop;
+  selected?.scrollIntoView({ block: "nearest" });
 }
 
 function renderDetail() {
@@ -761,6 +1309,12 @@ function renderDetail() {
       element("div", "detail-title", `${symbol(state.selected)} · not bound`),
       element("div", "detail-value", `Nothing on Hyper ${symbol(state.layer)} ${symbol(state.selected)} yet`),
     );
+  } else if (binding.historical) {
+    const last = lastUsed[`${binding.layer} ${binding.key}`];
+    text.append(
+      element("div", "detail-title", `${binding.label} · no longer bound`),
+      element("div", "detail-value", [plural(binding.count, "press"), last ? `last ${timeAgo(last)}` : null].filter(Boolean).join(" · ")),
+    );
   } else {
     const facts = [];
     if (binding.count > 0) {
@@ -769,7 +1323,7 @@ function renderDetail() {
     } else {
       facts.push(`Not used in ${monthLabel(view.month)}`);
     }
-    const last = lastUsed.get(`${binding.layer} ${binding.key}`);
+    const last = lastUsed[`${binding.layer} ${binding.key}`];
     facts.push(last ? `last ${timeAgo(last)}` : "never used");
     text.append(
       element("div", "detail-title", `${symbol(binding.key)} · ${binding.label}`),
@@ -780,24 +1334,6 @@ function renderDetail() {
   detail.append(chip(state.selected), text);
 }
 
-function renderGrid() {
-  const grid = $("grid");
-  grid.replaceChildren();
-
-  for (const b of view.scoped.slice(0, GRID_SIZE)) {
-    const cell = element("button", "cell");
-    cell.classList.toggle("unused", b.count === 0);
-    cell.classList.toggle("selected", b.key === state.selected);
-    cell.append(chip(b.key), element("span", "cell-label", b.label), element("span", "cell-count", b.count || "–"));
-    cell.addEventListener("click", () => select(b.key));
-    grid.append(cell);
-  }
-
-  const rest = view.scoped.length - GRID_SIZE;
-  $("more").hidden = rest <= 0;
-  $("more").textContent = `+ ${rest} more · press a grey key to see one`;
-}
-
 function comboChip([layer, key]) {
   const node = element("span", "chip combo");
   const first = element("i", "", layer.toUpperCase());
@@ -806,19 +1342,31 @@ function comboChip([layer, key]) {
   return node;
 }
 
+function insightsEmptyMessage() {
+  const status = health?.insights;
+  if (status?.status === "running") return "Analysis is running — insights appear when it finishes.";
+  if (status?.status === "missing-tool") return "The analysis tool was not found, so there are no insights.";
+  if (status?.status === "failed") return `Analysis failed${status.message ? `: ${status.message}` : "."}`;
+  return "No insights yet — they appear after the first analysis runs.";
+}
+
 function renderInsights() {
   const root = $("insights");
   root.replaceChildren();
 
   if (!insightsData) {
-    root.append(element("p", "empty-list", "No insights yet — they appear after the first analysis runs."));
+    root.append(element("p", "empty-list", insightsEmptyMessage()));
+    return;
+  }
+  if (insightsData.insights.length === 0) {
+    root.append(element("p", "empty-list", "Nothing stands out this month."));
     return;
   }
 
   const list = element("div", "insight-list");
-  for (const item of (insightsData.insights || []).slice(0, 5)) {
+  for (const item of insightsData.insights) {
     const tone = INSIGHT_KINDS[item.kind] || INSIGHT_KINDS.peak;
-    const keys = item.keys || [];
+    const keys = item.keys;
 
     const marker = element("span", "marker");
     marker.style.setProperty("--tone", tone.color);
@@ -838,47 +1386,22 @@ function renderInsights() {
       chips.append(...keys.slice(0, shown).map(comboChip));
       if (keys.length > shown) chips.append(element("span", "chip", `+${keys.length - shown}`));
       card.append(chips);
-      card.addEventListener("click", () => openCombo(...keys[0]));
+      // The card describes the report's month, so open the combo in that month.
+      card.addEventListener("click", () => openCombo(keys[0][0], keys[0][1], insightsData.month));
     }
     list.append(card);
   }
   root.append(list);
 }
 
-// Press counts per half-hour bin for the selected month. A dot stands for
-// perDot presses once the busiest bin no longer fits the plot height.
 function buildActivity() {
-  const month = months[state.monthIndex];
-  const all = new Array(48).fill(0);
-  const hit = new Array(48).fill(0);
-  let total = 0;
-  let hitTotal = 0;
-  for (const p of presses) {
-    if (p.month !== month || !(p.bin >= 0 && p.bin < 48)) continue;
-    all[p.bin] += 1;
-    total += 1;
-    if (p.layer === state.highlight) { hit[p.bin] += 1; hitTotal += 1; }
-  }
-
-  let peakHour = 0;
-  let peakCount = -1;
-  for (let hour = 0; hour < 24; hour++) {
-    const count = all[2 * hour] + all[2 * hour + 1];
-    if (count > peakCount) { peakHour = hour; peakCount = count; }
-  }
-
-  const capacity = Math.floor(CHART.plot / CHART.step);
-  return { all, hit, total, hitTotal, peakHour, perDot: Math.max(1, Math.ceil(Math.max(...all) / capacity)) };
-}
-
-function binTime(bin) {
-  return `${String(Math.floor(bin / 2)).padStart(2, "0")}:${bin % 2 ? "30" : "00"}`;
+  return HyperdashModel.buildActivity(presses, months[state.monthIndex], state.highlight, Math.floor(CHART.plot / CHART.step));
 }
 
 function renderActivity(a) {
   const root = $("activity");
   if (a.total === 0) {
-    root.replaceChildren(element("p", "empty-list", `Nothing logged in ${monthLabel(view.month)} yet`));
+    root.replaceChildren(element("p", "empty-list", emptyMessage()));
     return;
   }
 
@@ -886,22 +1409,37 @@ function renderActivity(a) {
   const binWidth = width / 48;
   const centre = top + plot / 2;
   const highlighting = state.highlight !== null;
-  let blue = "";
-  let grey = "";
-  let hover = "";
+  const paths = { grey: "" };
+  for (const family of FAMILIES) paths[`f-${family}`] = "";
+  const lightClass = highlighting ? `f-${familyOf(state.highlight)}` : null;
+  const busiest = a.all.indexOf(Math.max(...a.all));
+  let bins = "";
 
   for (let bin = 0; bin < 48; bin++) {
     const count = a.all[bin];
     if (!count) continue;
     const x = ((bin + 0.5) * binWidth).toFixed(1);
     const dots = Math.ceil(count / a.perDot);
-    const lit = !highlighting ? dots
-      : a.hit[bin] ? Math.min(dots, Math.max(1, Math.round(a.hit[bin] / a.perDot))) : 0;
-    for (let j = 0; j < dots; j++) {
-      const segment = `M${x} ${(centre + (j - (dots - 1) / 2) * step).toFixed(1)}h0`;
-      if (j >= dots - lit) blue += segment; else grey += segment;
+    const at = (j) => `M${x} ${(centre + (j - (dots - 1) / 2) * step).toFixed(1)}h0`;
+
+    if (highlighting) {
+      // The highlighted layer sits at the bottom of the column in its family colour.
+      const lit = a.hit[bin] ? Math.min(dots, Math.max(1, Math.round(a.hit[bin] / a.perDot))) : 0;
+      for (let j = 0; j < dots; j++) paths[j >= dots - lit ? lightClass : "grey"] += at(j);
+    } else {
+      // Dots split across families in proportion to their presses, stacked in legend order.
+      let used = 0;
+      let seen = 0;
+      for (const family of FAMILIES) {
+        seen += a.byFamily[family][bin];
+        const upTo = Math.round((seen / count) * dots);
+        for (let j = used; j < upTo; j++) paths[`f-${family}`] += at(j);
+        used = upTo;
+      }
     }
-    hover += `<rect x="${(bin * binWidth).toFixed(1)}" y="${top}" width="${binWidth.toFixed(1)}" height="${plot}" fill="transparent"><title>${binTime(bin)}–${binTime(bin + 1)} · ${count} ${count === 1 ? "press" : "presses"}</title></rect>`;
+    // One Tab stop (the busiest bin); ← → move between bins inside the chart.
+    const description = HyperdashModel.describeBin(a, bin);
+    bins += `<rect class="bin" tabindex="${bin === busiest ? 0 : -1}" role="img" aria-label="${description}" x="${(bin * binWidth).toFixed(1)}" y="${top}" width="${binWidth.toFixed(1)}" height="${plot}"><title>${description}</title></rect>`;
   }
 
   const base = top + plot + 6;
@@ -912,36 +1450,41 @@ function renderActivity(a) {
     return `<text x="${hour * (width / 24)}" y="${height - 3}" text-anchor="${anchor}">${hour}H</text>`;
   }).join("");
 
-  root.innerHTML = `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Presses by hour of day">`
+  root.innerHTML = `<svg class="chart" viewBox="0 0 ${width} ${height}" role="group" aria-label="Presses by half hour of day">`
     + `<line class="baseline" x1="0" x2="${width}" y1="${base}" y2="${base}"/>`
     + `<line class="peak-line" x1="${peakX}" x2="${peakX}" y1="${top - 4}" y2="${base}"/>`
     + `<text class="peak-label" x="${peakX}" y="9" text-anchor="${peakAnchor}">PEAK ${a.peakHour}H</text>`
-    + `<path class="dots grey" d="${grey}"/><path class="dots blue" d="${blue}"/>${hover}${axis}</svg>`;
+    + Object.entries(paths).map(([name, d]) => `<path class="dots ${name}" d="${d}"/>`).join("")
+    + `${bins}${axis}</svg>`;
+  root.append(element("div", "bin-readout", BIN_HINT));
 
   const legend = element("div", "chart-legend");
+  const swatch = (color, label, n) => {
+    const item = element("span", "", `${label} ${n.toLocaleString("en-US")}`);
+    const dot = element("i", "swatch");
+    dot.style.background = color;
+    item.prepend(dot);
+    return item;
+  };
   if (highlighting) {
-    const swatch = (color, label, n) => {
-      const item = element("span", "", `${label} ${n.toLocaleString("en-US")}`);
-      const dot = element("i", "swatch");
-      dot.style.background = color;
-      item.prepend(dot);
-      return item;
-    };
     legend.append(
-      swatch("var(--blue)", (LAYER_NAMES[state.highlight] || state.highlight).toUpperCase(), a.hitTotal),
+      swatch(`var(--f-${familyOf(state.highlight)})`, (LAYER_NAMES[state.highlight] || state.highlight).toUpperCase(), a.hitTotal),
       swatch("#565656", "OTHER", a.total - a.hitTotal),
     );
+  } else {
+    for (const family of FAMILIES) legend.append(swatch(`var(--f-${family})`, family.toUpperCase(), a.familyTotals[family]));
   }
-  if (a.perDot > 1) legend.append(element("span", "scale", `1 DOT = ${a.perDot} PRESSES`));
+  if (a.perDot > 1) legend.append(element("span", "scale", `1 DOT ≈ ${a.perDot} PRESSES`));
   root.append(legend);
 }
 
 function renderFooter() {
-  const hints = state.page === "insights" ? [["esc", "back"]]
+  const hints = dataError !== null ? [["esc", "close"]]
+    : state.page === "insights" ? [["⇧ ← →", "month"], ["esc", "back"]]
     : state.page === "activity" ? [["W", "highlight layer"], ["← →", "month"], ["esc", state.highlight ? "clear" : "back"]]
     : state.layer === null
       ? [["W", "layer"], ["I", "insights"], ["A", "activity"], ["← →", "month"]]
-      : [["U", "details"], ["← →", "month"], ["esc", state.selected ? "clear" : "back"]];
+      : [["key", "select"], ["⇧ ← →", "month"], ["esc", state.selected ? "clear" : "back"]];
   $("footer").replaceChildren(...hints.map(([keys, label]) => {
     const hint = element("span");
     for (const k of keys.split(" ")) hint.append(element("kbd", "", k));
@@ -981,86 +1524,142 @@ function openPage(page) {
   render();
 }
 
-function openCombo(layer, key) {
+// `month` is set when the combo comes from a report, so the numbers match the card that opened it.
+function openCombo(layer, key, month) {
   Object.assign(state, { layer, selected: key, page: null });
+  const index = month ? months.indexOf(month) : -1;
+  if (index !== -1) state.monthIndex = index;
   render();
 }
 
 function toggleHighlight(layer) {
-  if (!bindings.some((b) => b.layer === layer)) return;
+  if (!layers.includes(layer)) return;
   state.highlight = state.highlight === layer ? null : layer;
   render();
 }
 
 function changeMonth(step) {
-  if (state.page === "insights") return;
   const next = state.monthIndex + step;
   if (next < 0 || next >= months.length) return;
   state.monthIndex = next;
   render();
 }
 
-// Hammerspoon keeps this page loaded and calls update() each time the
-// panel opens, with fresh { bindings, log }.
+function toggleAbout(open) {
+  state.aboutOpen = open ?? !state.aboutOpen;
+  render();
+}
+
+// Hammerspoon keeps this page loaded and calls update() each time the panel opens,
+// with fresh { bindings, log, insights, health }. Bad input shows an error state instead of throwing.
 function update(data) {
-  bindings = data.bindings;
-  // Log lines are "2026-10-15T11:50:53<TAB>layer<TAB>key".
-  presses = [];
-  lastUsed = new Map();
-  for (const line of data.log.split("\n")) {
-    if (!line) continue;
-    const [time, layer, key] = line.split("\t");
-    const bin = Number(time.slice(11, 13)) * 2 + (Number(time.slice(14, 16)) >= 30 ? 1 : 0);
-    presses.push({ month: time.slice(0, 7), layer, key, bin });
-    lastUsed.set(`${layer} ${key}`, time);
+  const M = HyperdashModel;
+  const checked = M.validatePayload(data);
+  dataError = checked.ok ? null : checked.error;
+  bindings = checked.ok ? checked.bindings : [];
+  const now = nowStamp();
+  parsed = checked.ok ? M.parseLog(checked.log, now) : NO_PARSE;
+  presses = parsed.presses;
+  lastUsed = parsed.lastUsed;
+  const layerSet = new Set(bindings.map((b) => b.layer));
+  for (const p of presses) layerSet.add(p.layer);
+  layers = [...layerSet];
+  months = M.listMonths(presses, now);
+  Object.assign(state, { monthIndex: months.length - 1, layer: null, selected: null, page: null, highlight: null, aboutOpen: false });
+  insightsData = checked.ok ? checked.insights : null;
+  health = checked.ok ? checked.health : null;
+  render();
+  // Every open starts with no focused control, so Space or a letter never activates a stray button.
+  document.activeElement?.blur();
+  // Hammerspoon sizes the window from this before showing it.
+  return document.body.scrollHeight;
+}
+
+// Called by Hammerspoon after load, and again if icons change. May run before or after update().
+function setIcons(data) {
+  icons = { apps: data?.apps || {}, sites: data?.sites || {} };
+  iconCache.clear();
+  render();
+}
+
+// Called by Hammerspoon when a background analysis finishes, successfully or not.
+// Keeps the page and selection. `nextHealth` is optional.
+function setInsights(insights, nextHealth) {
+  insightsData = HyperdashModel.normalizeInsights(insights);
+  if (nextHealth !== undefined) health = HyperdashModel.normalizeHealth(nextHealth);
+  render();
+}
+
+function run(action) {
+  switch (action.type) {
+    case "close": post({ action: "close" }); break;
+    case "closeAbout": toggleAbout(false); break;
+    case "toggleAbout": toggleAbout(); break;
+    case "back": closeLayer(); break;
+    case "month": changeMonth(action.step); break;
+    case "select": select(action.key); break;
+    case "highlight": toggleHighlight(action.layer); break;
+    case "openLayer": openLayer(action.layer); break;
+    case "openPage": openPage(action.page); break;
+    default: break;
   }
-  months = listMonths();
-  Object.assign(state, { monthIndex: months.length - 1, layer: null, selected: null, page: null, highlight: null });
-  insightsData = data.insights || null;
-  render();
-
-  const card = $("card");
-  card.classList.remove("open");
-  void card.offsetWidth;
-  card.classList.add("open");
 }
 
-// Called by Hammerspoon when a background analysis finishes. Keeps the page and selection.
-function setInsights(insights) {
-  insightsData = insights || null;
-  render();
+// Bin details: hover and keyboard focus show exact counts with the family split in words.
+function showBin(event) {
+  const bin = event.target.closest?.(".bin");
+  const readout = $("activity").querySelector(".bin-readout");
+  if (readout) readout.textContent = bin ? bin.getAttribute("aria-label") : BIN_HINT;
 }
 
-// Called by Hammerspoon on hide, so the next open never shows old numbers.
-function conceal() {
-  $("card").classList.remove("open");
-}
+$("activity").addEventListener("focusin", showBin);
+$("activity").addEventListener("mouseover", showBin);
+$("activity").addEventListener("focusout", showBin);
+$("activity").addEventListener("mouseout", showBin);
+$("activity").addEventListener("keydown", (event) => {
+  const bin = event.target.closest?.(".bin");
+  if (!bin || event.shiftKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
+  const bins = [...$("activity").querySelectorAll(".bin")];
+  const next = bins[bins.indexOf(bin) + (event.key === "ArrowLeft" ? -1 : 1)];
+  event.preventDefault();
+  event.stopPropagation();
+  if (!next) return;
+  bin.tabIndex = -1;
+  next.tabIndex = 0;
+  next.focus();
+});
 
+$("list").addEventListener("click", (event) => {
+  const item = event.target.closest(".item");
+  if (!item) return;
+  if (state.layer === null) openCombo(item.dataset.layer, item.dataset.key);
+  else select(item.dataset.key);
+});
 $("close").addEventListener("click", () => post({ action: "close" }));
 $("previous-month").addEventListener("click", () => changeMonth(-1));
 $("next-month").addEventListener("click", () => changeMonth(1));
+$("about-toggle").addEventListener("click", () => toggleAbout());
 
 document.addEventListener("keydown", (event) => {
-  if (event.metaKey || event.ctrlKey || event.altKey) return;
-  if (event.key === "Escape") {
-    if (state.highlight !== null) toggleHighlight(state.highlight);
-    else if (state.page !== null) closeLayer();
-    else if (state.selected !== null) select(null);
-    else if (state.layer !== null) closeLayer();
-    else post({ action: "close" });
-  } else if (event.key === "ArrowLeft") {
-    changeMonth(-1);
-  } else if (event.key === "ArrowRight") {
-    changeMonth(1);
-  } else {
-    const key = TYPED_KEYS[event.key] || event.key.toLowerCase();
-    if (/^[a-z0-9]$/.test(key) || Object.values(TYPED_KEYS).includes(key)) {
-      event.preventDefault();
-      if (state.page === "activity") toggleHighlight(key);
-      else if (state.page === null && state.layer === null && !view.heat.has(key) && PAGE_KEYS[key]) openPage(PAGE_KEYS[key]);
-      else if (state.page === null) pressKey(key);
-    }
+  if (dataError !== null) {
+    if (event.key === "Escape") post({ action: "close" });
+    return;
   }
+  // Enter and Space keep their normal meaning on a header button the user reached with Tab.
+  if ((event.key === "Enter" || event.key === " ") && event.target.closest?.(".header, .info")
+    && event.target.matches?.(":focus-visible")) return;
+  const action = HyperdashModel.routeKey({
+    page: state.page,
+    layer: state.layer,
+    highlight: state.highlight,
+    selected: state.selected,
+    aboutOpen: state.aboutOpen,
+    layers,
+    heatHas: (key) => view.heat.has(key),
+  }, event);
+  if (!action) return;
+  event.preventDefault();
+  run(action);
 });
 
 buildKeyboard();
