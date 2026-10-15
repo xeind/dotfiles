@@ -1,7 +1,7 @@
 import Foundation
 
 public enum InsightKind: String, Codable, Sendable {
-    case rising, falling, dormant, unused, peak, burst
+    case rising, falling, dormant, unused, peak, burst, unbound
 }
 
 public struct Insight: Codable, Equatable, Sendable {
@@ -26,11 +26,18 @@ public struct InsightReport: Sendable {
     public let insights: [Insight]
     /// Presses in the month of `now`.
     public let monthTotal: Int
+    /// Earliest valid event at or before `now`, or nil when there is none.
+    public let recordingSince: String?
+    public let rejectedLines: Int
 }
 
 public let layerNames: [String: String] = [
     "b": "Browse", "o": "Open", "w": "Window", "c": "Capture",
     "f": "Finder", "s": "System", "v": "Move", "r": "Launcher",
+]
+
+private let shortMonthNames = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ]
 
 private let monthNames = [
@@ -43,7 +50,8 @@ func truncated(_ text: String, to limit: Int) -> String {
 }
 
 public func computeReport(
-    events: [PressEvent], bindings: [Binding], now: Date, calendar: Calendar = .current
+    events: [PressEvent], bindings: [Binding], now: Date, rejectedLines: Int = 0,
+    calendar: Calendar = .current
 ) -> InsightReport {
     var labels: [Combo: String] = [:]
     for binding in bindings { labels[binding.combo] = binding.label }
@@ -61,20 +69,34 @@ public func computeReport(
     var monthCounts: [Combo: Int] = [:]
     for event in thisMonth { monthCounts[event.combo, default: 0] += 1 }
 
+    // Claims about absence or change need recorded history to back them up.
+    let recordingStart = history.map(\.date).min()
+
     var insights: [Insight] = []
-    insights += trend(history, weekAgo: weekAgo, twoWeeksAgo: twoWeeksAgo, name: name)
-    insights += unused(history, bindings: bindings, since: thirtyDaysAgo)
-    insights += dormant(
-        history, monthStart: monthStart, previousMonthStart: previousMonthStart,
-        calendar: calendar, name: name)
+    if let recordingStart {
+        if recordingStart <= twoWeeksAgo {
+            insights += trend(history, weekAgo: weekAgo, twoWeeksAgo: twoWeeksAgo, name: name)
+        }
+        insights += unused(
+            history, bindings: bindings, since: thirtyDaysAgo, recordingStart: recordingStart,
+            calendar: calendar)
+        if recordingStart < calendar.date(byAdding: .day, value: 1, to: previousMonthStart)! {
+            insights += dormant(
+                history, monthStart: monthStart, previousMonthStart: previousMonthStart,
+                calendar: calendar, name: name)
+        }
+    }
+    insights += unbound(history, bindings: bindings)
     insights += burst(thisMonth, name: name)
     insights += peak(thisMonth, calendar: calendar)
 
     return InsightReport(
         generated: formatTimestamp(now, calendar: calendar),
         month: String(formatTimestamp(now, calendar: calendar).prefix(7)),
-        insights: Array(insights.prefix(5)),
-        monthTotal: thisMonth.count)
+        insights: insights,
+        monthTotal: thisMonth.count,
+        recordingSince: recordingStart.map { formatTimestamp($0, calendar: calendar) },
+        rejectedLines: rejectedLines)
 }
 
 private func trend(
@@ -114,8 +136,13 @@ private func trend(
     ]
 }
 
-private func unused(_ history: [PressEvent], bindings: [Binding], since: Date) -> [Insight] {
-    let pressed = Set(history.filter { $0.date > since }.map(\.combo))
+private func unused(
+    _ history: [PressEvent], bindings: [Binding], since: Date, recordingStart: Date,
+    calendar: Calendar
+) -> [Insight] {
+    // With under 30 days recorded, every press counts and the text names the start date.
+    let fullWindow = recordingStart <= since
+    let pressed = Set(history.filter { fullWindow ? $0.date > since : true }.map(\.combo))
     var perLayer: [String: [Combo]] = [:]
     var totals: [String: Int] = [:]
     var seen = Set<Combo>()
@@ -131,7 +158,11 @@ private func unused(_ history: [PressEvent], bindings: [Binding], since: Date) -
         Insight(
             kind: .unused,
             title: "\(combos.count) of \(totals[layer]!) \(layerName) shortcuts unused",
-            detail: "No presses in the last 30 days",
+            detail: fullWindow
+                ? "No presses in the last 30 days"
+                : "Not seen since recording began "
+                    + "\(shortMonthNames[calendar.component(.month, from: recordingStart) - 1]) "
+                    + "\(calendar.component(.day, from: recordingStart))",
             keys: combos,
             value: combos.count)
     ]
@@ -155,12 +186,14 @@ private func dormant(
         return []
     }
     let previousName = monthNames[calendar.component(.month, from: previousMonthStart) - 1]
-    let currentName = monthNames[calendar.component(.month, from: monthStart) - 1]
+    let currentShort = shortMonthNames[calendar.component(.month, from: monthStart) - 1]
+    // "Not used yet" is true at any point in the month; it makes no claim about stopping.
+    let suffix = " not used yet this month"
     return [
         Insight(
             kind: .dormant,
-            title: "Stopped using \(name(best.key))",
-            detail: "\(best.key.shortName) · \(best.value) presses in \(previousName), none in \(currentName)",
+            title: truncated(name(best.key), to: 40 - suffix.count) + suffix,
+            detail: "\(best.key.shortName) · \(best.value) presses in \(previousName) · none since \(currentShort) 1",
             keys: [best.key],
             value: best.value)
     ]
@@ -211,5 +244,22 @@ private func peak(_ thisMonth: [PressEvent], calendar: Calendar) -> [Insight] {
             detail: "\(share)% of this month's presses",
             keys: [],
             value: hour)
+    ]
+}
+
+private func unbound(_ history: [PressEvent], bindings: [Binding]) -> [Insight] {
+    let bound = Set(bindings.map(\.combo))
+    var counts: [Combo: Int] = [:]
+    for event in history where !bound.contains(event.combo) { counts[event.combo, default: 0] += 1 }
+    guard !counts.isEmpty else { return [] }
+    let ranked = counts.sorted { ($1.value, $0.key) < ($0.value, $1.key) }
+    let presses = counts.values.reduce(0, +)
+    return [
+        Insight(
+            kind: .unbound,
+            title: "\(counts.count) logged \(counts.count == 1 ? "combo" : "combos") no longer bound",
+            detail: "\(presses) \(presses == 1 ? "press" : "presses") logged with no current binding",
+            keys: ranked.map(\.key),
+            value: counts.count)
     ]
 }

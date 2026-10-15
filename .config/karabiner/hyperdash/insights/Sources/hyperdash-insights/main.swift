@@ -72,9 +72,10 @@ do {
     fail("cannot read bindings \(options.bindings): \(error)")
 }
 
+let parsedLog = parseLog(logText, calendar: calendar)
 let report = computeReport(
-    events: parseLog(logText, calendar: calendar), bindings: bindings,
-    now: options.now ?? Date(), calendar: calendar)
+    events: parsedLog.events, bindings: bindings, now: options.now ?? Date(),
+    rejectedLines: parsedLog.rejectedLines, calendar: calendar)
 
 do {
     try writeAtomically(InsightsFile(report: report).jsonData(), to: options.output)

@@ -1,3 +1,19 @@
+// LOG LINE VALIDITY (contract section 1; the JavaScript parser must match exactly)
+//
+// The usage log is split into lines on "\n" or "\r\n". A zero-length line is ignored and
+// not counted. Every other line is valid only if all of these hold:
+//   1. It has exactly 3 fields separated by single tab characters.
+//   2. Field 1 is a local timestamp "YYYY-MM-DDTHH:MM:SS": ASCII digits and the fixed
+//      separators only, 19 characters, no zone, no fraction, no surrounding space.
+//   3. The timestamp is a real local time: year >= 1970, month 1-12, hour 0-23, minute and
+//      second 0-59, and a day that exists in that month. It must also survive a round trip
+//      through the local calendar, so a time skipped by a daylight saving change is invalid.
+//   4. Field 2 (layer) and field 3 (key) are non-empty and match ^[a-z0-9_]+$.
+// Every other non-empty line is rejected and counted in `rejectedLines`.
+//
+// A valid line dated after `now` is not rejected. Analysis ignores it, and it does not set
+// `recordingSince`. "Last used" is the maximum valid timestamp, not the last line.
+
 import Foundation
 
 public struct Combo: Hashable, Comparable, Sendable {
@@ -57,14 +73,16 @@ public func parseTimestamp(_ text: String, calendar: Calendar) -> Date? {
     }
     guard let year = number(0..<4), let month = number(5..<7), let day = number(8..<10),
           let hour = number(11..<13), let minute = number(14..<16), let second = number(17..<19),
-          (1...12).contains(month), (1...31).contains(day),
+          year >= 1970, (1...12).contains(month), (1...31).contains(day),
           hour < 24, minute < 60, second < 60
     else { return nil }
     let components = DateComponents(
         year: year, month: month, day: day, hour: hour, minute: minute, second: second)
     guard let date = calendar.date(from: components) else { return nil }
     // Reject rolled-over dates such as 2026-02-31.
-    guard calendar.component(.day, from: date) == day else { return nil }
+    let round = calendar.dateComponents([.year, .month, .day, .hour], from: date)
+    guard round.year == year, round.month == month, round.day == day, round.hour == hour
+    else { return nil }
     return date
 }
 
@@ -76,21 +94,36 @@ public func formatTimestamp(_ date: Date, calendar: Calendar) -> String {
         c.year!, c.month!, c.day!, c.hour!, c.minute!, c.second!)
 }
 
-/// Parses the usage log. Lines that do not have three tab-separated fields
-/// with a valid timestamp are skipped. The result is sorted by time.
-public func parseLog(_ text: String, calendar: Calendar = .current) -> [PressEvent] {
+public struct ParsedLog: Sendable {
+    /// Valid events, sorted by time.
+    public let events: [PressEvent]
+    /// Non-empty lines that failed validation.
+    public let rejectedLines: Int
+}
+
+private func isIdentifier(_ text: Substring) -> Bool {
+    !text.isEmpty && text.utf8.allSatisfy { ($0 >= 97 && $0 <= 122) || ($0 >= 48 && $0 <= 57) || $0 == 95 }
+}
+
+/// Parses the usage log by the rules at the top of this file.
+public func parseLog(_ text: String, calendar: Calendar = .current) -> ParsedLog {
     var events: [PressEvent] = []
-    for line in text.split(whereSeparator: \.isNewline) {
+    var rejected = 0
+    for line in text.split(whereSeparator: { $0 == "\n" || $0 == "\r\n" }) {
         let fields = line.split(separator: "\t", omittingEmptySubsequences: false)
-        guard fields.count == 3, !fields[1].isEmpty, !fields[2].isEmpty,
+        guard fields.count == 3, isIdentifier(fields[1]), isIdentifier(fields[2]),
               let date = parseTimestamp(String(fields[0]), calendar: calendar)
-        else { continue }
+        else {
+            rejected += 1
+            continue
+        }
         events.append(
             PressEvent(date: date, combo: Combo(layer: String(fields[1]), key: String(fields[2]))))
     }
-    return events.enumerated()
+    let sorted = events.enumerated()
         .sorted { ($0.element.date, $0.offset) < ($1.element.date, $1.offset) }
         .map(\.element)
+    return ParsedLog(events: sorted, rejectedLines: rejected)
 }
 
 public func parseBindings(_ data: Data) throws -> [Binding] {
