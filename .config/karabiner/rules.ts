@@ -429,6 +429,9 @@ fs.writeFileSync(
           complex_modifications: {
             rules,
           },
+          virtual_hid_keyboard: {
+            keyboard_type_v2: "ansi",
+          },
         },
       ],
     },
