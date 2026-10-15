@@ -2690,10 +2690,10 @@
                     "shell_command": "printf '%s\\ts\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
                   },
                   {
-                    "shell_command": "/opt/homebrew/bin/hs -c 'shortcutDashboard.toggle()'"
+                    "shell_command": "/opt/homebrew/bin/hs -c 'hyperdash.toggle()'"
                   }
                 ],
-                "description": "Shortcut Dashboard",
+                "description": "hyperdash",
                 "type": "basic",
                 "from": {
                   "key_code": "q",

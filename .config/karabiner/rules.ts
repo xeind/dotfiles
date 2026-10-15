@@ -329,10 +329,10 @@ const rules: KarabinerRules[] = [
         to: [{ shell_command: "osascript ~/.config/raycast/scripts/undo-recording-mode.applescript" }],
         description: "Undo Recording Mode (show menu bar)",
       },
-      // Shortcut usage dashboard (hammerspoon/shortcut_dashboard.lua)
+      // hyperdash: shortcut usage dashboard (hammerspoon/hyperdash.lua)
       q: {
-        to: [{ shell_command: "/opt/homebrew/bin/hs -c 'shortcutDashboard.toggle()'" }],
-        description: "Shortcut Dashboard",
+        to: [{ shell_command: "/opt/homebrew/bin/hs -c 'hyperdash.toggle()'" }],
+        description: "hyperdash",
       },
     },
 
@@ -412,7 +412,7 @@ const rules: KarabinerRules[] = [
 
 fs.mkdirSync(USAGE_LOG_DIR, { recursive: true });
 fs.writeFileSync(
-  "dashboard/bindings.json",
+  "hyperdash/bindings.json",
   JSON.stringify(listSubLayerBindings(rules), null, 2)
 );
 

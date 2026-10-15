@@ -6,8 +6,8 @@ require("hs.ipc") -- lets the `hs` CLI reload and query this config
 hs.menuIcon(false)
 hs.autoLaunch(true)
 
--- Global, so `hs -c 'shortcutDashboard.toggle()'` from Karabiner can reach it.
-shortcutDashboard = require("shortcut_dashboard")
+-- Global, so `hs -c 'hyperdash.toggle()'` from Karabiner can reach it.
+hyperdash = require("hyperdash")
 
 -- Fit windows to their screen after a display connects or disconnects.
 -- macOS moves windows off a removed display but keeps their size, so a

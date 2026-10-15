@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Shortcuts</title>
+<title>hyperdash</title>
 <style>
   :root {
     --card: #212121;
@@ -354,7 +354,7 @@
 <main class="card" id="card">
   <header class="header">
     <span class="header-icon" id="header-icon"></span>
-    <h1 class="title" id="title">Shortcuts</h1>
+    <h1 class="title" id="title">hyperdash</h1>
     <div class="pill">
       <button id="previous-month" aria-label="Previous month">
         <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>
@@ -547,7 +547,7 @@ function render() {
   } else {
     icon.outerHTML = `<span class="header-icon" id="header-icon">${ICON_KEYBOARD}</span>`;
   }
-  $("title").textContent = inLayer ? LAYER_NAMES[state.layer] || state.layer : "Shortcuts";
+  $("title").textContent = inLayer ? LAYER_NAMES[state.layer] || state.layer : "hyperdash";
 
   $("month-label").textContent = monthLabel(view.month).toUpperCase();
   $("previous-month").disabled = state.monthIndex === 0;

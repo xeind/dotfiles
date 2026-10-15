@@ -1,12 +1,12 @@
--- Shortcut dashboard: a floating panel that ranks Hyper shortcuts by month.
--- Karabiner logs each press and runs `hs -c 'shortcutDashboard.toggle()'`
--- on Hyper + Space. The UI lives in ~/.config/karabiner/dashboard/.
+-- hyperdash: a floating panel that ranks Hyper shortcuts by month.
+-- Karabiner logs each press and runs `hs -c 'hyperdash.toggle()'`
+-- on Hyper + S + Q. The UI lives in ~/.config/karabiner/hyperdash/.
 
 local M = {}
 
 local HOME = os.getenv("HOME")
-local PAGE = HOME .. "/.config/karabiner/dashboard/index.html"
-local BINDINGS = HOME .. "/.config/karabiner/dashboard/bindings.json"
+local PAGE = HOME .. "/.config/karabiner/hyperdash/index.html"
+local BINDINGS = HOME .. "/.config/karabiner/hyperdash/bindings.json"
 local USAGE_LOG = HOME .. "/.local/state/karabiner/usage.log"
 local WIDTH = 408 -- card width plus the shadow margin on both sides
 local TOP_FRACTION = 0.18 -- open near the top of the screen, like Spotlight
