@@ -8,6 +8,9 @@ local HOME = os.getenv("HOME")
 local PAGE = HOME .. "/.config/karabiner/hyperdash/index.html"
 local BINDINGS = HOME .. "/.config/karabiner/hyperdash/bindings.json"
 local USAGE_LOG = HOME .. "/.local/state/karabiner/usage.log"
+local INSIGHTS = HOME .. "/.local/state/karabiner/insights.json"
+local INSIGHTS_TOOL = HOME .. "/.local/bin/hyperdash-insights" -- `yarn build:insights`
+local INSIGHTS_MAX_AGE = 3600 -- seconds; older insights are recomputed on open
 local WIDTH = 408 -- card width plus the shadow margin on both sides
 local TOP_FRACTION = 0.18 -- open near the top of the screen, like Spotlight
 
@@ -15,6 +18,7 @@ local webview = nil
 local height = 600 -- replaced by the page's own height after each render
 local previousWindow = nil
 local appWatcher = nil
+local insightsTask = nil
 
 local function readFile(path)
   local file = io.open(path, "r")
@@ -24,11 +28,38 @@ local function readFile(path)
   return content
 end
 
+-- The page expects JSON null when there are no insights yet.
+local function readInsights()
+  local raw = readFile(INSIGHTS)
+  if raw and pcall(hs.json.decode, raw) then return raw end
+  return "null"
+end
+
 local function readData()
-  return hs.json.encode({
+  local data = hs.json.encode({
     bindings = hs.json.decode(readFile(BINDINGS) or "[]"),
     log = readFile(USAGE_LOG) or "",
   })
+  -- hs.json.encode drops nil values, so splice the insights in as raw JSON.
+  return data:sub(1, -2) .. ',"insights":' .. readInsights() .. "}"
+end
+
+-- The tool runs in the background so a slow disk never delays the panel;
+-- the open panel receives the result through setInsights().
+local function refreshInsights()
+  if insightsTask and insightsTask:isRunning() then return end
+  if not hs.fs.attributes(INSIGHTS_TOOL) then return end
+  local attributes = hs.fs.attributes(INSIGHTS)
+  if attributes and os.time() - attributes.modification < INSIGHTS_MAX_AGE then return end
+
+  insightsTask = hs.task.new(INSIGHTS_TOOL, function(exitCode, _, stderr)
+    if exitCode ~= 0 then
+      print("hyperdash: insights failed: " .. stderr)
+    elseif webview:isVisible() then
+      webview:evaluateJavaScript("setInsights(" .. readInsights() .. ")")
+    end
+  end, { "--log", USAGE_LOG, "--bindings", BINDINGS, "--output", INSIGHTS })
+  insightsTask:start()
 end
 
 -- Size the window to the card, so the transparent area never blocks clicks.
@@ -59,6 +90,7 @@ local function show()
   hs.focus()
   webview:hswindow():focus()
   appWatcher:start()
+  refreshInsights()
 end
 
 local function create()

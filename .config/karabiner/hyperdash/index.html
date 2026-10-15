@@ -314,11 +314,93 @@
     color: var(--faint);
   }
 
+  /* Insights page */
+
+  .pill.updated { padding: 0 10px; }
+
+  .delta.peak { color: var(--blue-soft); background: #1b2c52; font-size: 11.5px; letter-spacing: 0.04em; }
+
+  .insight-list { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+
+  .insight {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    min-height: 54px;
+    padding: 8px 12px;
+    border-radius: 14px;
+    background: var(--raised);
+    border: 1px solid #313131;
+    text-align: left;
+  }
+
+  button.insight:hover { background: #2c2c2c; }
+
+  .marker {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    color: var(--tone);
+    background: var(--tone-bg);
+  }
+
+  .insight-text { flex: 1; min-width: 0; }
+
+  .insight-title, .insight-detail {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .insight-title { font-size: 13.5px; line-height: 1.25; letter-spacing: -0.01em; }
+  .insight-detail { margin-top: 2px; font-size: 12px; line-height: 1.3; color: var(--muted); }
+
+  .insight .chips { flex: none; }
+
+  .chip.combo { display: flex; gap: 4px; }
+  .chip.combo i { font-style: normal; color: #6f6f6f; }
+  .chip.combo b { font-weight: 400; color: #cfcfcf; }
+
+  /* Activity page */
+
+  .activity { margin-top: 14px; }
+
+  .chart { display: block; width: 100%; height: auto; }
+  .chart text { font: 500 9.5px var(--mono); letter-spacing: 0.06em; fill: var(--muted); }
+  .chart .peak-label { fill: #b5b5b5; }
+  .chart .baseline { stroke: var(--line); }
+  .chart .peak-line { stroke: #606060; stroke-dasharray: 3 3; }
+  .dots { fill: none; stroke-width: 3.6; stroke-linecap: round; }
+  .dots.blue { stroke: var(--blue); }
+  .dots.grey { stroke: #565656; }
+
+  .chart-legend {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 16px;
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .chart-legend .scale { margin-left: auto; color: var(--faint); }
+
+  .swatch { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; }
+
   /* Footer: the keys that work on this page */
 
   .footer {
     display: flex;
-    gap: 14px;
+    gap: 8px;
     margin-top: 14px;
     padding-top: 12px;
     border-top: 1px solid var(--line);
@@ -355,7 +437,8 @@
   <header class="header">
     <span class="header-icon" id="header-icon"></span>
     <h1 class="title" id="title">hyperdash</h1>
-    <div class="pill">
+    <div class="pill updated" id="updated" hidden><span class="pill-label" id="updated-label"></span></div>
+    <div class="pill" id="month-pill">
       <button id="previous-month" aria-label="Previous month">
         <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>
       </button>
@@ -369,7 +452,7 @@
     </button>
   </header>
 
-  <section class="total">
+  <section class="total" id="totals">
     <span class="total-number" id="total"></span>
     <span class="total-unit" id="total-unit"></span>
     <span class="delta" id="delta" hidden></span>
@@ -384,6 +467,12 @@
   <section class="detail" id="detail" hidden></section>
   <section class="grid" id="grid" hidden></section>
   <p class="more" id="more" hidden></p>
+
+  <!-- Insights page -->
+  <section id="insights" hidden></section>
+
+  <!-- Activity page -->
+  <section class="activity" id="activity" hidden></section>
 
   <footer class="footer" id="footer"></footer>
 </main>
@@ -420,7 +509,24 @@ const GRID_SIZE = 6;
 const ICON_KEYBOARD = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="2.5" y="5.5" width="19" height="13" rx="3"/><path d="M6.5 9.5h.01M10 9.5h.01M13.5 9.5h.01M17 9.5h.01M8 14.5h8"/></svg>';
 const ICON_BACK = '<svg width="12" height="12" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>';
 
-const state = { monthIndex: 0, layer: null, selected: null };
+const PAGE_KEYS = { i: "insights", a: "activity" };
+const PAGE_TITLES = { insights: "Insights", activity: "Activity" };
+
+const glyph = (paths) => `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+const INSIGHT_KINDS = {
+  rising: { color: "#3ddc84", background: "#0f3a21", icon: glyph('<path d="M4 17l6-6 4 4 6-7M14 8h6v6"/>') },
+  falling: { color: "#ff7a7a", background: "#3a1717", icon: glyph('<path d="M4 7l6 6 4-4 6 7M14 16h6v-6"/>') },
+  unused: { color: "#f5b942", background: "#3a2c0f", icon: glyph('<circle cx="12" cy="12" r="8" stroke-dasharray="3 3.2"/>') },
+  dormant: { color: "#a8a8a8", background: "#323232", icon: glyph('<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>') },
+  peak: { color: "#8fbaff", background: "#1b356e", icon: glyph('<path d="M5 19v-6M12 19V5M19 19v-9"/>') },
+  burst: { color: "#c9a2ff", background: "#33214f", icon: glyph('<path d="M13 3 5 14h6l-1 7 8-11h-6z"/>') },
+};
+
+// Activity chart geometry, in SVG user units (the viewBox is 1:1 with the card content).
+const CHART = { width: 326, top: 18, plot: 120, step: 4, height: 162 };
+
+const state = { monthIndex: 0, layer: null, selected: null, page: null, highlight: null };
+let insightsData = null;
 let bindings = [];
 let presses = [];
 let months = [];
@@ -539,15 +645,24 @@ function buildView() {
 function render() {
   view = buildView();
   const inLayer = state.layer !== null;
+  const page = state.page;
+  const activity = page === "activity" ? buildActivity() : null;
 
   const icon = $("header-icon");
-  if (inLayer) {
+  if (inLayer || page) {
     icon.outerHTML = `<button class="header-icon" id="header-icon" aria-label="Back">${ICON_BACK}</button>`;
     $("header-icon").addEventListener("click", closeLayer);
   } else {
     icon.outerHTML = `<span class="header-icon" id="header-icon">${ICON_KEYBOARD}</span>`;
   }
-  $("title").textContent = inLayer ? LAYER_NAMES[state.layer] || state.layer : "hyperdash";
+  $("title").textContent = page ? PAGE_TITLES[page] : inLayer ? LAYER_NAMES[state.layer] || state.layer : "hyperdash";
+
+  // Insights describe one analysis run, so that page shows its age instead of a month.
+  $("month-pill").hidden = page === "insights";
+  $("updated").hidden = page !== "insights" || !insightsData?.generated;
+  if (!$("updated").hidden) $("updated-label").textContent = `UPDATED ${timeAgo(insightsData.generated).toUpperCase()}`;
+  $("totals").hidden = page === "insights";
+  $("keyboard").hidden = page !== null;
 
   $("month-label").textContent = monthLabel(view.month).toUpperCase();
   $("previous-month").disabled = state.monthIndex === 0;
@@ -558,8 +673,15 @@ function render() {
     + (inLayer ? ` · ${view.used.length} OF ${view.scoped.length} USED` : "");
 
   const delta = $("delta");
-  delta.hidden = view.previousTotal === 0;
-  if (!delta.hidden) {
+  if (activity) {
+    delta.hidden = activity.total === 0;
+    const hour = String(activity.peakHour).padStart(2, "0");
+    delta.textContent = `PEAK ${hour}:00–${String(activity.peakHour + 1).padStart(2, "0")}:00`;
+    delta.className = "delta peak";
+  } else {
+    delta.hidden = view.previousTotal === 0;
+  }
+  if (!delta.hidden && !activity) {
     const percent = Math.round(((view.total - view.previousTotal) / view.previousTotal) * 100);
     delta.textContent = `${percent >= 0 ? "+" : "−"}${Math.abs(percent)}%`;
     delta.className = `delta ${percent >= 0 ? "up" : "down"}`;
@@ -575,15 +697,19 @@ function render() {
     node.style.setProperty("--heat", count > 0 ? `${Math.round(30 + 70 * Math.sqrt(count / max))}%` : "0%");
   }
 
-  $("ranking").hidden = inLayer;
+  $("ranking").hidden = inLayer || page !== null;
   $("detail").hidden = !inLayer;
   $("grid").hidden = !inLayer;
+  $("insights").hidden = page !== "insights";
+  $("activity").hidden = page !== "activity";
   if (inLayer) {
     renderDetail();
     renderGrid();
   } else {
     $("more").hidden = true;
-    renderRanking();
+    if (page === null) renderRanking();
+    else if (page === "insights") renderInsights();
+    else renderActivity(activity);
   }
   renderFooter();
 
@@ -672,10 +798,150 @@ function renderGrid() {
   $("more").textContent = `+ ${rest} more · press a grey key to see one`;
 }
 
+function comboChip([layer, key]) {
+  const node = element("span", "chip combo");
+  const first = element("i", "", layer.toUpperCase());
+  const second = element("b", "", symbol(key));
+  node.append(first, second);
+  return node;
+}
+
+function renderInsights() {
+  const root = $("insights");
+  root.replaceChildren();
+
+  if (!insightsData) {
+    root.append(element("p", "empty-list", "No insights yet — they appear after the first analysis runs."));
+    return;
+  }
+
+  const list = element("div", "insight-list");
+  for (const item of (insightsData.insights || []).slice(0, 5)) {
+    const tone = INSIGHT_KINDS[item.kind] || INSIGHT_KINDS.peak;
+    const keys = item.keys || [];
+
+    const marker = element("span", "marker");
+    marker.style.setProperty("--tone", tone.color);
+    marker.style.setProperty("--tone-bg", tone.background);
+    marker.innerHTML = tone.icon;
+    marker.title = item.kind;
+
+    const text = element("div", "insight-text");
+    text.append(element("div", "insight-title", item.title), element("div", "insight-detail", item.detail));
+
+    const card = element(keys.length ? "button" : "div", "insight");
+    card.append(marker, text);
+    if (keys.length) {
+      const chips = element("div", "chips");
+      // Two combos fit beside the text; more collapse to the first plus a count.
+      const shown = keys.length > 2 ? 1 : keys.length;
+      chips.append(...keys.slice(0, shown).map(comboChip));
+      if (keys.length > shown) chips.append(element("span", "chip", `+${keys.length - shown}`));
+      card.append(chips);
+      card.addEventListener("click", () => openCombo(...keys[0]));
+    }
+    list.append(card);
+  }
+  root.append(list);
+}
+
+// Press counts per half-hour bin for the selected month. A dot stands for
+// perDot presses once the busiest bin no longer fits the plot height.
+function buildActivity() {
+  const month = months[state.monthIndex];
+  const all = new Array(48).fill(0);
+  const hit = new Array(48).fill(0);
+  let total = 0;
+  let hitTotal = 0;
+  for (const p of presses) {
+    if (p.month !== month || !(p.bin >= 0 && p.bin < 48)) continue;
+    all[p.bin] += 1;
+    total += 1;
+    if (p.layer === state.highlight) { hit[p.bin] += 1; hitTotal += 1; }
+  }
+
+  let peakHour = 0;
+  let peakCount = -1;
+  for (let hour = 0; hour < 24; hour++) {
+    const count = all[2 * hour] + all[2 * hour + 1];
+    if (count > peakCount) { peakHour = hour; peakCount = count; }
+  }
+
+  const capacity = Math.floor(CHART.plot / CHART.step);
+  return { all, hit, total, hitTotal, peakHour, perDot: Math.max(1, Math.ceil(Math.max(...all) / capacity)) };
+}
+
+function binTime(bin) {
+  return `${String(Math.floor(bin / 2)).padStart(2, "0")}:${bin % 2 ? "30" : "00"}`;
+}
+
+function renderActivity(a) {
+  const root = $("activity");
+  if (a.total === 0) {
+    root.replaceChildren(element("p", "empty-list", `Nothing logged in ${monthLabel(view.month)} yet`));
+    return;
+  }
+
+  const { width, top, plot, step, height } = CHART;
+  const binWidth = width / 48;
+  const centre = top + plot / 2;
+  const highlighting = state.highlight !== null;
+  let blue = "";
+  let grey = "";
+  let hover = "";
+
+  for (let bin = 0; bin < 48; bin++) {
+    const count = a.all[bin];
+    if (!count) continue;
+    const x = ((bin + 0.5) * binWidth).toFixed(1);
+    const dots = Math.ceil(count / a.perDot);
+    const lit = !highlighting ? dots
+      : a.hit[bin] ? Math.min(dots, Math.max(1, Math.round(a.hit[bin] / a.perDot))) : 0;
+    for (let j = 0; j < dots; j++) {
+      const segment = `M${x} ${(centre + (j - (dots - 1) / 2) * step).toFixed(1)}h0`;
+      if (j >= dots - lit) blue += segment; else grey += segment;
+    }
+    hover += `<rect x="${(bin * binWidth).toFixed(1)}" y="${top}" width="${binWidth.toFixed(1)}" height="${plot}" fill="transparent"><title>${binTime(bin)}–${binTime(bin + 1)} · ${count} ${count === 1 ? "press" : "presses"}</title></rect>`;
+  }
+
+  const base = top + plot + 6;
+  const peakX = (a.peakHour + 0.5) * (width / 24);
+  const peakAnchor = peakX < 36 ? "start" : peakX > width - 36 ? "end" : "middle";
+  const axis = [0, 6, 12, 18, 24].map((hour) => {
+    const anchor = hour === 0 ? "start" : hour === 24 ? "end" : "middle";
+    return `<text x="${hour * (width / 24)}" y="${height - 3}" text-anchor="${anchor}">${hour}H</text>`;
+  }).join("");
+
+  root.innerHTML = `<svg class="chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Presses by hour of day">`
+    + `<line class="baseline" x1="0" x2="${width}" y1="${base}" y2="${base}"/>`
+    + `<line class="peak-line" x1="${peakX}" x2="${peakX}" y1="${top - 4}" y2="${base}"/>`
+    + `<text class="peak-label" x="${peakX}" y="9" text-anchor="${peakAnchor}">PEAK ${a.peakHour}H</text>`
+    + `<path class="dots grey" d="${grey}"/><path class="dots blue" d="${blue}"/>${hover}${axis}</svg>`;
+
+  const legend = element("div", "chart-legend");
+  if (highlighting) {
+    const swatch = (color, label, n) => {
+      const item = element("span", "", `${label} ${n.toLocaleString("en-US")}`);
+      const dot = element("i", "swatch");
+      dot.style.background = color;
+      item.prepend(dot);
+      return item;
+    };
+    legend.append(
+      swatch("var(--blue)", (LAYER_NAMES[state.highlight] || state.highlight).toUpperCase(), a.hitTotal),
+      swatch("#565656", "OTHER", a.total - a.hitTotal),
+    );
+  }
+  if (a.perDot > 1) legend.append(element("span", "scale", `1 DOT = ${a.perDot} PRESSES`));
+  root.append(legend);
+}
+
 function renderFooter() {
-  const hints = state.layer === null
-    ? [["W", "open layer"], ["← →", "month"], ["esc", "close"]]
-    : [["U", "details"], ["← →", "month"], ["esc", state.selected ? "clear" : "back"]];
+  const hints = state.page === "insights" ? [["esc", "back"]]
+    : state.page === "activity" ? [["W", "highlight layer"], ["← →", "month"], ["esc", state.highlight ? "clear" : "back"]]
+    : state.layer === null
+      ? [["W", "layer"], ["I", "insights"], ["A", "activity"], ["← →", "month"]]
+      : [["U", "details"], ["← →", "month"], ["esc", state.selected ? "clear" : "back"]];
   $("footer").replaceChildren(...hints.map(([keys, label]) => {
     const hint = element("span");
     for (const k of keys.split(" ")) hint.append(element("kbd", "", k));
@@ -704,13 +970,30 @@ function openLayer(layer) {
   render();
 }
 
+// Back to the overview from a layer or a page.
 function closeLayer() {
-  state.layer = null;
-  state.selected = null;
+  Object.assign(state, { layer: null, selected: null, page: null, highlight: null });
+  render();
+}
+
+function openPage(page) {
+  state.page = page;
+  render();
+}
+
+function openCombo(layer, key) {
+  Object.assign(state, { layer, selected: key, page: null });
+  render();
+}
+
+function toggleHighlight(layer) {
+  if (!bindings.some((b) => b.layer === layer)) return;
+  state.highlight = state.highlight === layer ? null : layer;
   render();
 }
 
 function changeMonth(step) {
+  if (state.page === "insights") return;
   const next = state.monthIndex + step;
   if (next < 0 || next >= months.length) return;
   state.monthIndex = next;
@@ -727,17 +1010,25 @@ function update(data) {
   for (const line of data.log.split("\n")) {
     if (!line) continue;
     const [time, layer, key] = line.split("\t");
-    presses.push({ month: time.slice(0, 7), layer, key });
+    const bin = Number(time.slice(11, 13)) * 2 + (Number(time.slice(14, 16)) >= 30 ? 1 : 0);
+    presses.push({ month: time.slice(0, 7), layer, key, bin });
     lastUsed.set(`${layer} ${key}`, time);
   }
   months = listMonths();
-  Object.assign(state, { monthIndex: months.length - 1, layer: null, selected: null });
+  Object.assign(state, { monthIndex: months.length - 1, layer: null, selected: null, page: null, highlight: null });
+  insightsData = data.insights || null;
   render();
 
   const card = $("card");
   card.classList.remove("open");
   void card.offsetWidth;
   card.classList.add("open");
+}
+
+// Called by Hammerspoon when a background analysis finishes. Keeps the page and selection.
+function setInsights(insights) {
+  insightsData = insights || null;
+  render();
 }
 
 // Called by Hammerspoon on hide, so the next open never shows old numbers.
@@ -752,7 +1043,9 @@ $("next-month").addEventListener("click", () => changeMonth(1));
 document.addEventListener("keydown", (event) => {
   if (event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.key === "Escape") {
-    if (state.selected !== null) select(null);
+    if (state.highlight !== null) toggleHighlight(state.highlight);
+    else if (state.page !== null) closeLayer();
+    else if (state.selected !== null) select(null);
     else if (state.layer !== null) closeLayer();
     else post({ action: "close" });
   } else if (event.key === "ArrowLeft") {
@@ -763,7 +1056,9 @@ document.addEventListener("keydown", (event) => {
     const key = TYPED_KEYS[event.key] || event.key.toLowerCase();
     if (/^[a-z0-9]$/.test(key) || Object.values(TYPED_KEYS).includes(key)) {
       event.preventDefault();
-      pressKey(key);
+      if (state.page === "activity") toggleHighlight(key);
+      else if (state.page === null && state.layer === null && !view.heat.has(key) && PAGE_KEYS[key]) openPage(PAGE_KEYS[key]);
+      else if (state.page === null) pressKey(key);
     }
   }
 });
