@@ -12,6 +12,7 @@
   },
   "scripts": {
     "build": "tsm rules.ts",
+    "build:insights": "swift build -c release --package-path hyperdash/insights && install -m 755 \"$(swift build -c release --package-path hyperdash/insights --show-bin-path)/hyperdash-insights\" \"$HOME/.local/bin/hyperdash-insights\"",
     "watch": "nodemon --exec yarn build -e ts"
   }
 }
