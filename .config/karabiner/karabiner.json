@@ -871,7 +871,7 @@
                     "shell_command": "open -b com.apple.exposelauncher"
                   }
                 ],
-                "description": "Open -b com.apple.exposelauncher",
+                "description": "Mission Control",
                 "type": "basic",
                 "from": {
                   "key_code": "spacebar",
@@ -2408,6 +2408,7 @@
                     ]
                   }
                 ],
+                "description": "Lock Screen",
                 "type": "basic",
                 "from": {
                   "key_code": "l",
@@ -2488,7 +2489,7 @@
                     "shell_command": "open x-apple.systempreferences:com.apple.preference"
                   }
                 ],
-                "description": "Open x-apple.systempreferences:com.apple.preference",
+                "description": "System Settings",
                 "type": "basic",
                 "from": {
                   "key_code": "p",
@@ -2669,6 +2670,33 @@
                 "type": "basic",
                 "from": {
                   "key_code": "t",
+                  "modifiers": {
+                    "optional": [
+                      "any"
+                    ]
+                  }
+                },
+                "conditions": [
+                  {
+                    "type": "variable_if",
+                    "name": "hyper_sublayer_s",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "to": [
+                  {
+                    "shell_command": "printf '%s\\ts\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "shell_command": "/opt/homebrew/bin/hs -c 'shortcutDashboard.toggle()'"
+                  }
+                ],
+                "description": "Shortcut Dashboard",
+                "type": "basic",
+                "from": {
+                  "key_code": "q",
                   "modifiers": {
                     "optional": [
                       "any"

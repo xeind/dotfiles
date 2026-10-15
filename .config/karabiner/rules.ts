@@ -6,6 +6,7 @@ import {
   open,
   rectangle,
   tinycast,
+  listSubLayerBindings,
   USAGE_LOG_DIR,
 } from "./utils";
 
@@ -87,7 +88,7 @@ const rules: KarabinerRules[] = [
 
     // w = "Window" via Rectangle.app
     w: {
-      spacebar: open("-b com.apple.exposelauncher"),
+      spacebar: { ...open("-b com.apple.exposelauncher"), description: "Mission Control" },
       1: rectangle("top-left-sixth"),
       3: rectangle("top-right-sixth"),
       y: rectangle("previous-display"),
@@ -298,6 +299,7 @@ const rules: KarabinerRules[] = [
             modifiers: ["right_control", "right_command"],
           },
         ],
+        description: "Lock Screen",
       },
       n: {
         to: [{ shell_command: "osascript -e 'tell application \"System Events\" to tell process \"MenuBarAgent\"' -e 'repeat with g in every group of menu bar 1' -e 'set mi to menu bar item 1 of g' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'" }],
@@ -307,7 +309,7 @@ const rules: KarabinerRules[] = [
         to: [{ shell_command: "osascript ~/.config/raycast/scripts/dismiss-notifications.applescript" }],
         description: "Dismiss Notifications",
       },
-      p: open("x-apple.systempreferences:com.apple.preference"),
+      p: { ...open("x-apple.systempreferences:com.apple.preference"), description: "System Settings" },
       d: {
         // F19 is bound to "Turn Do Not Disturb On/Off" in System Settings
         to: [{ key_code: "f19" }],
@@ -326,6 +328,11 @@ const rules: KarabinerRules[] = [
       t: {
         to: [{ shell_command: "osascript ~/.config/raycast/scripts/undo-recording-mode.applescript" }],
         description: "Undo Recording Mode (show menu bar)",
+      },
+      // Shortcut usage dashboard (hammerspoon/shortcut_dashboard.lua)
+      q: {
+        to: [{ shell_command: "/opt/homebrew/bin/hs -c 'shortcutDashboard.toggle()'" }],
+        description: "Shortcut Dashboard",
       },
     },
 
@@ -404,6 +411,10 @@ const rules: KarabinerRules[] = [
 ];
 
 fs.mkdirSync(USAGE_LOG_DIR, { recursive: true });
+fs.writeFileSync(
+  "dashboard/bindings.json",
+  JSON.stringify(listSubLayerBindings(rules), null, 2)
+);
 
 fs.writeFileSync(
   "karabiner.json",

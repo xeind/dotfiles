@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shortcuts</title>
+<style>
+  :root {
+    --card: #212121;
+    --raised: #262626;
+    --line: #2d2d2d;
+    --text: #efefef;
+    --muted: #8a8a8a;
+    --faint: #6a6a6a;
+    --blue: #2f7bff;
+    --blue-soft: #5ea2ff;
+    --sans: "Geist", -apple-system, sans-serif;
+    --mono: "Geist Mono", ui-monospace, monospace;
+    --key: 28px;
+    --gap: 5px;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  [hidden] { display: none !important; }
+
+  html, body {
+    background: transparent;
+    overflow: hidden;
+    font-family: var(--sans);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -webkit-user-select: none;
+    cursor: default;
+  }
+
+  /* Room for the card shadow inside the transparent window. */
+  body { padding: 20px; }
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .card {
+    width: 368px;
+    padding: 18px 20px 16px;
+    border-radius: 30px;
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 18px 40px -12px rgba(0, 0, 0, 0.65);
+    opacity: 0;
+    transform: translateY(4px) scale(0.985);
+  }
+
+  .card.open {
+    opacity: 1;
+    transform: none;
+    transition: opacity 120ms ease-out, transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* Header */
+
+  .header { display: flex; align-items: center; gap: 10px; height: 30px; }
+
+  .header-icon {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    color: var(--blue-soft);
+  }
+
+  button.header-icon:hover { background: #2c2c2c; }
+
+  .title { font-size: 16px; font-weight: 500; letter-spacing: -0.01em; }
+
+  .pill {
+    display: flex;
+    align-items: center;
+    height: 26px;
+    padding: 0 3px;
+    border: 1.5px solid #383838;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    color: #b5b5b5;
+  }
+
+  .pill-label { padding: 0 2px; }
+
+  .pill button {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--faint);
+  }
+
+  .pill button:hover:not(:disabled) { background: #333; color: var(--text); }
+  .pill button:disabled { visibility: hidden; }
+
+  .close {
+    margin-left: auto;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #2c2c2c;
+    display: grid;
+    place-items: center;
+    color: #c8c8c8;
+  }
+
+  .close:hover { background: #343434; }
+  .close:active { transform: scale(0.94); }
+
+  /* Total */
+
+  .total { display: flex; align-items: baseline; gap: 8px; margin-top: 16px; }
+
+  .total-number {
+    font-size: 34px;
+    font-weight: 500;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .total-unit { font-size: 12.5px; font-weight: 500; letter-spacing: 0.04em; color: var(--muted); }
+
+  .delta {
+    margin-left: auto;
+    align-self: center;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 5px 9px;
+    border-radius: 8px;
+  }
+
+  .delta.up { color: #3ddc84; background: #0f3a21; }
+  .delta.down { color: #ff7a7a; background: #3a1717; }
+
+  /* Keyboard */
+
+  .keyboard {
+    width: calc(10 * var(--key) + 9 * var(--gap));
+    margin: 18px auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+  }
+
+  .row { display: flex; gap: var(--gap); }
+  .row-1 { padding-left: 14px; }
+  .row-2 { padding-left: 42px; }
+  .row-3 { justify-content: center; }
+
+  .key {
+    --heat: 0%;
+    width: var(--key);
+    height: var(--key);
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #4a4a4a;
+    background: #262626;
+    border: 1px solid rgba(255, 255, 255, 0.035);
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  .key.space { width: 136px; }
+  .key.bound { color: #979797; background: #2c2c2c; border-color: rgba(255, 255, 255, 0.06); cursor: pointer; }
+
+  .key.used {
+    color: #fff;
+    background: color-mix(in oklab, var(--blue) var(--heat), #2c2c2c);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .key.selected { outline-color: #e6e6e6; }
+
+  /* Detail strip: fixed height, so selecting a key never shifts the layout. */
+
+  .detail {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    height: 54px;
+    margin-top: 14px;
+    padding: 0 12px;
+    border-radius: 14px;
+    background: var(--raised);
+    border: 1px solid #313131;
+  }
+
+  .detail .chip {
+    min-width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #8fbaff;
+    background: #1b356e;
+    border-color: rgba(120, 170, 255, 0.15);
+  }
+
+  .detail-text { min-width: 0; }
+
+  .detail-title, .detail-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .detail-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .detail-value { margin-top: 3px; font-size: 13.5px; }
+  .detail.empty .detail-value { color: var(--faint); margin: 0; }
+
+  /* Overview ranking */
+
+  .ranking { margin-top: 14px; }
+
+  .entry {
+    display: grid;
+    grid-template-columns: 54px 1fr 80px 32px;
+    align-items: center;
+    gap: 10px;
+    height: 44px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .entry:last-child { border-bottom: 0; }
+
+  .chips { display: flex; gap: 5px; }
+
+  .chip {
+    min-width: 24px;
+    height: 24px;
+    padding: 0 5px;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #a3a3a3;
+    background: #2a2a2a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35);
+  }
+
+  .entry-label, .cell-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .entry-label { font-size: 14.5px; letter-spacing: -0.01em; }
+
+  .bar { height: 4px; border-radius: 999px; background: #353535; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: inherit; background: var(--blue); }
+
+  .entry-count, .cell-count {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: #a3a3a3;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .empty-list { padding: 16px 0 4px; text-align: center; font-size: 13.5px; color: var(--muted); }
+
+  /* Layer grid */
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 8px;
+    margin-top: 10px;
+  }
+
+  .cell {
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    height: 34px;
+    padding: 0 8px 0 5px;
+    border-radius: 9px;
+    text-align: left;
+  }
+
+  .cell:hover { background: #262626; }
+  .cell.selected { background: #2a2a2a; }
+  .cell-label { font-size: 13.5px; letter-spacing: -0.01em; }
+  .cell.unused .cell-label, .cell.unused .cell-count { color: #5f5f5f; }
+
+  .more {
+    margin-top: 4px;
+    padding-left: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  /* Footer: the keys that work on this page */
+
+  .footer {
+    display: flex;
+    gap: 14px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  .footer span { display: flex; align-items: center; gap: 5px; }
+
+  .footer kbd {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 5px;
+    display: grid;
+    place-items: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: #9a9a9a;
+    background: #2a2a2a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card, .card.open { transform: none; transition: none; }
+  }
+</style>
+</head>
+<body>
+<main class="card" id="card">
+  <header class="header">
+    <span class="header-icon" id="header-icon"></span>
+    <h1 class="title" id="title">Shortcuts</h1>
+    <div class="pill">
+      <button id="previous-month" aria-label="Previous month">
+        <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>
+      </button>
+      <span class="pill-label" id="month-label"></span>
+      <button id="next-month" aria-label="Next month">
+        <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 1.5 7 5 3.5 8.5"/></svg>
+      </button>
+    </div>
+    <button class="close" id="close" aria-label="Close">
+      <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l10 10M12 2 2 12"/></svg>
+    </button>
+  </header>
+
+  <section class="total">
+    <span class="total-number" id="total"></span>
+    <span class="total-unit" id="total-unit"></span>
+    <span class="delta" id="delta" hidden></span>
+  </section>
+
+  <section class="keyboard" id="keyboard"></section>
+
+  <!-- Overview page -->
+  <section class="ranking" id="ranking"></section>
+
+  <!-- Layer page -->
+  <section class="detail" id="detail" hidden></section>
+  <section class="grid" id="grid" hidden></section>
+  <p class="more" id="more" hidden></p>
+
+  <footer class="footer" id="footer"></footer>
+</main>
+
+<script>
+const LAYER_NAMES = {
+  b: "Browse", o: "Open", w: "Window", c: "Capture",
+  f: "Finder", s: "System", v: "Move", r: "Launcher",
+};
+
+const KEY_ROWS = [
+  ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+  ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
+  ["z", "x", "c", "v", "b", "n", "m"],
+  ["spacebar"],
+];
+
+const KEY_SYMBOLS = {
+  semicolon: ";", spacebar: "␣", return_or_enter: "↵",
+  delete_or_backspace: "⌫", equal_sign: "=", hyphen: "-",
+  up_arrow: "↑", down_arrow: "↓", left_arrow: "←", right_arrow: "→",
+};
+
+// Browser key names for the bindings you can select by typing.
+const TYPED_KEYS = { " ": "spacebar", ";": "semicolon", "=": "equal_sign", "-": "hyphen" };
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+const GRID_SIZE = 6;
+
+const ICON_KEYBOARD = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="2.5" y="5.5" width="19" height="13" rx="3"/><path d="M6.5 9.5h.01M10 9.5h.01M13.5 9.5h.01M17 9.5h.01M8 14.5h8"/></svg>';
+const ICON_BACK = '<svg width="12" height="12" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>';
+
+const state = { monthIndex: 0, layer: null, selected: null };
+let bindings = [];
+let presses = [];
+let months = [];
+let lastUsed = new Map();
+let view = null;
+const keyNodes = new Map();
+
+const $ = (id) => document.getElementById(id);
+
+function post(message) {
+  window.webkit?.messageHandlers?.dashboard?.postMessage(message);
+}
+
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function symbol(key) {
+  return KEY_SYMBOLS[key] || key.toUpperCase();
+}
+
+function chip(key) {
+  return element("span", "chip", symbol(key));
+}
+
+function plural(n, word) {
+  return `${n.toLocaleString("en-US")} ${word}${n === 1 ? "" : "es"}`;
+}
+
+function monthLabel(month) {
+  const [year, index] = month.split("-").map(Number);
+  const name = MONTH_NAMES[index - 1];
+  return year === new Date().getFullYear() ? name : `${name.slice(0, 3)} ${year}`;
+}
+
+function timeAgo(timestamp) {
+  const minutes = Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60 * 24) return `${Math.floor(minutes / 60)}h ago`;
+  return `${Math.floor(minutes / (60 * 24))}d ago`;
+}
+
+function listMonths() {
+  const now = new Date();
+  const current = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const first = presses.reduce((min, p) => (p.month < min ? p.month : min), current);
+  const result = [];
+  let [year, month] = first.split("-").map(Number);
+  while (true) {
+    const id = `${year}-${String(month).padStart(2, "0")}`;
+    result.push(id);
+    if (id >= current) break;
+    month += 1;
+    if (month > 12) { month = 1; year += 1; }
+  }
+  return result;
+}
+
+function countPresses(month) {
+  const counts = new Map();
+  for (const p of presses) {
+    if (p.month !== month) continue;
+    const id = `${p.layer} ${p.key}`;
+    counts.set(id, (counts.get(id) || 0) + 1);
+  }
+  return counts;
+}
+
+// The keyboard is built once; render() only changes classes.
+function buildKeyboard() {
+  for (const [index, row] of KEY_ROWS.entries()) {
+    const rowNode = element("div", `row row-${index}`);
+    for (const key of row) {
+      const node = element("div", key === "spacebar" ? "key space" : "key", key === "spacebar" ? "space" : symbol(key));
+      node.addEventListener("click", () => pressKey(key));
+      keyNodes.set(key, node);
+      rowNode.append(node);
+    }
+    $("keyboard").append(rowNode);
+  }
+}
+
+function buildView() {
+  const month = months[state.monthIndex];
+  const counts = countPresses(month);
+  const previous = state.monthIndex > 0 ? countPresses(months[state.monthIndex - 1]) : new Map();
+  const inScope = (layer) => state.layer === null || layer === state.layer;
+  const sum = (map) => [...map].reduce((total, [id, n]) => total + (inScope(id.split(" ")[0]) ? n : 0), 0);
+
+  const scoped = bindings
+    .filter((b) => inScope(b.layer))
+    .map((b) => ({ ...b, count: counts.get(`${b.layer} ${b.key}`) || 0 }))
+    .sort((a, b) => b.count - a.count);
+
+  // Heat per keyboard key: layer totals on the overview, key counts in a layer.
+  const heat = new Map();
+  for (const b of scoped) {
+    const key = state.layer === null ? b.layer : b.key;
+    heat.set(key, (heat.get(key) || 0) + b.count);
+  }
+
+  return {
+    month,
+    total: sum(counts),
+    previousTotal: sum(previous),
+    scoped,
+    used: scoped.filter((b) => b.count > 0),
+    heat,
+  };
+}
+
+function render() {
+  view = buildView();
+  const inLayer = state.layer !== null;
+
+  const icon = $("header-icon");
+  if (inLayer) {
+    icon.outerHTML = `<button class="header-icon" id="header-icon" aria-label="Back">${ICON_BACK}</button>`;
+    $("header-icon").addEventListener("click", closeLayer);
+  } else {
+    icon.outerHTML = `<span class="header-icon" id="header-icon">${ICON_KEYBOARD}</span>`;
+  }
+  $("title").textContent = inLayer ? LAYER_NAMES[state.layer] || state.layer : "Shortcuts";
+
+  $("month-label").textContent = monthLabel(view.month).toUpperCase();
+  $("previous-month").disabled = state.monthIndex === 0;
+  $("next-month").disabled = state.monthIndex === months.length - 1;
+
+  $("total").textContent = view.total.toLocaleString("en-US");
+  $("total-unit").textContent = (view.total === 1 ? "PRESS" : "PRESSES")
+    + (inLayer ? ` · ${view.used.length} OF ${view.scoped.length} USED` : "");
+
+  const delta = $("delta");
+  delta.hidden = view.previousTotal === 0;
+  if (!delta.hidden) {
+    const percent = Math.round(((view.total - view.previousTotal) / view.previousTotal) * 100);
+    delta.textContent = `${percent >= 0 ? "+" : "−"}${Math.abs(percent)}%`;
+    delta.className = `delta ${percent >= 0 ? "up" : "down"}`;
+  }
+
+  // Square root spreads the low counts so lightly used keys still show.
+  const max = Math.max(1, ...view.heat.values());
+  for (const [key, node] of keyNodes) {
+    const count = view.heat.get(key);
+    node.classList.toggle("bound", count !== undefined);
+    node.classList.toggle("used", count > 0);
+    node.classList.toggle("selected", inLayer && key === state.selected);
+    node.style.setProperty("--heat", count > 0 ? `${Math.round(30 + 70 * Math.sqrt(count / max))}%` : "0%");
+  }
+
+  $("ranking").hidden = inLayer;
+  $("detail").hidden = !inLayer;
+  $("grid").hidden = !inLayer;
+  if (inLayer) {
+    renderDetail();
+    renderGrid();
+  } else {
+    $("more").hidden = true;
+    renderRanking();
+  }
+  renderFooter();
+
+  post({ action: "resize", height: document.body.scrollHeight });
+}
+
+function renderRanking() {
+  const ranking = $("ranking");
+  ranking.replaceChildren();
+
+  if (view.used.length === 0) {
+    ranking.append(element("p", "empty-list", `Nothing logged in ${monthLabel(view.month)} yet`));
+    return;
+  }
+
+  const top = view.used.slice(0, 3);
+  for (const b of top) {
+    const chips = element("div", "chips");
+    chips.append(chip(b.layer), chip(b.key));
+
+    const bar = element("div", "bar");
+    const fill = element("div", "bar-fill");
+    fill.style.width = `${(b.count / top[0].count) * 100}%`;
+    bar.append(fill);
+
+    const entry = element("div", "entry");
+    entry.append(chips, element("span", "entry-label", b.label), bar, element("span", "entry-count", b.count.toLocaleString("en-US")));
+    ranking.append(entry);
+  }
+}
+
+function renderDetail() {
+  const detail = $("detail");
+  detail.replaceChildren();
+  const layerName = LAYER_NAMES[state.layer] || state.layer;
+
+  if (state.selected === null) {
+    detail.className = "detail empty";
+    detail.append(element("p", "detail-value", "Press a key to see its details"));
+    return;
+  }
+
+  detail.className = "detail";
+  const binding = view.scoped.find((b) => b.key === state.selected);
+  const text = element("div", "detail-text");
+
+  if (!binding) {
+    text.append(
+      element("div", "detail-title", `${symbol(state.selected)} · not bound`),
+      element("div", "detail-value", `Nothing on Hyper ${symbol(state.layer)} ${symbol(state.selected)} yet`),
+    );
+  } else {
+    const facts = [];
+    if (binding.count > 0) {
+      facts.push(plural(binding.count, "press"));
+      facts.push(`#${view.used.indexOf(binding) + 1} in ${layerName}`);
+    } else {
+      facts.push(`Not used in ${monthLabel(view.month)}`);
+    }
+    const last = lastUsed.get(`${binding.layer} ${binding.key}`);
+    facts.push(last ? `last ${timeAgo(last)}` : "never used");
+    text.append(
+      element("div", "detail-title", `${symbol(binding.key)} · ${binding.label}`),
+      element("div", "detail-value", facts.join(" · ")),
+    );
+  }
+
+  detail.append(chip(state.selected), text);
+}
+
+function renderGrid() {
+  const grid = $("grid");
+  grid.replaceChildren();
+
+  for (const b of view.scoped.slice(0, GRID_SIZE)) {
+    const cell = element("button", "cell");
+    cell.classList.toggle("unused", b.count === 0);
+    cell.classList.toggle("selected", b.key === state.selected);
+    cell.append(chip(b.key), element("span", "cell-label", b.label), element("span", "cell-count", b.count || "–"));
+    cell.addEventListener("click", () => select(b.key));
+    grid.append(cell);
+  }
+
+  const rest = view.scoped.length - GRID_SIZE;
+  $("more").hidden = rest <= 0;
+  $("more").textContent = `+ ${rest} more · press a grey key to see one`;
+}
+
+function renderFooter() {
+  const hints = state.layer === null
+    ? [["W", "open layer"], ["← →", "month"], ["esc", "close"]]
+    : [["U", "details"], ["← →", "month"], ["esc", state.selected ? "clear" : "back"]];
+  $("footer").replaceChildren(...hints.map(([keys, label]) => {
+    const hint = element("span");
+    for (const k of keys.split(" ")) hint.append(element("kbd", "", k));
+    hint.append(label);
+    return hint;
+  }));
+}
+
+// A key press means "open this layer" on the overview, "select" in a layer.
+function pressKey(key) {
+  if (state.layer === null) {
+    if (view.heat.has(key)) openLayer(key);
+  } else {
+    select(key);
+  }
+}
+
+function select(key) {
+  state.selected = key;
+  render();
+}
+
+function openLayer(layer) {
+  state.layer = layer;
+  state.selected = null;
+  render();
+}
+
+function closeLayer() {
+  state.layer = null;
+  state.selected = null;
+  render();
+}
+
+function changeMonth(step) {
+  const next = state.monthIndex + step;
+  if (next < 0 || next >= months.length) return;
+  state.monthIndex = next;
+  render();
+}
+
+// Hammerspoon keeps this page loaded and calls update() each time the
+// panel opens, with fresh { bindings, log }.
+function update(data) {
+  bindings = data.bindings;
+  // Log lines are "2026-10-15T11:50:53<TAB>layer<TAB>key".
+  presses = [];
+  lastUsed = new Map();
+  for (const line of data.log.split("\n")) {
+    if (!line) continue;
+    const [time, layer, key] = line.split("\t");
+    presses.push({ month: time.slice(0, 7), layer, key });
+    lastUsed.set(`${layer} ${key}`, time);
+  }
+  months = listMonths();
+  Object.assign(state, { monthIndex: months.length - 1, layer: null, selected: null });
+  render();
+
+  const card = $("card");
+  card.classList.remove("open");
+  void card.offsetWidth;
+  card.classList.add("open");
+}
+
+// Called by Hammerspoon on hide, so the next open never shows old numbers.
+function conceal() {
+  $("card").classList.remove("open");
+}
+
+$("close").addEventListener("click", () => post({ action: "close" }));
+$("previous-month").addEventListener("click", () => changeMonth(-1));
+$("next-month").addEventListener("click", () => changeMonth(1));
+
+document.addEventListener("keydown", (event) => {
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.key === "Escape") {
+    if (state.selected !== null) select(null);
+    else if (state.layer !== null) closeLayer();
+    else post({ action: "close" });
+  } else if (event.key === "ArrowLeft") {
+    changeMonth(-1);
+  } else if (event.key === "ArrowRight") {
+    changeMonth(1);
+  } else {
+    const key = TYPED_KEYS[event.key] || event.key.toLowerCase();
+    if (/^[a-z0-9]$/.test(key) || Object.values(TYPED_KEYS).includes(key)) {
+      event.preventDefault();
+      pressKey(key);
+    }
+  }
+});
+
+buildKeyboard();
+update({ bindings: [], log: "" });
+</script>
+</body>
+</html>

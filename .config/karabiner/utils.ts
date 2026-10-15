@@ -162,7 +162,7 @@ function generateSubLayerVariableName(key: KeyCode) {
 
 /**
  * Every sublayer command appends "timestamp<TAB>layer<TAB>key" to this log,
- * so scripts/usage_report.sh can rank shortcuts by month.
+ * so scripts/usage_report.sh and the dashboard can rank shortcuts by month.
  */
 export const USAGE_LOG_DIR = `${process.env.HOME}/.local/state/karabiner`;
 
@@ -170,6 +170,60 @@ function logUsage(layer: KeyCode, key: KeyCode): To {
     return {
         shell_command: `printf '%s\\t${layer}\\t${key}\\n' "$(date +%FT%T)" >> ${USAGE_LOG_DIR}/usage.log`,
     };
+}
+
+/**
+ * List every sublayer command with a readable label, for the dashboard.
+ * Reads the generated rules, so the list always matches karabiner.json.
+ */
+export function listSubLayerBindings(
+    rules: KarabinerRules[]
+): { layer: string; key: string; label: string }[] {
+    const bindings: { layer: string; key: string; label: string }[] = [];
+    for (const rule of rules) {
+        for (const manipulator of rule.manipulators) {
+            const layerCondition = manipulator.conditions?.find(
+                (condition) =>
+                    "name" in condition &&
+                    condition.name.startsWith("hyper_sublayer_") &&
+                    condition.value === 1
+            );
+            if (!layerCondition || !("name" in layerCondition)) continue;
+            bindings.push({
+                layer: layerCondition.name.replace("hyper_sublayer_", ""),
+                key: manipulator.from!.key_code!,
+                // to[0] is the usage log; to[1] is the real command.
+                label: describeCommand(manipulator.description, manipulator.to![1]),
+            });
+        }
+    }
+    return bindings;
+}
+
+function describeCommand(description: string | undefined, first: To): string {
+    if (description) {
+        const appName = description.match(/^Open -a '(.+)\.app'$/);
+        if (appName) return appName[1];
+        const url = description.match(/^Open https?:\/\/([^/]+)/);
+        if (url) return url[1];
+        return humanize(description.replace(/^(Window Management|Window|Tinycast): /, ""));
+    }
+    if (first.pointing_button === "button1") return "Left click";
+    if (first.pointing_button === "button2") return "Right click";
+    if (first.key_code) {
+        const symbols: Record<string, string> = {
+            left_control: "⌃", right_control: "⌃", left_option: "⌥", right_option: "⌥",
+            left_shift: "⇧", right_shift: "⇧", left_command: "⌘", right_command: "⌘",
+        };
+        const modifiers = (first.modifiers ?? []).map((m) => symbols[m] ?? "").join("");
+        return modifiers + humanize(first.key_code);
+    }
+    return "Shell command";
+}
+
+function humanize(text: string): string {
+    const words = text.replace(/[_-]/g, " ");
+    return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 /**

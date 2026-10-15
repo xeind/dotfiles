@@ -1,0 +1,472 @@
+[
+  {
+    "layer": "b",
+    "key": "x",
+    "label": "x.com"
+  },
+  {
+    "layer": "b",
+    "key": "y",
+    "label": "youtube.com"
+  },
+  {
+    "layer": "b",
+    "key": "f",
+    "label": "facebook.com"
+  },
+  {
+    "layer": "b",
+    "key": "g",
+    "label": "github.com"
+  },
+  {
+    "layer": "b",
+    "key": "r",
+    "label": "reddit.com"
+  },
+  {
+    "layer": "b",
+    "key": "c",
+    "label": "chatgpt.com"
+  },
+  {
+    "layer": "b",
+    "key": "m",
+    "label": "mail.google.com"
+  },
+  {
+    "layer": "b",
+    "key": "p",
+    "label": "photos.google.com"
+  },
+  {
+    "layer": "b",
+    "key": "l",
+    "label": "linkedin.com"
+  },
+  {
+    "layer": "o",
+    "key": "1",
+    "label": "Bitwarden"
+  },
+  {
+    "layer": "o",
+    "key": "b",
+    "label": "Firefox"
+  },
+  {
+    "layer": "o",
+    "key": "z",
+    "label": "Zen Browser"
+  },
+  {
+    "layer": "o",
+    "key": "d",
+    "label": "Discord"
+  },
+  {
+    "layer": "o",
+    "key": "t",
+    "label": "Ghostty"
+  },
+  {
+    "layer": "o",
+    "key": "m",
+    "label": "Obsidian"
+  },
+  {
+    "layer": "o",
+    "key": "f",
+    "label": "Finder"
+  },
+  {
+    "layer": "o",
+    "key": "n",
+    "label": "Things3"
+  },
+  {
+    "layer": "o",
+    "key": "p",
+    "label": "Skim"
+  },
+  {
+    "layer": "o",
+    "key": "h",
+    "label": "Helium"
+  },
+  {
+    "layer": "o",
+    "key": "c",
+    "label": "Zed"
+  },
+  {
+    "layer": "w",
+    "key": "1",
+    "label": "Top left sixth"
+  },
+  {
+    "layer": "w",
+    "key": "3",
+    "label": "Top right sixth"
+  },
+  {
+    "layer": "w",
+    "key": "spacebar",
+    "label": "Mission Control"
+  },
+  {
+    "layer": "w",
+    "key": "y",
+    "label": "Previous display"
+  },
+  {
+    "layer": "w",
+    "key": "o",
+    "label": "Next display"
+  },
+  {
+    "layer": "w",
+    "key": "k",
+    "label": "Top half"
+  },
+  {
+    "layer": "w",
+    "key": "j",
+    "label": "Bottom half"
+  },
+  {
+    "layer": "w",
+    "key": "h",
+    "label": "Left half"
+  },
+  {
+    "layer": "w",
+    "key": "l",
+    "label": "Right half"
+  },
+  {
+    "layer": "w",
+    "key": "f",
+    "label": "Maximize"
+  },
+  {
+    "layer": "w",
+    "key": "e",
+    "label": "Top right"
+  },
+  {
+    "layer": "w",
+    "key": "q",
+    "label": "Top left"
+  },
+  {
+    "layer": "w",
+    "key": "a",
+    "label": "Bottom left"
+  },
+  {
+    "layer": "w",
+    "key": "d",
+    "label": "Bottom right"
+  },
+  {
+    "layer": "w",
+    "key": "s",
+    "label": "Center"
+  },
+  {
+    "layer": "w",
+    "key": "x",
+    "label": "Specified"
+  },
+  {
+    "layer": "w",
+    "key": "up_arrow",
+    "label": "Move up"
+  },
+  {
+    "layer": "w",
+    "key": "down_arrow",
+    "label": "Move down"
+  },
+  {
+    "layer": "w",
+    "key": "right_arrow",
+    "label": "Move right"
+  },
+  {
+    "layer": "w",
+    "key": "left_arrow",
+    "label": "Move left"
+  },
+  {
+    "layer": "w",
+    "key": "z",
+    "label": "Bottom left sixth"
+  },
+  {
+    "layer": "w",
+    "key": "c",
+    "label": "Bottom right sixth"
+  },
+  {
+    "layer": "w",
+    "key": "return_or_enter",
+    "label": "Almost maximize"
+  },
+  {
+    "layer": "w",
+    "key": "delete_or_backspace",
+    "label": "Restore"
+  },
+  {
+    "layer": "w",
+    "key": "equal_sign",
+    "label": "Larger"
+  },
+  {
+    "layer": "w",
+    "key": "hyphen",
+    "label": "Smaller"
+  },
+  {
+    "layer": "w",
+    "key": "semicolon",
+    "label": "Hide"
+  },
+  {
+    "layer": "w",
+    "key": "u",
+    "label": "Previous Tab"
+  },
+  {
+    "layer": "w",
+    "key": "i",
+    "label": "Next Tab"
+  },
+  {
+    "layer": "w",
+    "key": "n",
+    "label": "Next Window"
+  },
+  {
+    "layer": "w",
+    "key": "b",
+    "label": "Back"
+  },
+  {
+    "layer": "w",
+    "key": "m",
+    "label": "Forward"
+  },
+  {
+    "layer": "c",
+    "key": "a",
+    "label": "Screenshot all purpose"
+  },
+  {
+    "layer": "c",
+    "key": "w",
+    "label": "Screenshot area"
+  },
+  {
+    "layer": "c",
+    "key": "e",
+    "label": "Screenshot window"
+  },
+  {
+    "layer": "c",
+    "key": "q",
+    "label": "Screenshot screen"
+  },
+  {
+    "layer": "c",
+    "key": "d",
+    "label": "Scrollshot"
+  },
+  {
+    "layer": "c",
+    "key": "s",
+    "label": "OCR Text"
+  },
+  {
+    "layer": "c",
+    "key": "k",
+    "label": "Open Clipboard"
+  },
+  {
+    "layer": "c",
+    "key": "z",
+    "label": "Close all Overlays"
+  },
+  {
+    "layer": "c",
+    "key": "delete_or_backspace",
+    "label": "Open Clipboard History"
+  },
+  {
+    "layer": "f",
+    "key": "p",
+    "label": "Copy Path"
+  },
+  {
+    "layer": "f",
+    "key": "o",
+    "label": "Open in Finder"
+  },
+  {
+    "layer": "f",
+    "key": "r",
+    "label": "Reveal Copied Path"
+  },
+  {
+    "layer": "s",
+    "key": "u",
+    "label": "Volume increment"
+  },
+  {
+    "layer": "s",
+    "key": "j",
+    "label": "Volume decrement"
+  },
+  {
+    "layer": "s",
+    "key": "i",
+    "label": "Display brightness increment"
+  },
+  {
+    "layer": "s",
+    "key": "k",
+    "label": "Display brightness decrement"
+  },
+  {
+    "layer": "s",
+    "key": "l",
+    "label": "Lock Screen"
+  },
+  {
+    "layer": "s",
+    "key": "n",
+    "label": "Open Notification Center"
+  },
+  {
+    "layer": "s",
+    "key": "m",
+    "label": "Dismiss Notifications"
+  },
+  {
+    "layer": "s",
+    "key": "p",
+    "label": "System Settings"
+  },
+  {
+    "layer": "s",
+    "key": "d",
+    "label": "Toggle Do Not Disturb"
+  },
+  {
+    "layer": "s",
+    "key": "c",
+    "label": "Open Camera"
+  },
+  {
+    "layer": "s",
+    "key": "v",
+    "label": "Dictation"
+  },
+  {
+    "layer": "s",
+    "key": "a",
+    "label": "Mole: Toggle Awake"
+  },
+  {
+    "layer": "s",
+    "key": "r",
+    "label": "Recording Mode (hide menu bar)"
+  },
+  {
+    "layer": "s",
+    "key": "t",
+    "label": "Undo Recording Mode (show menu bar)"
+  },
+  {
+    "layer": "s",
+    "key": "q",
+    "label": "Shortcut Dashboard"
+  },
+  {
+    "layer": "v",
+    "key": "h",
+    "label": "Left arrow"
+  },
+  {
+    "layer": "v",
+    "key": "j",
+    "label": "Down arrow"
+  },
+  {
+    "layer": "v",
+    "key": "k",
+    "label": "Up arrow"
+  },
+  {
+    "layer": "v",
+    "key": "l",
+    "label": "Right arrow"
+  },
+  {
+    "layer": "v",
+    "key": "u",
+    "label": "Page down"
+  },
+  {
+    "layer": "v",
+    "key": "i",
+    "label": "Page up"
+  },
+  {
+    "layer": "v",
+    "key": "q",
+    "label": "Left click"
+  },
+  {
+    "layer": "v",
+    "key": "e",
+    "label": "Right click"
+  },
+  {
+    "layer": "v",
+    "key": "b",
+    "label": "Move Word Left"
+  },
+  {
+    "layer": "v",
+    "key": "m",
+    "label": "Move Word Right"
+  },
+  {
+    "layer": "v",
+    "key": "n",
+    "label": "Delete Word"
+  },
+  {
+    "layer": "v",
+    "key": "spacebar",
+    "label": "⌃⌘F1"
+  },
+  {
+    "layer": "v",
+    "key": "s",
+    "label": "⌃⌘F2"
+  },
+  {
+    "layer": "v",
+    "key": "f",
+    "label": "⌃⌘F3"
+  },
+  {
+    "layer": "r",
+    "key": "e",
+    "label": "Search Emoji"
+  }
+]
