@@ -2,102 +2,122 @@
   {
     "layer": "b",
     "key": "x",
-    "label": "x.com"
+    "label": "x.com",
+    "site": "x.com"
   },
   {
     "layer": "b",
     "key": "y",
-    "label": "youtube.com"
+    "label": "youtube.com",
+    "site": "youtube.com"
   },
   {
     "layer": "b",
     "key": "f",
-    "label": "facebook.com"
+    "label": "facebook.com",
+    "site": "facebook.com"
   },
   {
     "layer": "b",
     "key": "g",
-    "label": "github.com"
+    "label": "github.com",
+    "site": "github.com"
   },
   {
     "layer": "b",
     "key": "r",
-    "label": "reddit.com"
+    "label": "reddit.com",
+    "site": "reddit.com"
   },
   {
     "layer": "b",
     "key": "c",
-    "label": "chatgpt.com"
+    "label": "chatgpt.com",
+    "site": "chatgpt.com"
   },
   {
     "layer": "b",
     "key": "m",
-    "label": "mail.google.com"
+    "label": "mail.google.com",
+    "site": "mail.google.com"
   },
   {
     "layer": "b",
     "key": "p",
-    "label": "photos.google.com"
+    "label": "photos.google.com",
+    "site": "photos.google.com"
   },
   {
     "layer": "b",
     "key": "l",
-    "label": "linkedin.com"
+    "label": "linkedin.com",
+    "site": "linkedin.com"
   },
   {
     "layer": "o",
     "key": "1",
-    "label": "Bitwarden"
+    "label": "Bitwarden",
+    "app": "Bitwarden"
   },
   {
     "layer": "o",
     "key": "b",
-    "label": "Firefox"
+    "label": "Firefox",
+    "app": "Firefox"
   },
   {
     "layer": "o",
     "key": "z",
-    "label": "Zen Browser"
+    "label": "Zen Browser",
+    "app": "Zen Browser"
   },
   {
     "layer": "o",
     "key": "d",
-    "label": "Discord"
+    "label": "Discord",
+    "app": "Discord"
   },
   {
     "layer": "o",
     "key": "t",
-    "label": "Ghostty"
+    "label": "Ghostty",
+    "app": "Ghostty"
   },
   {
     "layer": "o",
     "key": "m",
-    "label": "Obsidian"
+    "label": "Obsidian",
+    "app": "Obsidian"
   },
   {
     "layer": "o",
     "key": "f",
-    "label": "Finder"
+    "label": "Finder",
+    "app": "Finder"
   },
   {
     "layer": "o",
     "key": "n",
-    "label": "Things3"
+    "label": "Things3",
+    "app": "Things3"
   },
   {
     "layer": "o",
     "key": "p",
-    "label": "Skim"
+    "label": "Skim",
+    "app": "Skim"
   },
   {
     "layer": "o",
     "key": "h",
-    "label": "Helium"
+    "label": "Helium",
+    "app": "Helium"
   },
   {
     "layer": "o",
     "key": "c",
-    "label": "Zed"
+    "label": "Zed",
+    "app": "Zed"
   },
   {
     "layer": "w",

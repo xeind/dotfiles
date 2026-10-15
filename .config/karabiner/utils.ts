@@ -178,8 +178,8 @@ function logUsage(layer: KeyCode, key: KeyCode): To {
  */
 export function listSubLayerBindings(
     rules: KarabinerRules[]
-): { layer: string; key: string; label: string }[] {
-    const bindings: { layer: string; key: string; label: string }[] = [];
+): SubLayerBinding[] {
+    const bindings: SubLayerBinding[] = [];
     for (const rule of rules) {
         for (const manipulator of rule.manipulators) {
             const layerCondition = manipulator.conditions?.find(
@@ -194,10 +194,27 @@ export function listSubLayerBindings(
                 key: manipulator.from!.key_code!,
                 // to[0] is the usage log; to[1] is the real command.
                 label: describeCommand(manipulator.description, manipulator.to![1]),
+                ...commandTarget(manipulator.description),
             });
         }
     }
     return bindings;
+}
+
+type SubLayerBinding = {
+    layer: string;
+    key: string;
+    label: string;
+    app?: string; // application name, for the dashboard's app icon
+    site?: string; // host name, for the dashboard's site icon
+};
+
+function commandTarget(description: string | undefined): { app?: string; site?: string } {
+    const appName = description?.match(/^Open -a '(.+)\.app'$/);
+    if (appName) return { app: appName[1] };
+    const url = description?.match(/^Open https?:\/\/([^/]+)/);
+    if (url) return { site: url[1] };
+    return {};
 }
 
 function describeCommand(description: string | undefined, first: To): string {
