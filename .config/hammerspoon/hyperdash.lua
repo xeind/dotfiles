@@ -878,6 +878,11 @@ local function startContextRecording()
     if kind then contextRecorder.write(kind) end
   end)
   contextSleepWatcher:start()
+
+  -- Keep the watchers reachable from the module table. As locals that only
+  -- this function referenced, they were garbage-collected after load, which
+  -- stops a watcher: only the start line and the first app were recorded.
+  M.contextRecording = { recorder = contextRecorder, app = contextAppWatcher, sleep = contextSleepWatcher }
 end
 
 create()
