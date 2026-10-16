@@ -15,7 +15,8 @@ source; the files in `~` are links into it. The repo is **public**.
 ## Ask first
 
 Commit and push only with the user's approval, one logical change per
-commit. Subjects follow the repo history: `chore: ...` or `feat: ...`.
+commit. Subjects name the area, then an imperative summary:
+`hyperdash: load the usage log incrementally`, `mise: pin npm:fallow`.
 
 ## Layout
 
