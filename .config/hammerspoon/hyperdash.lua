@@ -183,6 +183,14 @@ local queue = {} -- { code, onResult }
 local busy = false
 local callToken = 0 -- identifies the call in flight, so a late answer is ignored
 local watchdog = nil
+local recoverPage -- defined below; reloads the page after its process dies
+local recoveryStreak = 0 -- reloads since the last call the page answered
+
+-- A successful call returns an error table with code 0 and no message. A
+-- terminated WebContent process returns no result and WKErrorDomain code 5.
+local function pageError(err)
+  return type(err) == "table" and ((err.code or 0) ~= 0 or err.NSLocalizedDescription ~= nil or err.description ~= nil)
+end
 
 local function pump()
   if busy or #queue == 0 then return end
@@ -195,22 +203,22 @@ local function pump()
   busy = true
   callToken = callToken + 1
   local token = callToken
-  local function finish(result)
+  local function finish(result, dead)
     if token ~= callToken then return end -- answered after the watchdog gave up
     callToken = callToken + 1
     busy = false
     if watchdog then watchdog:stop(); watchdog = nil end
-    local ok, err = pcall(job.onResult, result)
+    local ok, err = pcall(job.onResult, result, dead)
     if not ok then print("hyperdash: " .. tostring(err)) end
+    if dead then recoverPage() else recoveryStreak = 0 end
     pump()
   end
   -- Without this, one lost callback would stall every later update.
   watchdog = hs.timer.doAfter(CALL_TIMEOUT, function()
     print("hyperdash: no answer from the page for " .. CALL_TIMEOUT .. " s")
-    finish(nil)
+    finish(nil, true)
   end)
-  -- The second callback argument is not an error flag, so judge by the result.
-  webview:evaluateJavaScript(job.code, function(result) finish(result) end)
+  webview:evaluateJavaScript(job.code, function(result, err) finish(result, pageError(err)) end)
 end
 
 local function send(code, onResult)
@@ -389,6 +397,58 @@ local function requestSync(callback, forceHealth)
 end
 
 ---------------------------------------------------------------------------
+-- A dead page
+--
+-- hs.webview 1.1.1 does not report the termination of its WebContent process
+-- (HSWebViewView does not implement webViewWebContentProcessDidTerminate:),
+-- so a dead page shows only as a failed call. Recovery reloads it with
+-- html(), which starts a new process, and the navigation handler resends
+-- everything with a reset.
+---------------------------------------------------------------------------
+
+local PAGE_RELOAD_TIMEOUT = 5 -- seconds to wait for a reloaded page
+local MAX_RECOVERIES = 2 -- reloads in a row before giving up until the next toggle
+local recovering = false
+local pageFailed = false -- the last reload did not finish
+local recoveryCallbacks = {}
+local recoveryTimer = nil
+
+local function giveUp(reason)
+  showing = false
+  cancelShow = false
+  previousWindow = nil
+  pendingOpen = false
+  print("hyperdash: page failed to load: " .. reason)
+  hs.alert.show("hyperdash: page failed to load")
+end
+
+local function recoveryFailed(reason)
+  recovering = false
+  pageFailed = true
+  if recoveryTimer then recoveryTimer:stop(); recoveryTimer = nil end
+  recoveryCallbacks = {}
+  syncWaiters = {}
+  if showing or pendingOpen then giveUp(reason) end
+end
+
+-- `onDone(true)` runs once the reloaded page has finished loading.
+function recoverPage(onDone)
+  if onDone then recoveryCallbacks[#recoveryCallbacks + 1] = onDone end
+  if recovering then return end
+  recoveryStreak = recoveryStreak + 1
+  if recoveryStreak > MAX_RECOVERIES then return recoveryFailed("the page keeps failing") end
+  recovering = true
+  pageReady = false
+  print("hyperdash: page not answering; reloading it")
+  -- Queued calls were meant for the dead page. The reload ends in a reset,
+  -- which resends everything, so drop them and let a new sync start.
+  queue = {}
+  syncing, syncAgain = false, false
+  recoveryTimer = hs.timer.doAfter(PAGE_RELOAD_TIMEOUT, function() recoveryFailed("reload did not finish") end)
+  webview:html(readFile(PAGE) or "")
+end
+
+---------------------------------------------------------------------------
 -- Background insights
 ---------------------------------------------------------------------------
 
@@ -448,28 +508,46 @@ local function show()
   refreshInsights()
   -- Reconcile first, then render and show: the panel appears complete, with
   -- no fade. place() runs after the render so it uses the new page height.
-  requestSync(function()
-    local now = '{"now":' .. jsonString(nowIso()) .. "}"
-    send("window.hyperdash.tick(" .. now .. ")", function() end)
-    send("window.hyperdash.open(" .. now .. ")", function(result)
-      showing = false
-      -- A toggle or close arrived while rendering: the user wanted it closed.
-      if cancelShow then
-        cancelShow = false
-        previousWindow = nil
-        return
-      end
-      if type(result) == "table" and type(result.height) == "number" then height = result.height end
-      place()
-      -- Activating Hammerspoon is enough for the panel to take keyboard
-      -- focus. Do not call hswindow():focus(): that Accessibility call to
-      -- our own window blocks for about 3 s.
-      hs.focus()
-      webview:show()
-      appWatcher:start()
-      open = true
-    end)
-  end, true)
+  -- A page that does not answer is reloaded once; a window is never shown
+  -- for a dead page, because it would be blank and still take focus.
+  local attempts = 0
+  local function try()
+    attempts = attempts + 1
+    requestSync(function()
+      if not showing then return end -- gave up while the page reloaded
+      local now = '{"now":' .. jsonString(nowIso()) .. "}"
+      send("window.hyperdash.tick(" .. now .. ")", function() end)
+      send("window.hyperdash.open(" .. now .. ")", function(result, dead)
+        -- A toggle or close arrived while rendering: the user wanted it closed.
+        if cancelShow then
+          showing = false
+          cancelShow = false
+          previousWindow = nil
+          return
+        end
+        if dead or type(result) ~= "table" or type(result.height) ~= "number" then
+          if attempts == 1 then
+            recoverPage(function(loaded)
+              if loaded and showing then try() end
+            end)
+            return
+          end
+          return giveUp("no answer after a reload")
+        end
+        showing = false
+        height = result.height
+        place()
+        -- Activating Hammerspoon is enough for the panel to take keyboard
+        -- focus. Do not call hswindow():focus(): that Accessibility call to
+        -- our own window blocks for about 3 s.
+        hs.focus()
+        webview:show()
+        appWatcher:start()
+        open = true
+      end)
+    end, true)
+  end
+  try()
 end
 
 local function create()
@@ -494,6 +572,11 @@ local function create()
   -- Load the page once and keep it hidden; later calls only send new data.
   webview:navigationCallback(function(action)
     if action == "didFinishNavigation" then
+      if recovering then
+        recovering = false
+        if recoveryTimer then recoveryTimer:stop(); recoveryTimer = nil end
+      end
+      pageFailed = false
       refreshBindingsCache()
       pageReady = true
       -- setIcons is a plain page function, not a window.hyperdash method.
@@ -502,10 +585,15 @@ local function create()
       logState = reader.newState()
       sent.bindings, sent.insights, sent.health = nil, nil, nil
       requestSync()
+      local callbacks = recoveryCallbacks
+      recoveryCallbacks = {}
+      for _, callback in ipairs(callbacks) do callback(true) end
       if pendingOpen then
         pendingOpen = false
         show()
       end
+    elseif (action == "didFailNavigation" or action == "didFailProvisionalNavigation") and recovering then
+      recoveryFailed("navigation failed")
     end
   end)
   webview:html(readFile(PAGE) or "")
@@ -526,12 +614,20 @@ function M.toggle()
   local timer
   timer = hs.timer.doAfter(0, function()
     pending[timer] = nil
-    if not pageReady then
-      pendingOpen = not pendingOpen
-    elseif showing then
+    if showing then
       -- Each toggle during the render flips the intent, so an even number
       -- of toggles always ends hidden.
       cancelShow = not cancelShow
+    elseif not pageReady then
+      if pageFailed then
+        -- The last reload failed: try again, and open when it works.
+        pageFailed = false
+        pendingOpen = true
+        recoveryStreak = 0
+        recoverPage()
+      else
+        pendingOpen = not pendingOpen
+      end
     elseif open then
       hide(true)
     else

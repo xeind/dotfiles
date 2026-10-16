@@ -24,6 +24,8 @@ function sandbox.new(options)
     hidden = 0,
     focused = 0,
     log = {},
+    alerts = {},
+    htmlCalls = 0,
   }
 
   ---------------------------------------------------------------- timers
@@ -53,6 +55,24 @@ function sandbox.new(options)
     env.clock = target
   end
 
+  -- Long waits behave like real time: the page answers between timer events,
+  -- so a call is never left unanswered across minutes.
+  local rawAdvance = env.advance
+  function env.advance(seconds)
+    if seconds <= 4 then return rawAdvance(seconds) end
+    local target = env.clock + seconds
+    for _ = 1, 1000000 do
+      if env.clock >= target - 1e-9 then break end
+      local nextDue = target
+      for _, t in ipairs(env.timers) do
+        if t.running and t.due < nextDue then nextDue = t.due end
+      end
+      rawAdvance(math.max(0, nextDue - env.clock))
+      env.flush()
+    end
+    env.clock = target
+  end
+
   function env.runningTimers()
     local n = 0
     for _, t in ipairs(env.timers) do if t.running then n = n + 1 end end
@@ -65,7 +85,7 @@ function sandbox.new(options)
     local chain = { "windowStyle", "transparent", "shadow", "allowTextEntry", "level", "behaviorAsLabels" }
     for _, name in ipairs(chain) do wv[name] = function(self) return self end end
     function wv:navigationCallback(fn) self.navigation = fn; return self end
-    function wv:html(text) self.page = text; return self end
+    function wv:html(text) self.page = text; env.htmlCalls = env.htmlCalls + 1; return self end
     function wv:frame(f) self.frameSet = f; return self end
     function wv:isVisible() return self.visible end
     function wv:show() self.visible = true; env.shown = env.shown + 1; return self end
@@ -79,11 +99,11 @@ function sandbox.new(options)
   end
 
   -- Answer the oldest unanswered evaluateJavaScript call with `result`.
-  function env.answer(result)
+  function env.answer(result, err)
     for _, call in ipairs(env.js) do
       if not call.answered then
         call.answered = true
-        if call.callback then call.callback(result, {}) end
+        if call.callback then call.callback(result, err or { code = 0 }) end
         return call
       end
     end
@@ -102,6 +122,7 @@ function sandbox.new(options)
                  calls = {}, mode = {} }
   env.page = page
   function env.respond(code)
+    if code == "typeof window.hyperdash" then return "object" end
     local method, args = code:match("^window%.hyperdash%.(%w+)%((.*)%)$")
     if not method then
       method, args = code:match("^(setIcons)%((.*)%)$")
@@ -113,7 +134,7 @@ function sandbox.new(options)
     local list = hs.json.decode("[" .. (leadingNull and args:sub(6) or args) .. "]")
     if leadingNull then table.insert(list, 1, false) end
     local a = list[1]
-    page.calls[#page.calls + 1] = { method = method, args = list, bytes = #code }
+    page.calls[#page.calls + 1] = { method = method, args = list, bytes = #code, at = env.clock }
     if method == "reset" then
       if page.mode.rejectReset then return { ok = false, reason = "generation", offset = page.offset } end
       page.generation, page.offset, page.text = a.generation, a.offset, a.text
@@ -150,6 +171,15 @@ function sandbox.new(options)
     end
     return nil -- setIcons and anything else: no answer value
   end
+  -- The page process dies: every call from now on fails with code 5.
+  function env.killPage() page.mode.dead = true end
+  -- html() started a fresh process: the page is empty and answers again.
+  function env.finishReload()
+    page.mode.dead = false
+    page.generation, page.offset, page.text = nil, 0, ""
+    page.bindings, page.insights, page.health = nil, nil, nil
+    env.webview.navigation("didFinishNavigation")
+  end
   -- Answer pending calls until none are left. Calls the page is told to
   -- ignore (mode.silent) stay pending, so tests can exercise the watchdog.
   function env.flush(limit)
@@ -158,15 +188,20 @@ function sandbox.new(options)
       for _, c in ipairs(env.js) do if not c.answered then call = c; break end end
       if not call or page.mode.silent then return end
       call.answered = true
-      local result = env.respond(call.code)
-      if call.callback then call.callback(result, {}) end
+      if page.mode.dead then
+        -- A terminated WebContent process: no result, WKErrorDomain code 5.
+        if call.callback then call.callback(nil, { code = 5, domain = "WKErrorDomain" }) end
+      else
+        local result = env.respond(call.code)
+        if call.callback then call.callback(result, { code = 0 }) end
+      end
     end
   end
 
   ---------------------------------------------------------------- hs
   local fakeHs = {
     json = hs.json,
-    fs = { attributes = hs.fs.attributes },
+    fs = { attributes = hs.fs.attributes, pathToAbsolute = hs.fs.pathToAbsolute },
     timer = {
       doAfter = function(delay, fn) return newTimer(delay, fn, false) end,
       doEvery = function(interval, fn) return newTimer(interval, fn, true) end,
@@ -176,6 +211,7 @@ function sandbox.new(options)
       new = function() return newWebview() end,
       usercontent = { new = function() return { setCallback = function(self, fn) self.callback = fn; env.controller = self end } end },
     },
+    alert = { show = function(message) env.alerts[#env.alerts + 1] = message end },
     drawing = { windowLevels = { floating = 3 } },
     application = {
       watcher = {
@@ -236,7 +272,7 @@ function sandbox.new(options)
   ---------------------------------------------------------------- environment
   local sandboxOs = setmetatable({
     getenv = function(name) if name == "HOME" then return options.home end return os.getenv(name) end,
-    time = function(t) if t then return os.time(t) end return env.clock end,
+    time = function(t) if t then return os.time(t) end return math.floor(env.clock) end,
     date = os.date,
   }, { __index = os })
 
@@ -254,7 +290,7 @@ function sandbox.new(options)
     end,
   }, { __index = _G })
 
-  local chunk, err = loadfile(options.moduleDir .. "/hyperdash.lua", "t", globals)
+  local chunk, err = loadfile(options.moduleDir .. "/" .. (options.moduleFile or "hyperdash.lua"), "t", globals)
   assert(chunk, err)
   env.module = chunk()
   env.webview = env.webviews[1]

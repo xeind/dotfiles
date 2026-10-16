@@ -45,8 +45,8 @@ local GOOD_BINDINGS = '[{"layer":"b","key":"x","label":"x.com","site":"x.com"},{
 local GOOD_INSIGHTS = '{"version":2,"generated":"2026-10-15T10:00:00","month":"2026-10","recordingSince":null,"rejectedLines":0,"insights":[]}'
 
 -- Load the module against `home`, finish page loading, and let the first sync run.
-local function startPanel(home)
-  local env = sandbox.new({ moduleDir = MODULE_DIR, home = home })
+local function startPanel(home, startTime)
+  local env = sandbox.new({ moduleDir = MODULE_DIR, home = home, startTime = startTime })
   env.webview.navigation("didFinishNavigation")
   env.flush()
   return env
@@ -371,6 +371,98 @@ do
     check("rapid " .. count .. " toggles: parity", visible == (count % 2 == 1) or ((env.shown - env.hidden) == (startVisible + (count % 2))) , count)
     if env.shown - env.hidden == 1 then env.module.toggle(); env.advance(0); env.flush() end
   end
+end
+
+---------------------------------------------------------------------------
+local function noon()
+  local t = os.date("*t")
+  return os.time({ year = t.year, month = t.month, day = t.day, hour = 12, min = 0, sec = 0 })
+end
+
+-- A dead page (WebContent process terminated)
+---------------------------------------------------------------------------
+do
+  -- The morning incident: the page died while idle; the next open must not
+  -- show a blank window. It reloads the page, resends everything, then opens.
+  local home, p = baseHome("dead_open")
+  write(p.log, lines(0, 20))
+  local env = startPanel(home, noon())
+  local html = env.htmlCalls
+  env.killPage()
+  env.module.toggle()
+  env.advance(0)
+  env.flush()
+  check("dead page: window not shown", env.shown == 0, env.shown)
+  check("dead page: not focused", env.focused == 0)
+  check("dead page: reloaded exactly once", env.htmlCalls == html + 1, env.htmlCalls - html)
+  check("dead page: no overlapping calls", (env.overlap or 0) == 0, env.overlap)
+  env.finishReload()
+  env.flush()
+  check("dead page: shown once after the reload", env.shown == 1, env.shown)
+  check("dead page: page repopulated by a reset", env.page.text == lines(0, 20) and env.page.bindings ~= nil)
+  check("dead page: no alert", #env.alerts == 0)
+  check("dead page: next close/open cycle works", (function() toggle(env); toggle(env); return env.shown == 2 end)())
+end
+
+do
+  -- Dead again after the reload: no window, one alert, and a later toggle recovers.
+  local home, p = baseHome("dead_twice")
+  write(p.log, lines(0, 5))
+  local env = startPanel(home, noon())
+  env.killPage()
+  env.module.toggle()
+  env.advance(0)
+  env.flush()
+  env.webview.navigation("didFinishNavigation") -- reloaded, but the page is still dead
+  env.flush()
+  env.webview.navigation("didFinishNavigation") -- and again
+  env.flush()
+  check("dead twice: not shown", env.shown == 0)
+  check("dead twice: one alert", #env.alerts == 1 and env.alerts[1] == "hyperdash: page failed to load", #env.alerts)
+  env.module.toggle()
+  env.advance(0)
+  env.finishReload() -- a later toggle reloads again, and this time the page lives
+  env.flush()
+  check("dead twice: later toggle opens", env.shown == 1, env.shown)
+end
+
+do
+  -- The reload never finishes.
+  local home, p = baseHome("dead_timeout")
+  write(p.log, lines(0, 5))
+  local env = startPanel(home, noon())
+  env.killPage()
+  env.module.toggle()
+  env.advance(0)
+  env.flush()
+  env.advance(5.1)
+  env.flush()
+  check("reload timeout: alert, not shown", #env.alerts == 1 and env.shown == 0)
+  local html = env.htmlCalls
+  env.module.toggle()
+  env.advance(0)
+  check("reload timeout: next toggle reloads again", env.htmlCalls == html + 1, env.htmlCalls - html)
+  env.finishReload()
+  env.flush()
+  check("reload timeout: and opens when it loads", env.shown == 1, env.shown)
+end
+
+do
+  -- Close during the reload cancels the open.
+  local home, p = baseHome("dead_cancel")
+  write(p.log, lines(0, 5))
+  local env = startPanel(home, noon())
+  env.killPage()
+  env.module.toggle()
+  env.advance(0)
+  env.flush()
+  env.module.toggle() -- change of mind while the page reloads
+  env.advance(0)
+  env.finishReload()
+  env.flush()
+  check("cancel during reload: not shown", env.shown == 0, env.shown)
+  toggle(env)
+  check("cancel during reload: next toggle opens", env.shown == 1)
 end
 
 os.execute("rm -rf " .. SCRATCH)
