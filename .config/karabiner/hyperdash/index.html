@@ -314,6 +314,7 @@
   }
 
   .card {
+    position: relative;
     width: 368px;
     padding: 14px 20px 12px;
     border-radius: 30px;
@@ -526,9 +527,10 @@
 
   /* Binding list: overview ranking and layer pages. Scrolls inside the card. */
 
+  /* Fixed height: a month with few combos, a group filter or a layer with few bindings never resizes the panel. */
   .list {
     margin-top: 8px;
-    max-height: 240px;
+    height: 240px;
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -600,6 +602,7 @@
 
   .delta.peak { color: var(--info); background: var(--info-bg); font-size: 11.5px; letter-spacing: 0.04em; }
 
+  #insights { height: 330px; overflow-y: auto; overscroll-behavior: contain; }
   .insight-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 
   .insight {
@@ -666,12 +669,14 @@
   .dots.lit { stroke: var(--accent-soft); }
   .dots.grey { stroke: var(--dim); }
 
+  /* Always three rows (six group cells, then shading and scale), so the legend never changes the height. */
   .chart-legend {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 15px;
+    gap: 2px 8px;
+    height: 49px;
     align-items: center;
-    gap: 4px 10px;
-    flex-wrap: wrap;
-    min-height: 16px;
     margin-top: 8px;
     font-family: var(--mono);
     font-size: 10px;
@@ -680,7 +685,11 @@
     color: var(--muted);
   }
 
-  .chart-legend .scale { margin-left: auto; color: var(--faint); }
+  .chart-legend > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chart-legend .zero { color: var(--faint); }
+  .chart-legend .foot { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; }
+  .chart-legend .foot span { white-space: nowrap; }
+  .chart-legend .scale { color: var(--faint); }
 
   .swatch { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; }
 
@@ -700,8 +709,16 @@
 
   .info:hover, .info[aria-expanded="true"] { background: var(--hover); color: var(--text); }
 
+  /* An overlay over the card, so opening it never changes the height. */
   .about {
-    margin-top: 8px;
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    top: 86px;
+    z-index: 5;
+    max-height: 230px;
+    overflow-y: auto;
+    box-shadow: 0 10px 24px -8px var(--shadow);
     padding: 7px 10px;
     border-radius: 10px;
     background: var(--raised);
@@ -735,10 +752,13 @@
     letter-spacing: 0.02em;
     color: var(--faint);
     line-height: 1.4;
+    height: 27px; /* two lines, always */
+    overflow: hidden;
   }
 
-  /* A healthy status fits on one line; warnings and errors wrap and are never cut off. */
-  .status[data-level="ok"] { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* A healthy status is one line; warnings and errors take both lines, with the full text in the tooltip. */
+  .status[data-level="ok"] { white-space: nowrap; text-overflow: ellipsis; }
+  .status[data-level="warn"], .status[data-level="error"] { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .status[data-level="warn"] { color: var(--warning); }
   .status[data-level="error"] { color: var(--down); }
 
@@ -761,15 +781,22 @@
   .bin { fill: transparent; }
   .bin:hover, .bin:focus { fill: var(--edge); outline: none; }
 
+  /* Two fixed lines: the time range and total, then one count per colour group in legend order. */
   .bin-readout {
-    min-height: 26px;
+    height: 27px;
     margin-top: 6px;
+    overflow: hidden;
     font-family: var(--mono);
     font-size: 10px;
-    line-height: 1.3;
+    line-height: 13.5px;
     letter-spacing: 0.04em;
     color: var(--soft);
   }
+
+  .bin-readout > span { display: block; height: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bin-readout .r2 { display: flex; gap: 12px; color: var(--muted); }
+  .bin-readout .r2 span { display: inline-flex; align-items: center; gap: 4px; }
+  .bin-readout .r2 i { width: 7px; height: 7px; border-radius: 50%; }
 
 
   /* Activity: day controls, shading, panels */
@@ -802,7 +829,7 @@
   .swatch.shade-asleep { background: var(--shade-asleep); }
   .swatch.shade-unknown { background: repeating-linear-gradient(45deg, var(--hatch) 0 1.5px, transparent 1.5px 3px); }
 
-  .appbar { display: flex; gap: 5px; margin-top: 8px; overflow: hidden; font: 10px var(--mono); letter-spacing: 0.04em; color: var(--faint); align-items: center; }
+  .appbar { display: flex; gap: 5px; height: 22px; margin-top: 8px; overflow: hidden; font: 10px var(--mono); letter-spacing: 0.04em; color: var(--faint); align-items: center; }
 
   .appchip {
     flex: none;
@@ -825,13 +852,13 @@
   .appchip .icon.mono { font-size: 8px; border-radius: 4px; }
   .appchip b { font-weight: 400; color: var(--faint); }
 
-  .panel { margin-top: 8px; }
+  .panel { height: 220px; margin-top: 8px; overflow: hidden; }
+  .panel-body { height: 184px; margin-top: 4px; overflow-y: auto; overscroll-behavior: contain; }
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
   .panel-head { display: flex; justify-content: space-between; gap: 8px; font: 10px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
   .panel-head span:last-child { color: var(--faint); text-align: right; }
-  .panel-note { margin-top: 4px; font: 9.5px var(--mono); letter-spacing: 0.02em; color: var(--faint); }
-  .cmds { max-height: 144px; margin-top: 4px; overflow-y: auto; overscroll-behavior: contain; }
-  .cmds::-webkit-scrollbar { width: 4px; }
-  .cmds::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+  .panel-note { margin-top: 4px; height: 14px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 9.5px var(--mono); letter-spacing: 0.02em; color: var(--faint); }
 
   .cmd {
     display: grid;
@@ -851,7 +878,6 @@
   .cmd-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .cmd-app { font: 10px var(--mono); color: var(--faint); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-  .seqs { margin-top: 4px; }
   .seq { padding: 4px 4px 5px; border-radius: 8px; }
   .seq-title { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; }
   .seq-title span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -863,6 +889,7 @@
 
   /* Category groups: share bar above the list */
 
+  .groupbar-wrap { height: 33px; overflow: hidden; }
   .groupbar { display: flex; gap: 2px; height: 8px; margin-top: 8px; }
   .groupbar button { border-radius: 3px; background: var(--grp); min-width: 3px; }
   .groupbar button[aria-pressed="false"].dimmed { opacity: 0.35; }
@@ -924,7 +951,7 @@
   <section class="total" id="totals">
     <span class="total-number" id="total"></span>
     <span class="total-unit" id="total-unit"></span>
-    <button class="info tabstop" id="about-toggle" aria-label="About these counts" aria-expanded="false" title="About these counts (?)">i</button>
+    <button class="info tabstop" id="about-toggle" aria-label="About these counts" aria-expanded="false">i</button>
     <span class="delta" id="delta" hidden></span>
   </section>
 
@@ -1704,7 +1731,7 @@ var HyperdashModel = (() => {
     if (logStatus) parts.push(`LOG ${logStatus.toUpperCase()}`);
     if (!logBad) parts.push(lastEvent ? `${compact ? "LAST" : "LAST PRESS"} ${formatWhen(lastEvent, now).toUpperCase()}` : "NO PRESSES RECORDED");
     if (rejected > 0) parts.push(`${rejected} BAD ${rejected === 1 ? "LINE" : "LINES"}`);
-    if (bindingsStatus !== "ok") parts.push(bindingsStatus === "invalid" ? "BINDINGS FILE INVALID · RUN YARN BUILD" : "BINDINGS FILE MISSING · RUN YARN BUILD");
+    if (bindingsStatus !== "ok") parts.push(bindingsStatus === "invalid" ? "BINDINGS INVALID · RUN YARN BUILD" : "BINDINGS MISSING · RUN YARN BUILD");
     if (analysis) parts.push(compact && analysis === "running" ? "ANALYZING" : ANALYSIS_TEXT[analysis]);
     if (contextStatus) parts.push(compact ? CONTEXT_SHORT[contextStatus] : CONTEXT_TEXT[contextStatus]);
     // The tooltip always carries the full wording.
@@ -1722,7 +1749,7 @@ var HyperdashModel = (() => {
   }
 
   // The detail lines behind the "i" button.
-  function aboutLines({ health, insights, summary, now }) {
+  function aboutLines({ health, insights, summary, now, statusText }) {
     const lines = ["Hyper sublayer activations · repeats and outcomes excluded"];
     const log = [];
     if (health?.log) log.push(`Log ${health.log.status}`);
@@ -1743,6 +1770,8 @@ var HyperdashModel = (() => {
       lines.push(health.context.status === "disabled" ? "App context is off" : `App context ${health.context.status}`);
       if (health.context.status === "ok") lines.push("The usage log has 1 s resolution: an app change in the same second as a press counts after it");
     }
+    // The status line is clamped to two lines; its full text is always here.
+    if (statusText) lines.push(`Status: ${statusText}`);
     return lines;
   }
 
@@ -1914,6 +1943,8 @@ let bindings = [];
 let months = [];
 let tabStops = false; // sequential focus is off after each open until Tab is pressed
 let theme = "manila";
+let lastActivity = null;
+let groupCaptionOverride = null;
 let renderNow = null; // the "now" a protocol call supplied; interactions use the real clock
 let view = null;
 const keyNodes = new Map();
@@ -2119,7 +2150,6 @@ function renderStatus(broken) {
   status.hidden = broken;
   const line = M.describeHealth({ health, lastEvent: summary.lastEvent, rejected: summary.rejected, now });
   status.textContent = line.text;
-  status.title = line.full;
   status.dataset.level = line.level;
 
   $("about").hidden = !state.aboutOpen || broken;
@@ -2127,8 +2157,8 @@ function renderStatus(broken) {
   if (state.aboutOpen) {
     const themeButton = element("button", "themebtn", `THEME · ${theme.toUpperCase()}`);
     themeButton.id = "theme-button";
-    themeButton.title = "Switch theme (T on the overview)";
-    $("about").replaceChildren(...M.aboutLines({ health, insights: insightsData, summary, now }).map((text) => element("p", "", text)), themeButton);
+    themeButton.setAttribute("aria-label", "Switch theme (T on the overview)");
+    $("about").replaceChildren(...M.aboutLines({ health, insights: insightsData, summary, now, statusText: line.full }).map((text) => element("p", "", text)), themeButton);
   }
 }
 
@@ -2145,11 +2175,16 @@ function renderGroupbar(visible) {
       sum += row.count;
     }
   }
-  wrap.hidden = !visible || sum === 0;
+  wrap.hidden = !visible;
   if (wrap.hidden) return;
-  const signature = `${state.group}|${GROUPS.map((g) => totals[g] || 0).join(",")}`;
+  const signature = `${state.group}|${groupCaptionOverride}|${GROUPS.map((g) => totals[g] || 0).join(",")}`;
   if (signature === groupSignature) return;
   groupSignature = signature;
+  if (sum === 0) {
+    $("groupbar").replaceChildren();
+    $("groupcap").textContent = "BY GROUP · NO PRESSES YET";
+    return;
+  }
   const share = (n) => `${Math.round((n / sum) * 100)}%`;
   $("groupbar").replaceChildren(...GROUPS.filter((g) => totals[g]).map((group) => {
     const segment = element("button", `grp-${group}`);
@@ -2157,13 +2192,13 @@ function renderGroupbar(visible) {
     segment.dataset.group = group;
     segment.setAttribute("aria-pressed", String(state.group === group));
     segment.setAttribute("aria-label", `${GROUP_LABELS[group]} ${totals[group]} presses, filter the list`);
-    segment.title = `${GROUP_LABELS[group]} · ${totals[group].toLocaleString("en-US")} · ${share(totals[group])}`;
+    segment.dataset.caption = `${GROUP_LABELS[group].toUpperCase()} · ${totals[group].toLocaleString("en-US")} · ${share(totals[group])}`;
     segment.tabIndex = -1;
     if (state.group !== null && state.group !== group) segment.classList.add("dimmed");
     return segment;
   }));
   const top = GROUPS.filter((g) => totals[g]).sort((a, b) => totals[b] - totals[a]).slice(0, 3);
-  $("groupcap").textContent = state.group
+  $("groupcap").textContent = groupCaptionOverride ? groupCaptionOverride : state.group
     ? `${GROUP_LABELS[state.group].toUpperCase()} ONLY · CLICK AGAIN TO CLEAR`
     : `BY GROUP · ${top.map((g) => `${GROUP_LABELS[g].toUpperCase()} ${share(totals[g])}`).join(" · ")}`;
 }
@@ -2261,7 +2296,6 @@ function renderList(inLayer) {
     const label = element("span", "item-label", b.label);
     if (b.historical) {
       label.append(element("span", "note", " · no longer bound"));
-      item.title = `${b.label} · no longer bound`;
     }
     item.append(iconFor(b), label, chips, bar, element("span", "item-count", b.count ? b.count.toLocaleString("en-US") : "–"));
     fragment.append(item);
@@ -2357,7 +2391,8 @@ function renderInsights() {
     marker.style.setProperty("--tone", tone.color);
     marker.style.setProperty("--tone-bg", tone.background);
     marker.innerHTML = tone.icon;
-    marker.title = item.kind;
+    marker.setAttribute("role", "img");
+    marker.setAttribute("aria-label", item.kind);
 
     const text = element("div", "insight-text");
     text.append(element("div", "insight-title", item.title), element("div", "insight-detail", item.detail));
@@ -2462,10 +2497,7 @@ function renderChart(m) {
   chartSignature = signature;
   const focusedBin = document.activeElement?.classList?.contains("bin") ? document.activeElement.dataset.bin : null;
 
-  if (a.total === 0 && !day) {
-    root.replaceChildren(element("p", "empty-list", emptyMessage()));
-    return;
-  }
+  lastActivity = a;
 
   const { width, top, plot, step, height } = CHART;
   const binWidth = width / 48;
@@ -2499,7 +2531,7 @@ function renderChart(m) {
       }
     }
     const description = HyperdashModel.describeBin(a, bin);
-    bins += `<rect class="bin${day && state.interval === bin ? " selected" : ""}" data-bin="${bin}" tabindex="${bin === busiest ? 0 : -1}" role="img" aria-label="${description}" x="${(bin * binWidth).toFixed(1)}" y="${top}" width="${binWidth.toFixed(1)}" height="${plot}"><title>${description}</title></rect>`;
+    bins += `<rect class="bin${day && state.interval === bin ? " selected" : ""}" data-bin="${bin}" tabindex="${bin === busiest ? 0 : -1}" role="img" aria-label="${description}" x="${(bin * binWidth).toFixed(1)}" y="${top}" width="${binWidth.toFixed(1)}" height="${plot}"></rect>`;
   }
 
   const base = top + plot + 6;
@@ -2530,7 +2562,10 @@ function renderChart(m) {
     + `${bands}<line class="baseline" x1="0" x2="${width}" y1="${base}" y2="${base}"/>${now}${peak}`
     + Object.entries(paths).map(([name, d]) => `<path class="dots ${name}" d="${d}"/>`).join("")
     + `${bins}${axis}</svg>`;
-  root.append(element("div", "bin-readout", a.total === 0 ? emptyMessage() : BIN_HINT));
+  const readout = element("div", "bin-readout");
+  readout.append(element("span", "r1"), element("span", "r2"));
+  root.append(readout);
+  setReadout(readout, null);
 
   const legend = element("div", "chart-legend");
   const swatch = (color, label, n, className = "") => {
@@ -2540,21 +2575,34 @@ function renderChart(m) {
     item.prepend(dot);
     return item;
   };
+  // Six group cells (two rows) then the shading and scale row: the same size on every day.
   if (highlighting) {
     legend.append(
       swatch("var(--accent-soft)", (LAYER_NAMES[state.highlight] || state.highlight).toUpperCase(), a.hitTotal),
       swatch("var(--dim)", "OTHER", a.total - a.hitTotal),
     );
+    for (let i = 0; i < 4; i++) legend.append(element("span"));
   } else {
-    for (const group of GROUPS) if (a.groupTotals[group] > 0) legend.append(swatch(`var(--g-${group})`, GROUP_LABELS[group].toUpperCase(), a.groupTotals[group]));
+    for (const group of GROUPS) {
+      const cell = swatch(`var(--g-${group})`, GROUP_LABELS[group].toUpperCase(), a.groupTotals[group]);
+      if (a.groupTotals[group] === 0) cell.classList.add("zero");
+      legend.append(cell);
+    }
   }
+  const foot = element("div", "foot");
+  const shading = element("span");
   if (segments) {
     const kinds = new Set(segments.map((s) => s.state));
-    if (kinds.has("locked")) legend.append(swatch(null, "LOCKED", null, "shade-locked"));
-    if (kinds.has("asleep")) legend.append(swatch(null, "ASLEEP", null, "shade-asleep"));
-    if (kinds.has("unknown")) legend.append(swatch(null, "UNKNOWN", null, "shade-unknown"));
+    const items = [];
+    if (kinds.has("locked")) items.push(swatch(null, "LOCKED", null, "shade-locked"));
+    if (kinds.has("asleep")) items.push(swatch(null, "ASLEEP", null, "shade-asleep"));
+    if (kinds.has("unknown")) items.push(swatch(null, "UNKNOWN", null, "shade-unknown"));
+    shading.style.display = "inline-flex";
+    shading.style.gap = "10px";
+    shading.append(...items);
   }
-  if (a.perDot > 1) legend.append(element("span", "scale", `1 DOT ≈ ${a.perDot} PRESSES`));
+  foot.append(shading, element("span", "scale", a.perDot > 1 ? `1 DOT ≈ ${a.perDot} PRESSES` : ""));
+  legend.append(foot);
   root.append(legend);
 
   const refocus = focusedBin === null ? null : root.querySelector(`.bin[data-bin="${focusedBin}"]`);
@@ -2562,6 +2610,27 @@ function renderChart(m) {
     root.querySelector('.bin[tabindex="0"]')?.setAttribute("tabindex", "-1");
     refocus.tabIndex = 0;
     refocus.focus({ preventScroll: true });
+  }
+}
+
+// The readout under the chart is two fixed lines: the time range and total, then a count per colour group in
+// legend order (the dots carry the colour; the full wording is in the bin's tooltip and label).
+function setReadout(readout, bin) {
+  const a = lastActivity;
+  const [first, second] = readout.children;
+  second.replaceChildren();
+  if (bin === null || !a || !a.all[bin]) {
+    first.textContent = !a || a.total === 0 ? emptyMessage() : BIN_HINT;
+    return;
+  }
+  const n = a.all[bin];
+  first.textContent = `${HyperdashModel.binTime(bin)}–${HyperdashModel.binTime(bin + 1)} · ${n.toLocaleString("en-US")} ${n === 1 ? "press" : "presses"}`;
+  for (const group of GROUPS) {
+    const cell = element("span");
+    const dot = element("i");
+    dot.style.background = `var(--g-${group})`;
+    cell.append(dot, document.createTextNode(String(a.byGroup[group][bin] || "–")));
+    second.append(cell);
   }
 }
 
@@ -2584,8 +2653,8 @@ function appIcon(bundle) {
 
 function renderAppbar(m) {
   const root = $("appbar");
-  root.hidden = m.mode !== "day";
-  if (root.hidden) return;
+  root.style.visibility = m.mode === "day" ? "" : "hidden"; // keeps its row so the page height holds
+  if (m.mode !== "day") { root.replaceChildren(); appbarSignature = null; return; }
   const status = health?.context?.status;
   const on = contextOn();
   const signature = `${on}|${status}|${state.appFilter}|${m.day.apps.map((x) => `${x.app}${x.count}`).join(",")}|${iconVersion}|${appNamesVersion}`;
@@ -2603,7 +2672,7 @@ function renderAppbar(m) {
     const chip = element("button", "appchip");
     chip.dataset.app = app;
     chip.setAttribute("aria-pressed", String(state.appFilter === app));
-    chip.title = app;
+    chip.setAttribute("aria-label", `${appName(app)} (${app}), ${count} presses, filter`);
     chip.append(appIcon(app), element("span", "", appName(app)), element("b", "", String(count)));
     return chip;
   }));
@@ -2634,7 +2703,11 @@ function renderPanel(m) {
     const signature = "month";
     if (signature === panelSignature) return;
     panelSignature = signature;
-    root.replaceChildren(element("p", "panel-note", "Pick a day (Enter) for its commands and sequences"));
+    const head = element("div", "panel-head");
+    head.append(element("span", "", "Month view"), element("span", "", "all days combined"));
+    const body = element("div", "panel-body");
+    body.append(element("p", "panel-note", "Pick a day (Enter) for its commands and sequences"));
+    root.replaceChildren(head, body, element("p", "panel-note"));
     return;
   }
   const day = m.day;
@@ -2650,10 +2723,9 @@ function renderPanel(m) {
     const rows = M.commandsIn(day.events, bin);
     const head = element("div", "panel-head");
     head.append(element("span", "", `${M.binTime(bin)}–${M.binTime(bin + 1)} · ${rows.length} ${rows.length === 1 ? "command" : "commands"}`), element("span", "", "esc · sequences"));
-    const list = element("div", "cmds");
+    const list = element("div", "cmds panel-body");
     list.append(...rows.map((event) => commandRow(event, state.focusSec)));
-    root.replaceChildren(head, list);
-    if (withApp) root.append(element("p", "panel-note", "App = last app before that second (the usage log has 1 s resolution)"));
+    root.replaceChildren(head, list, element("p", "panel-note", withApp ? "App = last app before that second (the usage log has 1 s resolution)" : ""));
     list.scrollTop = scrollTop;
     list.querySelector(".focus")?.scrollIntoView({ block: "nearest" });
     return;
@@ -2661,7 +2733,7 @@ function renderPanel(m) {
 
   const head = element("div", "panel-head");
   head.append(element("span", "", "Observed sequences"), element("span", "", "≤ 10 s apart · 3+ times"));
-  const list = element("div", "seqs");
+  const list = element("div", "seqs panel-body");
   if (day.sequences.length === 0) list.append(element("p", "panel-note", "No pair recurred yet on this day"));
   for (const sequence of day.sequences.slice(0, 4)) {
     const entry = element("div", "seq");
@@ -2678,7 +2750,7 @@ function renderPanel(m) {
     entry.append(title, times);
     list.append(entry);
   }
-  root.replaceChildren(head, list);
+  root.replaceChildren(head, list, element("p", "panel-note"));
 }
 
 function renderActivity(m) {
@@ -2982,7 +3054,7 @@ function run(action) {
 function showBin(event) {
   const bin = event.target.closest?.(".bin");
   const readout = $("activity").querySelector(".bin-readout");
-  if (readout) readout.textContent = bin ? bin.getAttribute("aria-label") : BIN_HINT;
+  if (readout) setReadout(readout, bin ? Number(bin.dataset.bin) : null);
 }
 
 $("activity").addEventListener("focusin", showBin);
@@ -3032,6 +3104,18 @@ $("activity").addEventListener("click", (event) => {
     selectInterval(state.interval === Number(bin.dataset.bin) ? null : Number(bin.dataset.bin));
   }
 });
+
+// Hovering or focusing a group segment names it in the caption (no native tooltip, which clips at the card edge).
+const showGroup = (event) => {
+  const segment = event.target.closest?.("button");
+  groupCaptionOverride = segment ? segment.dataset.caption : null;
+  groupSignature = null;
+  renderGroupbar(!$("groupwrap").hidden);
+};
+$("groupbar").addEventListener("mouseover", showGroup);
+$("groupbar").addEventListener("mouseout", showGroup);
+$("groupbar").addEventListener("focusin", showGroup);
+$("groupbar").addEventListener("focusout", showGroup);
 
 $("groupbar").addEventListener("click", (event) => {
   const segment = event.target.closest("button");

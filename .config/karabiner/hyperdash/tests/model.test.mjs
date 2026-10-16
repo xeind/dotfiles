@@ -334,7 +334,7 @@ test("aboutLines: definition first, then log and analysis detail", () => {
 test("describeHealth: an invalid bindings file is an error and says how to fix it", () => {
   const result = M.describeHealth({ health: { log: { status: "ok" }, bindings: { status: "invalid" }, insights: null }, lastEvent: null, rejected: 0, now: NOW });
   assert.equal(result.level, "error");
-  assert.match(result.text, /BINDINGS FILE INVALID · RUN YARN BUILD/);
+  assert.match(result.text, /BINDINGS INVALID · RUN YARN BUILD/);
 });
 
 test("with no bindings every logged combo is historical, and totals still agree", () => {
@@ -1036,7 +1036,7 @@ test("describeHealth: the healthy line is short enough for one line; warnings an
   assert.equal(stale.text, "LOG OK · LAST PRESS 14:02 · ANALYSIS STALE · APP CONTEXT OK");
   const broken = M.describeHealth({ health: { log: { status: "unreadable" }, bindings: { status: "invalid" }, insights: { status: "failed" } }, lastEvent: null, rejected: 2, now: NOW });
   assert.equal(broken.level, "error");
-  assert.equal(broken.text, "LOG UNREADABLE · 2 BAD LINES · BINDINGS FILE INVALID · RUN YARN BUILD · ANALYSIS FAILED");
+  assert.equal(broken.text, "LOG UNREADABLE · 2 BAD LINES · BINDINGS INVALID · RUN YARN BUILD · ANALYSIS FAILED");
   assert.equal(broken.full, broken.text, "an error's tooltip and text are the same full wording");
 });
 
@@ -1093,4 +1093,27 @@ test("every theme defines every colour token, and every colour the page uses exi
   const rest = css.replace(/:root[^{]*\{[\s\S]*?\n  \}/g, "");
   assert.deepEqual(rest.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(/g), null, "raw colours outside the theme blocks");
   assert.deepEqual([...html.slice(html.indexOf("<script>")).matchAll(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(/g)].map((x) => x[0]), [], "raw colours in the page script");
+});
+
+test("the status line: up to three problems fit its two reserved lines (about 105 characters at the card width); more are clamped, with the full text in the tooltip", () => {
+  const combos = [
+    { health: { log: { status: "unreadable" }, bindings: { status: "invalid" }, insights: { status: "failed" }, context: { status: "ok" } }, rejected: 12 },
+    { health: { log: { status: "missing" }, bindings: { status: "missing" }, insights: { status: "missing-tool" }, context: { status: "disabled" } }, rejected: 0 },
+    { health: { log: { status: "ok" }, bindings: { status: "invalid" }, insights: { status: "stale" }, context: { status: "ok" } }, rejected: 0 },
+    { health: { log: { status: "unreadable" }, bindings: { status: "ok" }, insights: { status: "failed" }, context: { status: "missing" } }, rejected: 0 },
+  ];
+  for (const { health, rejected } of combos) {
+    const line = M.describeHealth({ health, lastEvent: "2026-10-12T14:02:00", rejected, now: NOW });
+    assert.ok(line.text.length <= 105, `${line.text.length}: ${line.text}`);
+  }
+});
+
+test("aboutLines ends with the full status text, because the status line is clamped to two lines", () => {
+  const store = M.createStore();
+  const health = { log: { status: "unreadable" }, bindings: { status: "invalid" }, insights: { status: "failed" }, context: { status: "missing" } };
+  const status = M.describeHealth({ health, lastEvent: null, rejected: 3, now: NOW });
+  const lines = M.aboutLines({ health, insights: null, summary: store.summary(), now: NOW, statusText: status.full });
+  assert.equal(lines.at(-1), `Status: ${status.full}`);
+  assert.match(lines.at(-1), /CONTEXT LOG MISSING/, "the part a two-line clamp would cut is present");
+  assert.ok(!M.aboutLines({ health: null, insights: null, summary: store.summary(), now: NOW }).some((l) => l.startsWith("Status:")), "no status text, no line");
 });
