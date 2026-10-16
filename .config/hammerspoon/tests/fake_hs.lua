@@ -71,6 +71,7 @@ function sandbox.new(options)
     function wv:show() self.visible = true; env.shown = env.shown + 1; return self end
     function wv:hide() self.visible = false; env.hidden = env.hidden + 1; return self end
     function wv:evaluateJavaScript(code, callback)
+      if env.pending() > 0 then env.overlap = (env.overlap or 0) + 1 end
       env.js[#env.js + 1] = { code = code, callback = callback }
     end
     env.webviews[#env.webviews + 1] = wv
@@ -91,6 +92,75 @@ function sandbox.new(options)
     local n = 0
     for _, call in ipairs(env.js) do if not call.answered then n = n + 1 end end
     return n
+  end
+
+
+  ---------------------------------------------------------------- fake page
+  -- A model of window.hyperdash for the host tests. env.respond(code) returns
+  -- what the page would answer; env.flush() answers every pending call.
+  local page = { generation = nil, offset = 0, text = "", bindings = nil, insights = nil, health = nil,
+                 calls = {}, mode = {} }
+  env.page = page
+  function env.respond(code)
+    local method, args = code:match("^window%.hyperdash%.(%w+)%((.*)%)$")
+    if not method then
+      method, args = code:match("^(setIcons)%((.*)%)$")
+      if method then page.calls[#page.calls + 1] = { method = method, args = {}, bytes = #code } end
+      return nil
+    end
+    -- hs.json.decode drops nulls from arrays, which would shift arguments.
+    local leadingNull = args:sub(1, 5) == "null,"
+    local list = hs.json.decode("[" .. (leadingNull and args:sub(6) or args) .. "]")
+    if leadingNull then table.insert(list, 1, false) end
+    local a = list[1]
+    page.calls[#page.calls + 1] = { method = method, args = list, bytes = #code }
+    if method == "reset" then
+      if page.mode.rejectReset then return { ok = false, reason = "generation", offset = page.offset } end
+      page.generation, page.offset, page.text = a.generation, a.offset, a.text
+      page.bindings, page.insights, page.health = a.bindings, a.insights, a.health
+      return { ok = true, generation = a.generation, offset = a.offset, height = 600 }
+    elseif method == "append" then
+      if page.mode.rejectAppendOnce then
+        local reason = page.mode.rejectAppendOnce
+        page.mode.rejectAppendOnce = nil
+        return { ok = false, reason = reason, offset = page.offset }
+      end
+      if page.mode.rejectAppend then return { ok = false, reason = page.mode.rejectAppend, offset = page.offset } end
+      if a.generation ~= page.generation then return { ok = false, reason = "generation", offset = page.offset } end
+      if a.from < page.offset then return { ok = false, reason = "duplicate", offset = page.offset } end
+      if a.from > page.offset then return { ok = false, reason = "gap", offset = page.offset } end
+      page.text = page.text .. a.text
+      page.offset = a.to
+      return { ok = true, offset = a.to, height = 600 }
+    elseif method == "setBindings" then
+      page.bindings, page.health = list[1], list[2]
+      return { ok = true, height = 600 }
+    elseif method == "setInsights" then
+      page.insights, page.health = list[1] or nil, list[2]
+      return { ok = true, height = 600 }
+    elseif method == "setHealth" then
+      page.health = a
+      return { ok = true, height = 600 }
+    elseif method == "tick" then
+      page.ticks = (page.ticks or 0) + 1
+      return { ok = true, height = 600 }
+    elseif method == "open" then
+      page.opens = (page.opens or 0) + 1
+      return { height = page.openHeight or 600 }
+    end
+    return nil -- setIcons and anything else: no answer value
+  end
+  -- Answer pending calls until none are left. Calls the page is told to
+  -- ignore (mode.silent) stay pending, so tests can exercise the watchdog.
+  function env.flush(limit)
+    for _ = 1, limit or 200 do
+      local call
+      for _, c in ipairs(env.js) do if not c.answered then call = c; break end end
+      if not call or page.mode.silent then return end
+      call.answered = true
+      local result = env.respond(call.code)
+      if call.callback then call.callback(result, {}) end
+    end
   end
 
   ---------------------------------------------------------------- hs

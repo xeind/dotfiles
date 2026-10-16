@@ -4,6 +4,7 @@
 --
 -- Sections:
 --   1. validation of bindings.json entries and insights.json (stage A)
+--   2. incremental log reader (stage B)
 
 local R = {}
 
@@ -51,6 +52,171 @@ function R.sanitizeBindings(list)
     end
   end
   return valid, dropped
+end
+
+---------------------------------------------------------------------------
+-- 2. Incremental log reader
+--
+-- A reader state tracks what the page has acknowledged:
+--   generation  id of the log generation the page holds
+--   offset      bytes [0, offset) are in the page; always ends after a "\n"
+--   dev, ino    identity of the file those bytes came from
+--   needReset   the page content is unknown or suspect: next plan is a reset
+--   status      "ok" | "missing"
+--
+-- plan() reads the file and changes the state only to set needReset when it
+-- finds the file changed under it. The host delivers the action, then calls
+-- commit() on `ok: true` or fail() on anything else.
+---------------------------------------------------------------------------
+
+local DEFAULT_CHUNK = 1024 * 1024
+
+function R.newState()
+  return { generation = 0, offset = 0, dev = nil, ino = nil, needReset = true, status = "ok" }
+end
+
+-- env = { stat = function(path) -> {dev, ino, size, modification} | nil,
+--         open = io.open, chunk = bytes per read call }
+function R.defaultEnv()
+  return { stat = hs.fs.attributes, open = io.open, chunk = DEFAULT_CHUNK }
+end
+
+-- Reads bytes [from, to) of `path`. Returns the string, or nil and a message
+-- when the file cannot be opened or holds fewer bytes than expected.
+local function readRange(env, path, from, to)
+  local file = env.open(path, "rb")
+  if not file then return nil, "cannot open " .. path end
+  local parts, remaining = {}, to - from
+  local ok, seekError = file:seek("set", from)
+  if not ok then
+    file:close()
+    return nil, "seek failed: " .. tostring(seekError)
+  end
+  local chunk = env.chunk or DEFAULT_CHUNK
+  while remaining > 0 do
+    local piece = file:read(math.min(chunk, remaining))
+    if not piece or #piece == 0 then
+      file:close()
+      return nil, "short read"
+    end
+    parts[#parts + 1] = piece
+    remaining = remaining - #piece
+  end
+  file:close()
+  return table.concat(parts)
+end
+
+-- Position of the last "\n" in `text`, or 0.
+local function lastNewline(text)
+  for i = #text, 1, -1 do
+    if text:byte(i) == 10 then return i end
+  end
+  return 0
+end
+
+local function sameIdentity(a, b)
+  return a and b and a.dev == b.dev and a.ino == b.ino
+end
+
+-- A fresh reset action: complete lines of bytes [0, size).
+local function planReset(state, env, path, stat)
+  local raw, err = readRange(env, path, 0, stat.size)
+  if not raw then return { kind = "error", message = err } end
+  local cut = lastNewline(raw)
+  return {
+    kind = "reset",
+    generation = state.generation + 1,
+    text = raw:sub(1, cut),
+    offset = cut,
+    dev = stat.dev,
+    ino = stat.ino,
+    size = stat.size,
+    status = "ok",
+  }
+end
+
+-- File identity. A file is "the same" when its (dev, ino) match the ones
+-- recorded at the last reset and its size has not shrunk below the offset.
+-- Replacing the log by rename (write elsewhere, mv over it) gives a new inode,
+-- so it always starts a new generation. Two further guards catch what
+-- (dev, ino) cannot: a size below the offset (truncation), and the byte at
+-- offset-1, which must still be the "\n" that ended the last consumed line
+-- (an in-place rewrite that kept the inode and grew the file).
+--
+-- Returns one of:
+--   { kind = "none" }                       nothing new (a partial line stays unread)
+--   { kind = "reset", generation, text, offset, dev, ino, size, status }
+--   { kind = "append", generation, from, to, text }
+--   { kind = "error", message }             read failed; state unchanged
+--   { kind = "retry" }                      file changed during the read; plan again
+function R.plan(state, env, path)
+  local stat = env.stat(path)
+  if not stat then
+    if state.status == "missing" and not state.needReset then return { kind = "none" } end
+    return {
+      kind = "reset", generation = state.generation + 1, text = "", offset = 0,
+      dev = nil, ino = nil, size = 0, status = "missing",
+    }
+  end
+
+  if state.needReset or state.status == "missing" or not sameIdentity(state, stat) or stat.size < state.offset then
+    local action = planReset(state, env, path, stat)
+    if action.kind ~= "reset" then return action end
+    local after = env.stat(path)
+    if not sameIdentity(stat, after) or after.size < action.offset then
+      return { kind = "retry" }
+    end
+    return action
+  end
+
+  if stat.size == state.offset then return { kind = "none" } end
+
+  -- Read one byte before the offset as well: it must be the "\n" that ended
+  -- the last consumed line. Anything else means the file was rewritten.
+  local from = math.max(state.offset - 1, 0)
+  local raw, err = readRange(env, path, from, stat.size)
+  if not raw then return { kind = "error", message = err } end
+  local skip = state.offset - from
+  if skip == 1 and raw:byte(1) ~= 10 then
+    state.needReset = true
+    return { kind = "retry" }
+  end
+  local fresh = raw:sub(skip + 1)
+  local cut = lastNewline(fresh)
+  if cut == 0 then return { kind = "none" } end
+
+  local after = env.stat(path)
+  if not sameIdentity(stat, after) or after.size < state.offset + cut then
+    state.needReset = true
+    return { kind = "retry" }
+  end
+  return {
+    kind = "append",
+    generation = state.generation,
+    from = state.offset,
+    to = state.offset + cut,
+    text = fresh:sub(1, cut),
+  }
+end
+
+-- Record that the page acknowledged `action` with ok = true.
+function R.commit(state, action)
+  if action.kind == "reset" then
+    state.generation = action.generation
+    state.offset = action.offset
+    state.dev, state.ino = action.dev, action.ino
+    state.status = action.status
+    state.needReset = false
+  elseif action.kind == "append" and action.from == state.offset then
+    state.offset = action.to
+  else
+    state.needReset = true
+  end
+end
+
+-- Delivery failed, was rejected, or the callback never reported ok.
+function R.fail(state)
+  state.needReset = true
 end
 
 return R

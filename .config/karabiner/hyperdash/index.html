@@ -654,7 +654,6 @@ var HyperdashModel = (() => {
   //  - a valid line after `now` is ignored: not rejected, and it sets no first or last event.
   const TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/;
   const NAME = /^[a-z0-9_]+$/;
-  const LINE_BREAK = /\r?\n/;
 
   function isValidTimestamp(text) {
     const match = typeof text === "string" ? TIMESTAMP.exec(text) : null;
@@ -666,32 +665,8 @@ var HyperdashModel = (() => {
       && date.getHours() === hour && date.getMinutes() === minute && date.getSeconds() === second;
   }
 
-  // Valid timestamps sort as strings, so the latest use is a string maximum.
-  function parseLog(text, now) {
-    const presses = [];
-    const lastUsed = {};
-    let rejected = 0;
-    let future = 0;
-    let firstEvent = null;
-    let lastEvent = null;
-    for (const line of text.split(LINE_BREAK)) {
-      if (line === "") continue;
-      const fields = line.split("\t");
-      if (fields.length !== 3 || !isValidTimestamp(fields[0]) || !NAME.test(fields[1]) || !NAME.test(fields[2])) {
-        rejected += 1;
-        continue;
-      }
-      const [time, layer, key] = fields;
-      if (time > now) { future += 1; continue; }
-      const bin = Number(time.slice(11, 13)) * 2 + (Number(time.slice(14, 16)) >= 30 ? 1 : 0);
-      presses.push({ month: time.slice(0, 7), layer, key, bin });
-      const id = `${layer} ${key}`;
-      if (!(id in lastUsed) || time > lastUsed[id]) lastUsed[id] = time;
-      if (firstEvent === null || time < firstEvent) firstEvent = time;
-      if (lastEvent === null || time > lastEvent) lastEvent = time;
-    }
-    return { presses, rejected, future, lastUsed, firstEvent, lastEvent };
-  }
+  // A "now" supplied by the host: a local "YYYY-MM-DDTHH:MM:SS" string that passes the log's timestamp rules.
+  const stampOrNull = (value) => (typeof value === "string" && isValidTimestamp(value) ? value : null);
 
   // Input shapes from the host. A bad bindings list or log text is an error state, not an exception.
   const isText = (value) => typeof value === "string";
@@ -763,21 +738,6 @@ var HyperdashModel = (() => {
     return index === 1 ? `${pad(year - 1, 4)}-12` : `${pad(year, 4)}-${pad(index - 1)}`;
   }
 
-  function listMonths(presses, now) {
-    const current = monthOf(now);
-    const first = presses.reduce((min, p) => (p.month < min ? p.month : min), current);
-    const result = [];
-    let [year, month] = first.split("-").map(Number);
-    while (true) {
-      const id = `${pad(year, 4)}-${pad(month)}`;
-      result.push(id);
-      if (id >= current) break;
-      month += 1;
-      if (month > 12) { month = 1; year += 1; }
-    }
-    return result;
-  }
-
   // A month is complete when it has ended and recording began on or before its first instant.
   function isMonthComplete(month, firstEvent, now) {
     return month < monthOf(now) && firstEvent !== null && firstEvent <= `${month}-01T00:00:00`;
@@ -792,16 +752,6 @@ var HyperdashModel = (() => {
   }
 
   // Counting and rows
-
-  function countCombos(presses, month) {
-    const counts = {};
-    for (const p of presses) {
-      if (p.month !== month) continue;
-      const id = `${p.layer} ${p.key}`;
-      counts[id] = (counts[id] || 0) + 1;
-    }
-    return counts;
-  }
 
   function sumCounts(counts, layer) {
     let total = 0;
@@ -828,33 +778,6 @@ var HyperdashModel = (() => {
 
   // Activity: presses per half-hour bin.
 
-  function buildActivity(presses, month, highlight, capacity) {
-    const all = new Array(48).fill(0);
-    const hit = new Array(48).fill(0);
-    const byFamily = {};
-    const familyTotals = {};
-    for (const family of FAMILIES) { byFamily[family] = new Array(48).fill(0); familyTotals[family] = 0; }
-    let total = 0;
-    let hitTotal = 0;
-    for (const p of presses) {
-      if (p.month !== month || !(p.bin >= 0 && p.bin < 48)) continue;
-      all[p.bin] += 1;
-      total += 1;
-      const family = familyOf(p.layer);
-      byFamily[family][p.bin] += 1;
-      familyTotals[family] += 1;
-      if (p.layer === highlight) { hit[p.bin] += 1; hitTotal += 1; }
-    }
-    let peakHour = 0;
-    let peakCount = -1;
-    for (let hour = 0; hour < 24; hour++) {
-      const count = all[2 * hour] + all[2 * hour + 1];
-      if (count > peakCount) { peakHour = hour; peakCount = count; }
-    }
-    const perDot = Math.max(1, Math.ceil(Math.max(...all) / capacity));
-    return { all, hit, byFamily, familyTotals, total, hitTotal, peakHour, perDot };
-  }
-
   const binTime = (bin) => `${pad(Math.floor(bin / 2))}:${bin % 2 ? "30" : "00"}`;
 
   // Exact counts for one bin, with the family split spelled out in words.
@@ -866,6 +789,236 @@ var HyperdashModel = (() => {
       if (n > 0) parts.push(`${family.toUpperCase()} ${n}`);
     }
     return parts.join(" · ");
+  }
+
+  // Incremental log store. The host delivers complete newline-terminated lines; the store keeps
+  // aggregates so that selecting a key, opening the info panel or switching pages never rescans history:
+  //  - counts by month and combo ("layer key");
+  //  - the last-use maximum by combo;
+  //  - Activity bins by month, layer and half hour;
+  //  - the rejected-line count;
+  //  - a pending list of valid future-dated events that tick() promotes when their time comes.
+  // The line rules are the ones documented above (tests/reference_model.mjs keeps a plain reference parser).
+  const EMPTY = Object.freeze({});
+
+  function createStore() {
+    const minuteCache = new Map();
+    let counts, bins, lastUsed, layerSet, pending, count, rejected, firstEvent, lastEvent;
+
+    function clear() {
+      counts = {};
+      bins = {};
+      lastUsed = {};
+      layerSet = Object.create(null);
+      pending = [];
+      count = 0;
+      rejected = 0;
+      firstEvent = null;
+      lastEvent = null;
+    }
+    clear();
+
+    // Same verdict as isValidTimestamp. The Date round trip depends only on the minute, so cache it per minute.
+    function validStamp(time) {
+      const match = TIMESTAMP.exec(time);
+      if (!match || Number(match[6]) > 59) return false;
+      const key = time.slice(0, 16);
+      let ok = minuteCache.get(key);
+      if (ok === undefined) {
+        ok = isValidTimestamp(`${key}:00`);
+        minuteCache.set(key, ok);
+      }
+      return ok;
+    }
+
+    function apply(time, layer, key) {
+      const month = time.slice(0, 7);
+      const id = `${layer} ${key}`;
+      const monthCounts = counts[month] || (counts[month] = {});
+      monthCounts[id] = (monthCounts[id] || 0) + 1;
+      const monthBins = bins[month] || (bins[month] = Object.create(null));
+      const layerBins = monthBins[layer] || (monthBins[layer] = new Array(48).fill(0));
+      layerBins[Number(time.slice(11, 13)) * 2 + (Number(time.slice(14, 16)) >= 30 ? 1 : 0)] += 1;
+      if (!(id in lastUsed) || time > lastUsed[id]) lastUsed[id] = time;
+      layerSet[layer] = true;
+      count += 1;
+      if (firstEvent === null || time < firstEvent) firstEvent = time;
+      if (lastEvent === null || time > lastEvent) lastEvent = time;
+    }
+
+    // Lines split on "\n" or "\r\n"; zero-length lines are skipped without counting.
+    function ingest(text, now) {
+      const length = text.length;
+      let pos = 0;
+      while (pos < length) {
+        let end = text.indexOf("\n", pos);
+        let next;
+        if (end === -1) {
+          end = length;
+          next = length;
+        } else {
+          next = end + 1;
+          if (end > pos && text.charCodeAt(end - 1) === 13) end -= 1;
+        }
+        if (end === pos) { pos = next; continue; }
+
+        const first = text.indexOf("\t", pos);
+        const second = first === -1 || first >= end ? -1 : text.indexOf("\t", first + 1);
+        const third = second === -1 || second >= end ? -1 : text.indexOf("\t", second + 1);
+        if (second === -1 || second >= end || (third !== -1 && third < end)) {
+          rejected += 1;
+          pos = next;
+          continue;
+        }
+        const time = text.slice(pos, first);
+        const layer = text.slice(first + 1, second);
+        const key = text.slice(second + 1, end);
+        pos = next;
+        if (!NAME.test(layer) || !NAME.test(key) || !validStamp(time)) { rejected += 1; continue; }
+        if (time > now) pending.push({ time, layer, key });
+        else apply(time, layer, key);
+      }
+    }
+
+    // Promote future-dated events whose time has come.
+    function tick(now) {
+      if (pending.length === 0) return 0;
+      const waiting = [];
+      let promoted = 0;
+      for (const event of pending) {
+        if (event.time > now) waiting.push(event);
+        else { apply(event.time, event.layer, event.key); promoted += 1; }
+      }
+      pending = waiting;
+      return promoted;
+    }
+
+    function months(now) {
+      const current = monthOf(now);
+      let [year, month] = (firstEvent === null ? current : monthOf(firstEvent)).split("-").map(Number);
+      const result = [];
+      while (true) {
+        const id = `${pad(year, 4)}-${pad(month)}`;
+        result.push(id);
+        if (id >= current) break;
+        month += 1;
+        if (month > 12) { month = 1; year += 1; }
+      }
+      return result;
+    }
+
+    // Sorted, JSON-safe copy of every aggregate, for tests.
+    function snapshot() {
+      const sorted = (object) => Object.fromEntries(Object.keys(object).sort().map((k) => [k, object[k]]));
+      const binCopy = {};
+      for (const month of Object.keys(bins).sort()) {
+        binCopy[month] = sorted(Object.fromEntries(Object.keys(bins[month]).map((layer) => [layer, bins[month][layer].slice()])));
+      }
+      return JSON.parse(JSON.stringify({
+        count, rejected, firstEvent, lastEvent,
+        pending: pending.map((p) => `${p.time} ${p.layer} ${p.key}`).sort(),
+        counts: Object.fromEntries(Object.keys(counts).sort().map((m) => [m, sorted(counts[m])])),
+        bins: binCopy,
+        lastUsed: sorted(lastUsed),
+        layers: Object.keys(layerSet).sort(),
+      }));
+    }
+
+    return {
+      reset: (text, now) => { clear(); ingest(text, now); },
+      append: ingest,
+      tick,
+      months,
+      snapshot,
+      countsOf: (month) => counts[month] || EMPTY,
+      binsOf: (month) => bins[month] || EMPTY,
+      lastUsedOf: (id) => lastUsed[id] || null,
+      layerList: () => Object.keys(layerSet),
+      summary: () => ({ count, rejected, pending: pending.length, firstEvent, lastEvent }),
+    };
+  }
+
+  // The page side of the host protocol, apart from the DOM: which log generation is loaded, how many
+  // bytes were consumed, and whether an append applies. The host advances its offset only after ok: true.
+  function createSession() {
+    const store = createStore();
+    let generation = null;
+    let offset = 0;
+
+    return {
+      store,
+      get generation() { return generation; },
+      get offset() { return offset; },
+
+      // Complete lines for bytes 0 to `offset`. Discards every earlier event.
+      reset(data, now) {
+        if (!data || !isText(data.text)) {
+          store.reset("", now);
+          generation = null;
+          offset = 0;
+          return { ok: false, reason: "invalid", offset };
+        }
+        store.reset(data.text, now);
+        generation = data.generation;
+        offset = Number.isFinite(data.offset) ? data.offset : data.text.length;
+        return { ok: true, generation, offset };
+      },
+
+      // Complete lines for bytes [from, to). Applied only for this generation and only in order.
+      append(data, now) {
+        if (!data || !isText(data.text) || !Number.isFinite(data.from) || !Number.isFinite(data.to) || data.to < data.from) {
+          return { ok: false, reason: "invalid", offset };
+        }
+        if (data.generation !== generation) return { ok: false, reason: "generation", offset };
+        if (data.from < offset) return { ok: false, reason: "duplicate", offset };
+        if (data.from > offset) return { ok: false, reason: "gap", offset };
+        store.append(data.text, now);
+        offset = data.to;
+        return { ok: true, offset };
+      },
+    };
+  }
+
+  // Navigation after a data update: the month stays by id, and a layer, selection or highlight
+  // survives unless the layer it points at no longer exists.
+  function reconcileNavigation(nav, months, layers) {
+    const next = { ...nav };
+    if (!months.includes(next.monthId)) next.monthId = months[months.length - 1];
+    if (next.layer !== null && !layers.includes(next.layer)) { next.layer = null; next.selected = null; }
+    if (next.highlight !== null && !layers.includes(next.highlight)) next.highlight = null;
+    return next;
+  }
+
+  // Bins for one month: per-bin totals, family split, highlight hits and the dot scale.
+  function buildActivityFromBins(layerBins, highlight, capacity) {
+    const all = new Array(48).fill(0);
+    const hit = new Array(48).fill(0);
+    const byFamily = {};
+    const familyTotals = {};
+    for (const family of FAMILIES) { byFamily[family] = new Array(48).fill(0); familyTotals[family] = 0; }
+    let total = 0;
+    let hitTotal = 0;
+    for (const layer of Object.keys(layerBins)) {
+      const family = familyOf(layer);
+      const row = layerBins[layer];
+      for (let bin = 0; bin < 48; bin++) {
+        const n = row[bin];
+        if (n === 0) continue;
+        all[bin] += n;
+        byFamily[family][bin] += n;
+        familyTotals[family] += n;
+        total += n;
+        if (layer === highlight) { hit[bin] += n; hitTotal += n; }
+      }
+    }
+    let peakHour = 0;
+    let peakCount = -1;
+    for (let hour = 0; hour < 24; hour++) {
+      const n = all[2 * hour] + all[2 * hour + 1];
+      if (n > peakCount) { peakHour = hour; peakCount = n; }
+    }
+    const perDot = Math.max(1, Math.ceil(Math.max(...all) / capacity));
+    return { all, hit, byFamily, familyTotals, total, hitTotal, peakHour, perDot };
   }
 
   // Data state
@@ -904,14 +1057,14 @@ var HyperdashModel = (() => {
   }
 
   // The detail lines behind the "i" button.
-  function aboutLines({ health, insights, parsed, now }) {
+  function aboutLines({ health, insights, summary, now }) {
     const lines = ["Hyper sublayer activations · repeats and outcomes excluded"];
     const log = [];
     if (health?.log) log.push(`Log ${health.log.status}`);
     const size = formatBytes(health?.log?.bytes);
     if (size) log.push(size);
-    log.push(`${parsed.presses.length.toLocaleString("en-US")} ${parsed.presses.length === 1 ? "press" : "presses"}`);
-    if (parsed.rejected > 0) log.push(`${parsed.rejected} rejected ${parsed.rejected === 1 ? "line" : "lines"}`);
+    log.push(`${summary.count.toLocaleString("en-US")} ${summary.count === 1 ? "press" : "presses"}`);
+    if (summary.rejected > 0) log.push(`${summary.rejected} rejected ${summary.rejected === 1 ? "line" : "lines"}`);
     lines.push(log.join(" · "));
     if (health?.bindings && health.bindings.status !== "ok") {
       lines.push(`Bindings file ${health.bindings.status}: every logged combo shows as history`);
@@ -919,7 +1072,7 @@ var HyperdashModel = (() => {
     if (health?.insights) {
       lines.push(`Analysis ${health.insights.status}${health.insights.message ? `: ${health.insights.message}` : ""}`);
     }
-    const since = insights?.recordingSince || parsed.firstEvent;
+    const since = insights?.recordingSince || summary.firstEvent;
     if (since) lines.push(`Recording since ${formatWhen(since, now)}`);
     return lines;
   }
@@ -963,9 +1116,9 @@ var HyperdashModel = (() => {
   }
 
   return {
-    FAMILIES, familyOf, localStamp, isValidTimestamp, parseLog, validatePayload, normalizeInsights, normalizeHealth,
-    monthOf, previousMonth, listMonths, isMonthComplete, compareMonths,
-    countCombos, sumCounts, buildRows, buildActivity, binTime, describeBin,
+    FAMILIES, familyOf, localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
+    monthOf, previousMonth, isMonthComplete, compareMonths,
+    sumCounts, buildRows, buildActivityFromBins, createStore, createSession, reconcileNavigation, binTime, describeBin,
     formatWhen, describeHealth, aboutLines, routeKey,
   };
 })();
@@ -1031,22 +1184,27 @@ const INSIGHT_KINDS = {
 // Activity chart geometry, in SVG user units (the viewBox is 1:1 with the card content).
 const CHART = { width: 326, top: 18, plot: 120, step: 4, height: 162 };
 
-const NO_PARSE = { presses: [], rejected: 0, future: 0, lastUsed: {}, firstEvent: null, lastEvent: null };
 const BIN_HINT = "TAB · INSPECT 30-MINUTE BINS";
 
-const state = { monthIndex: 0, layer: null, selected: null, page: null, highlight: null, aboutOpen: false };
+// Navigation state. The month is kept by its YYYY-MM id so data updates never move it.
+const state = { monthId: null, layer: null, selected: null, page: null, highlight: null, aboutOpen: false };
+const session = HyperdashModel.createSession();
+const store = session.store;
 let insightsData = null;
 let health = null;
 let dataError = null;
-let parsed = NO_PARSE;
 let layers = [];
 let icons = { apps: {}, sites: {} };
 const iconCache = new Map();
+let iconVersion = 0;
 let listScope = null;
+let listSignature = null;
+let listSelected = null;
+let activitySignature = null;
+let headerMode = null;
 let bindings = [];
-let presses = [];
 let months = [];
-let lastUsed = {};
+let renderNow = null; // the "now" a protocol call supplied; interactions use the real clock
 let view = null;
 const keyNodes = new Map();
 
@@ -1110,15 +1268,15 @@ function buildKeyboard() {
   $("keyboard").append(legend);
 }
 
-const nowStamp = () => HyperdashModel.localStamp(new Date());
+const currentNow = () => renderNow || HyperdashModel.localStamp(new Date());
 
 function buildView() {
   const M = HyperdashModel;
-  const month = months[state.monthIndex];
-  const counts = M.countCombos(presses, month);
+  const month = state.monthId;
+  const counts = store.countsOf(month);
   const rows = M.buildRows(bindings, counts, state.layer);
   const total = M.sumCounts(counts, state.layer);
-  const previousTotal = M.sumCounts(M.countCombos(presses, M.previousMonth(month)), state.layer);
+  const previousTotal = M.sumCounts(store.countsOf(M.previousMonth(month)), state.layer);
 
   // Heat per keyboard key: layer totals on the overview, key counts in a layer.
   const heat = new Map();
@@ -1130,14 +1288,15 @@ function buildView() {
   return {
     month,
     total,
-    comparison: M.compareMonths({ month, total, previousTotal, firstEvent: parsed.firstEvent, now: nowStamp() }),
+    comparison: M.compareMonths({ month, total, previousTotal, firstEvent: store.summary().firstEvent, now: currentNow() }),
     scoped: rows,
     used: rows.filter((row) => row.count > 0),
     heat,
   };
 }
 
-function render() {
+// `announce` posts the new height to the host. Protocol calls return the height instead.
+function render(announce = true) {
   const M = HyperdashModel;
   view = buildView();
   const inLayer = state.layer !== null;
@@ -1145,12 +1304,16 @@ function render() {
   const broken = dataError !== null;
   const activity = !broken && page === "activity" ? buildActivity() : null;
 
-  const icon = $("header-icon");
-  if (inLayer || page) {
-    icon.outerHTML = `<button class="header-icon" id="header-icon" aria-label="Back">${ICON_BACK}</button>`;
-    $("header-icon").addEventListener("click", closeLayer);
-  } else {
-    icon.outerHTML = `<span class="header-icon" id="header-icon">${ICON_KEYBOARD}</span>`;
+  // Swap the header icon only when the mode changes, so a focused Back button keeps focus.
+  const mode = inLayer || page ? "back" : "home";
+  if (mode !== headerMode) {
+    headerMode = mode;
+    if (mode === "back") {
+      $("header-icon").outerHTML = `<button class="header-icon" id="header-icon" aria-label="Back">${ICON_BACK}</button>`;
+      $("header-icon").addEventListener("click", closeLayer);
+    } else {
+      $("header-icon").outerHTML = `<span class="header-icon" id="header-icon">${ICON_KEYBOARD}</span>`;
+    }
   }
   $("title").textContent = page ? PAGE_TITLES[page] : inLayer ? LAYER_NAMES[state.layer] || state.layer : "hyperdash";
 
@@ -1166,8 +1329,8 @@ function render() {
   $("keyboard").hidden = page !== null || broken;
 
   $("month-label").textContent = monthLabel(view.month).toUpperCase();
-  $("previous-month").disabled = state.monthIndex === 0;
-  $("next-month").disabled = state.monthIndex === months.length - 1;
+  $("previous-month").disabled = months.indexOf(state.monthId) === 0;
+  $("next-month").disabled = months.indexOf(state.monthId) === months.length - 1;
 
   $("total").textContent = view.total.toLocaleString("en-US");
   $("total-unit").textContent = (view.total === 1 ? "PRESS" : "PRESSES")
@@ -1222,16 +1385,17 @@ function render() {
   renderStatus(broken);
   renderFooter();
 
-  post({ action: "resize", height: document.body.scrollHeight });
+  if (announce) post({ action: "resize", height: document.body.scrollHeight });
 }
 
 // The status line and the "i" panel: what the counts mean and how fresh the data is.
 function renderStatus(broken) {
   const M = HyperdashModel;
-  const now = nowStamp();
+  const now = currentNow();
+  const summary = store.summary();
   const status = $("status");
   status.hidden = broken;
-  const line = M.describeHealth({ health, lastEvent: parsed.lastEvent, rejected: parsed.rejected, now });
+  const line = M.describeHealth({ health, lastEvent: summary.lastEvent, rejected: summary.rejected, now });
   status.textContent = line.text;
   status.title = line.text;
   status.dataset.level = line.level;
@@ -1239,13 +1403,13 @@ function renderStatus(broken) {
   $("about").hidden = !state.aboutOpen || broken;
   $("about-toggle").setAttribute("aria-expanded", String(state.aboutOpen));
   if (state.aboutOpen) {
-    $("about").replaceChildren(...M.aboutLines({ health, insights: insightsData, parsed, now }).map((text) => element("p", "", text)));
+    $("about").replaceChildren(...M.aboutLines({ health, insights: insightsData, summary, now }).map((text) => element("p", "", text)));
   }
 }
 
 function emptyMessage() {
   if (health?.log && health.log.status !== "ok") return `Usage log ${health.log.status} — nothing to show`;
-  if (parsed.presses.length === 0) return "No presses recorded yet";
+  if (store.summary().count === 0) return "No presses recorded yet";
   return `Nothing logged in ${monthLabel(view.month)} yet`;
 }
 
@@ -1288,10 +1452,19 @@ function iconFor(b) {
 function renderList(inLayer) {
   const list = $("list");
   const scope = `${state.layer}|${view.month}`;
+  const rows = inLayer ? view.scoped : view.used;
+
+  // Skip the rebuild when nothing a row shows has changed, so hover, scroll and focus stay put.
+  const signature = `${scope}|${inLayer}|${state.selected}|${iconVersion}|`
+    + (rows.length === 0 ? emptyMessage() : rows.map((r) => `${r.layer} ${r.key} ${r.count} ${r.label}`).join("\n"));
+  if (signature === listSignature) return;
+  listSignature = signature;
+
   const scrollTop = scope === listScope ? list.scrollTop : 0;
   listScope = scope;
+  const active = document.activeElement;
+  const focusedId = active?.classList?.contains("item") ? `${active.dataset.layer} ${active.dataset.key}` : null;
 
-  const rows = inLayer ? view.scoped : view.used;
   if (rows.length === 0) {
     list.replaceChildren(element("p", "empty-list", emptyMessage()));
     return;
@@ -1300,6 +1473,7 @@ function renderList(inLayer) {
   const top = Math.max(1, rows[0].count);
   const fragment = document.createDocumentFragment();
   let selected = null;
+  let focusTarget = null;
   for (const b of rows) {
     const item = element("button", `item fam-${familyOf(b.layer)}`);
     item.tabIndex = -1; // the list is one Tab stop; typing selects bindings
@@ -1307,6 +1481,7 @@ function renderList(inLayer) {
     item.dataset.key = b.key;
     if (b.count === 0) item.classList.add("unused");
     if (inLayer && b.key === state.selected) { item.classList.add("selected"); selected = item; }
+    if (focusedId === `${b.layer} ${b.key}`) focusTarget = item;
 
     const chips = element("span", "chips");
     if (!inLayer) {
@@ -1331,7 +1506,10 @@ function renderList(inLayer) {
   }
   list.replaceChildren(fragment);
   list.scrollTop = scrollTop;
-  selected?.scrollIntoView({ block: "nearest" });
+  // Scroll to the selection only when it changed, not on every data update.
+  if (state.selected !== listSelected) selected?.scrollIntoView({ block: "nearest" });
+  listSelected = state.selected;
+  focusTarget?.focus({ preventScroll: true });
 }
 
 function renderDetail() {
@@ -1355,7 +1533,7 @@ function renderDetail() {
       element("div", "detail-value", `Nothing on Hyper ${symbol(state.layer)} ${symbol(state.selected)} yet`),
     );
   } else if (binding.historical) {
-    const last = lastUsed[`${binding.layer} ${binding.key}`];
+    const last = store.lastUsedOf(`${binding.layer} ${binding.key}`);
     text.append(
       element("div", "detail-title", `${binding.label} · no longer bound`),
       element("div", "detail-value", [plural(binding.count, "press"), last ? `last ${timeAgo(last)}` : null].filter(Boolean).join(" · ")),
@@ -1368,7 +1546,7 @@ function renderDetail() {
     } else {
       facts.push(`Not used in ${monthLabel(view.month)}`);
     }
-    const last = lastUsed[`${binding.layer} ${binding.key}`];
+    const last = store.lastUsedOf(`${binding.layer} ${binding.key}`);
     facts.push(last ? `last ${timeAgo(last)}` : "never used");
     text.append(
       element("div", "detail-title", `${symbol(binding.key)} · ${binding.label}`),
@@ -1440,11 +1618,18 @@ function renderInsights() {
 }
 
 function buildActivity() {
-  return HyperdashModel.buildActivity(presses, months[state.monthIndex], state.highlight, Math.floor(CHART.plot / CHART.step));
+  return HyperdashModel.buildActivityFromBins(store.binsOf(state.monthId), state.highlight, Math.floor(CHART.plot / CHART.step));
 }
 
 function renderActivity(a) {
   const root = $("activity");
+
+  // Skip the rebuild when the bins and highlight are unchanged, so hover and focus stay put.
+  const signature = `${view.month}|${state.highlight}|${a.perDot}|${a.all.join(",")}|${a.hit.join(",")}|${a.total === 0 ? emptyMessage() : ""}`;
+  if (signature === activitySignature) return;
+  activitySignature = signature;
+  const focusedBin = document.activeElement?.classList?.contains("bin") ? document.activeElement.dataset.bin : null;
+
   if (a.total === 0) {
     root.replaceChildren(element("p", "empty-list", emptyMessage()));
     return;
@@ -1484,7 +1669,7 @@ function renderActivity(a) {
     }
     // One Tab stop (the busiest bin); ← → move between bins inside the chart.
     const description = HyperdashModel.describeBin(a, bin);
-    bins += `<rect class="bin" tabindex="${bin === busiest ? 0 : -1}" role="img" aria-label="${description}" x="${(bin * binWidth).toFixed(1)}" y="${top}" width="${binWidth.toFixed(1)}" height="${plot}"><title>${description}</title></rect>`;
+    bins += `<rect class="bin" data-bin="${bin}" tabindex="${bin === busiest ? 0 : -1}" role="img" aria-label="${description}" x="${(bin * binWidth).toFixed(1)}" y="${top}" width="${binWidth.toFixed(1)}" height="${plot}"><title>${description}</title></rect>`;
   }
 
   const base = top + plot + 6;
@@ -1521,6 +1706,13 @@ function renderActivity(a) {
   }
   if (a.perDot > 1) legend.append(element("span", "scale", `1 DOT ≈ ${a.perDot} PRESSES`));
   root.append(legend);
+
+  const refocus = focusedBin === null ? null : root.querySelector(`.bin[data-bin="${focusedBin}"]`);
+  if (refocus) {
+    root.querySelector('.bin[tabindex="0"]')?.setAttribute("tabindex", "-1");
+    refocus.tabIndex = 0;
+    refocus.focus({ preventScroll: true });
+  }
 }
 
 function renderFooter() {
@@ -1572,8 +1764,7 @@ function openPage(page) {
 // `month` is set when the combo comes from a report, so the numbers match the card that opened it.
 function openCombo(layer, key, month) {
   Object.assign(state, { layer, selected: key, page: null });
-  const index = month ? months.indexOf(month) : -1;
-  if (index !== -1) state.monthIndex = index;
+  if (month && months.includes(month)) state.monthId = month;
   render();
 }
 
@@ -1584,9 +1775,9 @@ function toggleHighlight(layer) {
 }
 
 function changeMonth(step) {
-  const next = state.monthIndex + step;
+  const next = months.indexOf(state.monthId) + step;
   if (next < 0 || next >= months.length) return;
-  state.monthIndex = next;
+  state.monthId = months[next];
   render();
 }
 
@@ -1595,43 +1786,114 @@ function toggleAbout(open) {
   render();
 }
 
-// Hammerspoon keeps this page loaded and calls update() each time the panel opens,
-// with fresh { bindings, log, insights, health }. Bad input shows an error state instead of throwing.
-function update(data) {
-  const M = HyperdashModel;
-  const checked = M.validatePayload(data);
-  dataError = checked.ok ? null : checked.error;
-  bindings = checked.ok ? checked.bindings : [];
-  const now = nowStamp();
-  parsed = checked.ok ? M.parseLog(checked.log, now) : NO_PARSE;
-  presses = parsed.presses;
-  lastUsed = parsed.lastUsed;
-  const layerSet = new Set(bindings.map((b) => b.layer));
-  for (const p of presses) layerSet.add(p.layer);
-  layers = [...layerSet];
-  months = M.listMonths(presses, now);
-  Object.assign(state, { monthIndex: months.length - 1, layer: null, selected: null, page: null, highlight: null, aboutOpen: false });
-  insightsData = checked.ok ? checked.insights : null;
-  health = checked.ok ? checked.health : null;
-  render();
-  // Every open starts with no focused control, so Space or a letter never activates a stray button.
-  document.activeElement?.blur();
-  // Hammerspoon sizes the window from this before showing it.
-  return document.body.scrollHeight;
+// Host protocol: window.hyperdash. The host sends one call at a time and waits for the result.
+// Every call except open() keeps the page, month id, selection, highlight, scroll and focus.
+
+// Starts a call: the "now" it supplied, or the real clock.
+function begin(data) {
+  renderNow = HyperdashModel.stampOrNull(data?.now);
+  return currentNow();
 }
 
-// Called by Hammerspoon after load, and again if icons change. May run before or after update().
+// Keeps months, layers and navigation consistent after data or bindings change.
+function reconcile(now) {
+  months = store.months(now);
+  const known = new Set(bindings.map((b) => b.layer));
+  for (const layer of store.layerList()) known.add(layer);
+  layers = [...known];
+  Object.assign(state, HyperdashModel.reconcileNavigation(state, months, layers));
+}
+
+function finish(extra) {
+  render(false);
+  renderNow = null;
+  return { ...extra, height: document.body.scrollHeight };
+}
+
+const hyperdash = {
+  // Full load for startup and recovery: discards all event state and parses `text` (bytes 0 to `offset`).
+  reset(data) {
+    const now = begin(data);
+    const checked = HyperdashModel.validatePayload({ bindings: data?.bindings, log: data?.text, insights: data?.insights, health: data?.health });
+    dataError = checked.ok ? null : checked.error;
+    bindings = checked.ok ? checked.bindings : [];
+    const result = session.reset(checked.ok ? data : null, now);
+    insightsData = checked.ok ? checked.insights : null;
+    health = checked.ok ? checked.health : null;
+    iconVersion += 1;
+    iconCache.clear();
+    reconcile(now);
+    return finish(result);
+  },
+
+  // New complete lines covering bytes [from, to). Applied only for the current generation, in order.
+  append(data) {
+    const now = begin(data);
+    const result = session.append(data, now);
+    if (!result.ok) { renderNow = null; return result; }
+    reconcile(now);
+    return finish(result);
+  },
+
+  setBindings(list, nextHealth) {
+    if (!Array.isArray(list)) return { ok: false, reason: "invalid" };
+    const now = begin();
+    bindings = HyperdashModel.normalizeBindings(list);
+    if (nextHealth !== undefined) health = HyperdashModel.normalizeHealth(nextHealth);
+    iconVersion += 1;
+    iconCache.clear();
+    reconcile(now);
+    return finish({ ok: true });
+  },
+
+  setInsights(insights, nextHealth) {
+    begin();
+    insightsData = HyperdashModel.normalizeInsights(insights);
+    if (nextHealth !== undefined) health = HyperdashModel.normalizeHealth(nextHealth);
+    return finish({ ok: true });
+  },
+
+  // Status only: never rebuilds list rows. Pieces that quote the status are guarded by their own signatures.
+  setHealth(nextHealth) {
+    begin();
+    health = HyperdashModel.normalizeHealth(nextHealth);
+    renderStatus(dataError !== null);
+    if (dataError === null && state.page === null) renderList(state.layer !== null);
+    else if (dataError === null && state.page === "insights" && !insightsData) renderInsights();
+    else if (dataError === null && state.page === "activity") renderActivity(buildActivity());
+    renderNow = null;
+    return { ok: true, height: document.body.scrollHeight };
+  },
+
+  // Each panel open, after any pending reset or append: the only call that resets navigation.
+  open(data) {
+    const now = begin(data);
+    store.tick(now);
+    reconcile(now);
+    Object.assign(state, { layer: null, selected: null, page: null, highlight: null, aboutOpen: false, monthId: months[months.length - 1] });
+    listScope = null;
+    listSignature = null;
+    activitySignature = null;
+    // Every open starts with no focused control, so Space or a letter never activates a stray button.
+    document.activeElement?.blur();
+    return finish();
+  },
+
+  // Date change, wake and open: promotes future-dated events whose time has come and refreshes the month list.
+  tick(data) {
+    const now = begin(data);
+    store.tick(now);
+    reconcile(now);
+    return finish({ ok: true });
+  },
+};
+window.hyperdash = hyperdash;
+
+// Called by Hammerspoon after load, and again if icons change. May run before or after the first reset().
 function setIcons(data) {
   icons = { apps: data?.apps || {}, sites: data?.sites || {} };
   iconCache.clear();
-  render();
-}
-
-// Called by Hammerspoon when a background analysis finishes, successfully or not.
-// Keeps the page and selection. `nextHealth` is optional.
-function setInsights(insights, nextHealth) {
-  insightsData = HyperdashModel.normalizeInsights(insights);
-  if (nextHealth !== undefined) health = HyperdashModel.normalizeHealth(nextHealth);
+  iconVersion += 1;
   render();
 }
 
@@ -1709,7 +1971,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 buildKeyboard();
-update({ bindings: [], log: "" });
+hyperdash.reset({ generation: 0, bindings: [], text: "", offset: 0 });
 </script>
 </body>
 </html>
