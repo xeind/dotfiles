@@ -141,6 +141,109 @@ do
   check("throwing sendApps: recovers once the app is gone", env.page.apps ~= nil and env.page.apps["com.apple.finder"] == "Finder")
 end
 
+do
+  -- 4. A failing insights tool is not restarted on every open.
+  local function setup(name)
+    local home, p = baseHome(name)
+    write(p.log, lines(0, 3))
+    os.execute("mkdir -p " .. home .. "/.local/bin")
+    p.tool = home .. "/.local/bin/hyperdash-insights"
+    write(p.tool, "#!/bin/sh\n")
+    os.execute("chmod 755 " .. p.tool)
+    os.execute("rm -f " .. p.insights) -- no report: always due
+    local env = sandbox.new({ moduleDir = MODULE_DIR, home = home })
+    env.webview.navigation("didFinishNavigation")
+    env.flush()
+    return env, p
+  end
+  local function openClose(env)
+    toggle(env)
+    local shown = env.shown
+    toggle(env)
+    return shown
+  end
+
+  local env, p = setup("backoff")
+  local t0 = env.clock
+  local shown = openClose(env)
+  check("backoff: first open starts the tool", #env.tasks == 1, #env.tasks)
+  check("backoff: the open does not wait for the analysis", shown == 1, shown)
+  env.tasks[1]:finish(1, "", "boom: bad log")
+  env.flush()
+  toggle(env) -- reopen to receive health
+  local h = env.page.health.insights
+  check("backoff: failure reaches health", h.status == "failed" and h.message:find("boom: bad log", 1, true) ~= nil, h.message)
+  check("backoff: health says when the next try is", h.message:find("next try " .. os.date("%H:%M", math.floor(t0) + 300), 1, true) ~= nil, h.message)
+  check("backoff: retryAt field is the same moment", h.retryAt == os.date("%Y-%m-%dT%H:%M:%S", math.floor(t0) + 300), h.retryAt)
+  toggle(env)
+  env.advance(10); openClose(env)
+  check("backoff: no retry 10 s after one failure", #env.tasks == 1, #env.tasks)
+  env.advance(280); openClose(env)
+  check("backoff: no retry at 290 s", #env.tasks == 1, #env.tasks)
+  for _ = 1, 5 do openClose(env) end
+  check("backoff: repeated opens still spawn nothing", #env.tasks == 1, #env.tasks)
+  env.advance(15); openClose(env)
+  check("backoff: retry after 5 minutes", #env.tasks == 2, #env.tasks)
+
+  -- A second failure extends the wait to 30 minutes.
+  local t1 = env.clock
+  env.tasks[2]:finish(2, "", "")
+  env.flush()
+  toggle(env)
+  h = env.page.health.insights
+  check("backoff x2: exit code reported", h.message:find("exit code 2", 1, true) ~= nil, h.message)
+  check("backoff x2: next try in 30 minutes", h.retryAt == os.date("%Y-%m-%dT%H:%M:%S", math.floor(t1) + 1800), h.retryAt)
+  toggle(env)
+  env.advance(310); openClose(env)
+  check("backoff x2: no retry after 5 more minutes", #env.tasks == 2, #env.tasks)
+  env.advance(1400); openClose(env)
+  check("backoff x2: no retry at 29 minutes", #env.tasks == 2, #env.tasks)
+  env.advance(100); openClose(env)
+  check("backoff x2: retry after 30 minutes", #env.tasks == 3, #env.tasks)
+
+  -- A success resets the backoff.
+  write(p.insights, '{"version":2,"generated":"2026-10-16T10:00:00","month":"2026-10","recordingSince":null,"rejectedLines":0,"insights":[]}')
+  env.tasks[3]:finish(0)
+  env.flush()
+  toggle(env)
+  check("success: failure cleared from health", env.page.health.insights.status == "ok" and env.page.health.insights.retryAt == nil, env.page.health.insights.status)
+  toggle(env)
+  os.execute(string.format("touch -t %s %s", os.date("%Y%m%d%H%M.%S", os.time() - 4000), p.insights)) -- due again
+  env.advance(1)
+  openClose(env)
+  check("success: next due run starts at once", #env.tasks == 4, #env.tasks)
+  env.tasks[4]:finish(1, "", "again")
+  env.flush()
+  toggle(env)
+  check("success: the next failure waits 5 minutes again, not 30", env.page.health.insights.retryAt == os.date("%Y-%m-%dT%H:%M:%S", math.floor(env.clock) + 300), env.page.health.insights.retryAt)
+  toggle(env)
+
+  -- A start failure counts as a failure.
+  local env2, p2 = setup("backoff_start")
+  env2.taskStartFails = true
+  local s0 = env2.clock
+  local shown2 = openClose(env2)
+  check("start failure: no task, open still works", #env2.tasks == 0 and shown2 == 1, #env2.tasks)
+  toggle(env2)
+  local h2 = env2.page.health.insights
+  check("start failure: reported in health with a retry time", h2.status == "failed" and h2.message:find("could not start", 1, true) ~= nil and h2.retryAt == os.date("%Y-%m-%dT%H:%M:%S", math.floor(s0) + 300), h2.message)
+  toggle(env2)
+  env2.taskStartFails = false
+  env2.advance(100); openClose(env2)
+  check("start failure: blocks retries for 5 minutes", #env2.tasks == 0, #env2.tasks)
+  env2.taskStartFails = true
+  env2.advance(210); openClose(env2)
+  check("start failure: second start failure is attempted after the wait", #env2.tasks == 0 and (env2.page.health.insights.status == "failed"), #env2.tasks)
+  toggle(env2)
+  check("start failure x2: next try in 30 minutes", env2.page.health.insights.retryAt == os.date("%Y-%m-%dT%H:%M:%S", math.floor(env2.clock) + 1800), env2.page.health.insights.retryAt)
+  toggle(env2)
+  env2.taskStartFails = false
+  env2.advance(1000); openClose(env2)
+  check("start failure x2: nothing before 30 minutes", #env2.tasks == 0, #env2.tasks)
+  env2.advance(900); openClose(env2)
+  check("start failure x2: runs after 30 minutes", #env2.tasks == 1, #env2.tasks)
+end
+
 os.execute("rm -rf " .. SCRATCH)
 report[#report + 1] = string.format("passed=%d failed=%d", passed, failed)
 return table.concat(report, "\n")

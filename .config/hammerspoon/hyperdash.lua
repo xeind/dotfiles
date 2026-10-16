@@ -75,6 +75,9 @@ end
 -- Outcome of the last background insights run: { status, message }.
 -- Cleared by the next successful run.
 local lastRunFailure = nil
+local insightsFailures = 0 -- consecutive failed runs, start failures included
+local insightsRetryAt = nil -- epoch seconds: no new run before this
+local insightsAttempt = nil -- identifies the run whose callback may act
 
 local insightsCache = { key = false, raw = nil, message = nil } -- raw: valid version 2 report
 local bindingsCache = { key = false, list = {}, json = "[]", status = "missing", invalid = 0 }
@@ -197,9 +200,9 @@ local function encodeHealth()
   local logExtra = ""
   if log.offset then logExtra = string.format(',"offset":%d,"generation":%d', log.offset, log.generation) end
   return string.format(
-    '{"log":{"status":%s,"bytes":%d,"modified":%s%s},"insights":{"status":%s,"message":%s},"bindings":{"status":%s%s},"context":{"status":%s,"bytes":%d,"modified":%s}}',
+    '{"log":{"status":%s,"bytes":%d,"modified":%s%s},"insights":{"status":%s,"message":%s,"retryAt":%s},"bindings":{"status":%s%s},"context":{"status":%s,"bytes":%d,"modified":%s}}',
     jsonString(log.status), log.bytes, jsonString(log.modified), logExtra,
-    jsonString(insights.status), jsonString(insights.message),
+    jsonString(insights.status), jsonString(insights.message), jsonString(insights.retryAt),
     jsonString(bindingsCache.status),
     bindingsCache.invalid > 0 and (',"invalidEntries":' .. bindingsCache.invalid) or "",
     jsonString(context.status), context.bytes, jsonString(context.modified)
@@ -603,8 +606,6 @@ end
 -- Background insights
 ---------------------------------------------------------------------------
 
--- The tool runs in the background so a slow disk never delays the panel;
--- the page receives the result through the next reconcile.
 -- The context log is passed only when recording is on and the file exists:
 -- the tool exits 1 for a missing --context file.
 local function insightsArguments()
@@ -629,27 +630,49 @@ local function insightsDue()
   return context and context.modification > report.modification and age >= INSIGHTS_CONTEXT_MIN_AGE or false
 end
 
+-- A failed run leaves the old report in place, so the report stays "due".
+-- Without a pause every open would start another failing process. Each
+-- failure sets the earliest next run (reader.insightsBackoff); a success
+-- clears it. The open path only starts the task; it never waits for it.
+local function recordInsightsFailure(message)
+  insightsFailures = insightsFailures + 1
+  insightsRetryAt = os.time() + reader.insightsBackoff(insightsFailures)
+  lastRunFailure = {
+    status = "failed",
+    message = message .. " (next try " .. os.date("%H:%M", insightsRetryAt) .. ")",
+    retryAt = os.date("%Y-%m-%dT%H:%M:%S", insightsRetryAt),
+  }
+  print("hyperdash: insights failed: " .. message)
+end
+
 -- The tool runs in the background so a slow disk never delays the panel;
 -- the page receives the result through the next reconcile.
 local function refreshInsights()
   if insightsTask and insightsTask:isRunning() then return end
   if not hs.fs.attributes(INSIGHTS_TOOL) then return end
+  if insightsRetryAt and os.time() < insightsRetryAt then return end
   if not insightsDue() then return end
 
+  local attempt = {}
+  insightsAttempt = attempt
   insightsTask = hs.task.new(INSIGHTS_TOOL, function(exitCode, _, stderr)
+    if insightsAttempt ~= attempt then return end -- a start failure already counted
     if exitCode ~= 0 then
       local detail = (stderr or ""):gsub("^%s+", ""):gsub("%s+$", ""):sub(1, 200)
-      lastRunFailure = {
-        status = "failed",
-        message = detail ~= "" and detail or ("exit code " .. tostring(exitCode)),
-      }
-      print("hyperdash: insights failed: " .. lastRunFailure.message)
+      recordInsightsFailure(detail ~= "" and detail or ("exit code " .. tostring(exitCode)))
     else
-      lastRunFailure = nil
+      lastRunFailure, insightsFailures, insightsRetryAt = nil, 0, nil
     end
     requestSync()
   end, insightsArguments())
-  insightsTask:start()
+
+  -- start() may raise, return nil, or return a task that is not running.
+  local ok, started = pcall(function() return insightsTask:start() end)
+  if not ok or not started or not insightsTask:isRunning() then
+    insightsAttempt = nil
+    recordInsightsFailure("could not start " .. INSIGHTS_TOOL .. (ok and "" or (": " .. tostring(started))))
+    requestSync()
+  end
 end
 
 ---------------------------------------------------------------------------

@@ -300,6 +300,16 @@ function R.newRecorder(env)
   return recorder
 end
 
+-- Seconds to wait before the insights tool runs again after `failures`
+-- failures in a row: 5 minutes after one, 30 minutes after two or more.
+R.INSIGHTS_RETRY_FIRST = 300
+R.INSIGHTS_RETRY_LATER = 1800
+function R.insightsBackoff(failures)
+  if failures <= 0 then return 0 end
+  if failures == 1 then return R.INSIGHTS_RETRY_FIRST end
+  return R.INSIGHTS_RETRY_LATER
+end
+
 -- Order-independent text for a bundle ID to name map, to see whether it changed.
 function R.mapSignature(map)
   local keys = {}

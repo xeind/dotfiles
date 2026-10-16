@@ -539,6 +539,13 @@ do
   check("context stream: incremental text equals the file", pagetext == source, #pagetext .. " vs " .. #source)
 end
 
+do
+  check("insightsBackoff: no failures, no wait", R.insightsBackoff(0) == 0)
+  check("insightsBackoff: one failure, 5 minutes", R.insightsBackoff(1) == 300)
+  check("insightsBackoff: two failures, 30 minutes", R.insightsBackoff(2) == 1800)
+  check("insightsBackoff: many failures stay at 30 minutes", R.insightsBackoff(50) == 1800)
+end
+
 os.execute("rm -rf " .. SCRATCH)
 report[#report + 1] = string.format("passed=%d failed=%d", passed, failed)
 return table.concat(report, "\n")
