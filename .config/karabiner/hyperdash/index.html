@@ -575,15 +575,15 @@
     <h1 class="title" id="title">hyperdash</h1>
     <div class="pill updated" id="updated" hidden><span class="pill-label" id="updated-label"></span></div>
     <div class="pill" id="month-pill">
-      <button id="previous-month" aria-label="Previous month">
+      <button class="tabstop" id="previous-month" aria-label="Previous month">
         <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>
       </button>
       <span class="pill-label" id="month-label"></span>
-      <button id="next-month" aria-label="Next month">
+      <button class="tabstop" id="next-month" aria-label="Next month">
         <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 1.5 7 5 3.5 8.5"/></svg>
       </button>
     </div>
-    <button class="close" id="close" aria-label="Close">
+    <button class="close tabstop" id="close" aria-label="Close">
       <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l10 10M12 2 2 12"/></svg>
     </button>
   </header>
@@ -591,7 +591,7 @@
   <section class="total" id="totals">
     <span class="total-number" id="total"></span>
     <span class="total-unit" id="total-unit"></span>
-    <button class="info" id="about-toggle" aria-label="About these counts" aria-expanded="false" title="About these counts (?)">i</button>
+    <button class="info tabstop" id="about-toggle" aria-label="About these counts" aria-expanded="false" title="About these counts (?)">i</button>
     <span class="delta" id="delta" hidden></span>
   </section>
 
@@ -603,7 +603,7 @@
   <section class="detail" id="detail" hidden></section>
 
   <!-- Overview and layer pages: the binding list -->
-  <section class="list" id="list" tabindex="0" aria-label="Bindings"></section>
+  <section class="list tabstop" id="list" tabindex="-1" aria-label="Bindings"></section>
   <p class="problem" id="problem" role="alert" hidden></p>
 
   <!-- Insights page -->
@@ -979,6 +979,10 @@ var HyperdashModel = (() => {
     };
   }
 
+  // Tab stops stay off after each open until the user presses Tab, so the window becoming key never
+  // draws a focus ring on Close. Pressing Tab turns them on before the browser moves focus.
+  const tabStopsAfter = (enabled, event) => enabled || event.key === "Tab";
+
   // Navigation after a data update: the month stays by id, and a layer, selection or highlight
   // survives unless the layer it points at no longer exists.
   function reconcileNavigation(nav, months, layers) {
@@ -1118,7 +1122,7 @@ var HyperdashModel = (() => {
   return {
     FAMILIES, familyOf, localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
     monthOf, previousMonth, isMonthComplete, compareMonths,
-    sumCounts, buildRows, buildActivityFromBins, createStore, createSession, reconcileNavigation, binTime, describeBin,
+    sumCounts, buildRows, buildActivityFromBins, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, describeBin,
     formatWhen, describeHealth, aboutLines, routeKey,
   };
 })();
@@ -1204,6 +1208,7 @@ let activitySignature = null;
 let headerMode = null;
 let bindings = [];
 let months = [];
+let tabStops = false; // sequential focus is off after each open until Tab is pressed
 let renderNow = null; // the "now" a protocol call supplied; interactions use the real clock
 let view = null;
 const keyNodes = new Map();
@@ -1309,8 +1314,9 @@ function render(announce = true) {
   if (mode !== headerMode) {
     headerMode = mode;
     if (mode === "back") {
-      $("header-icon").outerHTML = `<button class="header-icon" id="header-icon" aria-label="Back">${ICON_BACK}</button>`;
+      $("header-icon").outerHTML = `<button class="header-icon tabstop" id="header-icon" aria-label="Back">${ICON_BACK}</button>`;
       $("header-icon").addEventListener("click", closeLayer);
+      applyTabStops();
     } else {
       $("header-icon").outerHTML = `<span class="header-icon" id="header-icon">${ICON_KEYBOARD}</span>`;
     }
@@ -1786,6 +1792,11 @@ function toggleAbout(open) {
   render();
 }
 
+// The header buttons, the "i" button and the list are Tab stops only once the user has pressed Tab.
+function applyTabStops() {
+  for (const node of document.querySelectorAll(".tabstop")) node.tabIndex = tabStops ? 0 : -1;
+}
+
 // Host protocol: window.hyperdash. The host sends one call at a time and waits for the result.
 // Every call except open() keeps the page, month id, selection, highlight, scroll and focus.
 
@@ -1874,8 +1885,12 @@ const hyperdash = {
     listScope = null;
     listSignature = null;
     activitySignature = null;
-    // Every open starts with no focused control, so Space or a letter never activates a stray button.
+    // Every open starts with no focused control and no Tab stops, so Space or a letter never activates a
+    // stray button and the window becoming key draws no focus ring. The list starts at the top.
+    tabStops = false;
+    applyTabStops();
     document.activeElement?.blur();
+    $("list").scrollTop = 0;
     return finish();
   },
 
@@ -1947,7 +1962,16 @@ $("previous-month").addEventListener("click", () => changeMonth(-1));
 $("next-month").addEventListener("click", () => changeMonth(1));
 $("about-toggle").addEventListener("click", () => toggleAbout());
 
+// When the window becomes key, WebKit may focus its first control. Drop that focus unless the user is tabbing.
+window.addEventListener("focus", () => {
+  if (!tabStops && document.activeElement?.closest?.(".header, .info, #list")) document.activeElement.blur();
+});
+
 document.addEventListener("keydown", (event) => {
+  if (!tabStops && HyperdashModel.tabStopsAfter(tabStops, event)) {
+    tabStops = true;
+    applyTabStops();
+  }
   if (dataError !== null) {
     if (event.key === "Escape") post({ action: "close" });
     return;
@@ -1972,6 +1996,7 @@ document.addEventListener("keydown", (event) => {
 
 buildKeyboard();
 hyperdash.reset({ generation: 0, bindings: [], text: "", offset: 0 });
+applyTabStops();
 </script>
 </body>
 </html>

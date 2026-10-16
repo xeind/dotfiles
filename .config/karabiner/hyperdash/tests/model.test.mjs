@@ -622,3 +622,10 @@ test("stampOrNull: a host `now` is a local ISO string, never epoch milliseconds"
   assert.equal(M.stampOrNull(undefined), null);
 });
 
+test("tabStopsAfter: tab stops stay off until the user presses Tab", () => {
+  assert.equal(M.tabStopsAfter(false, { key: "w" }), false);
+  assert.equal(M.tabStopsAfter(false, { key: "Enter" }), false);
+  assert.equal(M.tabStopsAfter(false, { key: " " }), false);
+  assert.equal(M.tabStopsAfter(false, { key: "Tab" }), true);
+  assert.equal(M.tabStopsAfter(true, { key: "w" }), true, "once on, they stay on until the next open");
+});
