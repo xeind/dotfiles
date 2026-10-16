@@ -2,6 +2,8 @@
 -- Karabiner logs each press and runs `hs -c 'hyperdash.toggle()'`
 -- on Hyper + S + Q. The UI lives in ~/.config/karabiner/hyperdash/.
 
+local reader = require("hyperdash_core") -- pure helpers; see that file
+
 local M = {}
 
 local HOME = os.getenv("HOME")
@@ -31,17 +33,22 @@ local function readFile(path)
   return content
 end
 
--- hs.json.decode logs an error and returns nil on bad JSON; it does not throw.
-local function isJson(raw)
-  local ok, value = pcall(hs.json.decode, raw or "")
-  return ok and value ~= nil
+-- Raw JSON of a valid version 2 report. Returns nil when the file is
+-- missing, and nil plus a message when it is unusable. hs.json.decode logs
+-- an error and returns nil on bad JSON; it does not throw.
+local function readInsightsReport()
+  local raw = readFile(INSIGHTS)
+  if not raw then return nil end
+  local ok, decoded = pcall(hs.json.decode, raw)
+  if not ok or decoded == nil then return nil, INSIGHTS .. " is not valid JSON" end
+  local valid, message = reader.checkInsights(decoded)
+  if not valid then return nil, message end
+  return raw
 end
 
 -- The page expects JSON null when there are no insights yet.
 local function readInsights()
-  local raw = readFile(INSIGHTS)
-  if isJson(raw) then return raw end
-  return "null"
+  return (readInsightsReport()) or "null"
 end
 
 -- Outcome of the last background insights run: { status, message }.
@@ -73,8 +80,9 @@ local function insightsHealth()
   if insightsTask and insightsTask:isRunning() then return { status = "running" } end
   if lastRunFailure then return lastRunFailure end
   local attributes = hs.fs.attributes(INSIGHTS)
-  if attributes and not isJson(readFile(INSIGHTS)) then
-    return { status = "failed", message = INSIGHTS .. " is not valid JSON" }
+  if attributes then
+    local report, message = readInsightsReport()
+    if not report then return { status = "failed", message = message or ("cannot read " .. INSIGHTS) } end
   end
   local fresh = attributes and os.time() - attributes.modification < INSIGHTS_MAX_AGE
   if fresh then return { status = "ok" } end
@@ -84,24 +92,29 @@ local function insightsHealth()
   return { status = "stale" }
 end
 
--- Decoded bindings plus raw JSON text. A missing or corrupt file gives an
--- empty list and status "missing" | "invalid" instead of breaking the page.
+-- Returns the valid bindings, their JSON text, a status and the number of
+-- dropped entries. A missing or corrupt file gives an empty list and status
+-- "missing" | "invalid". Entries with the wrong field types are dropped and
+-- reported as status "invalid" with a count; the rest still reach the page.
 local function readBindings()
   local raw = readFile(BINDINGS)
-  if not raw then return {}, "[]", "missing" end
-  local ok, list = pcall(hs.json.decode, raw)
-  if not ok or type(list) ~= "table" or (#list == 0 and next(list) ~= nil) then return {}, "[]", "invalid" end
-  return list, raw, "ok"
+  if not raw then return {}, "[]", "missing", 0 end
+  local ok, decoded = pcall(hs.json.decode, raw)
+  local list, dropped = reader.sanitizeBindings(ok and decoded or nil)
+  if not list then return {}, "[]", "invalid", 0 end
+  if dropped == 0 then return list, raw, "ok", 0 end
+  return list, hs.json.encode(list), "invalid", dropped
 end
 
 local function encodeHealth(log)
   local insights = insightsHealth()
-  local _, _, bindingsStatus = readBindings()
+  local _, _, bindingsStatus, invalidEntries = readBindings()
   return string.format(
-    '{"log":{"status":%s,"bytes":%d,"modified":%s},"insights":{"status":%s,"message":%s},"bindings":{"status":%s}}',
+    '{"log":{"status":%s,"bytes":%d,"modified":%s},"insights":{"status":%s,"message":%s},"bindings":{"status":%s%s}}',
     jsonString(log.status), log.bytes, jsonString(log.modified),
     jsonString(insights.status), jsonString(insights.message),
-    jsonString(bindingsStatus)
+    jsonString(bindingsStatus),
+    invalidEntries > 0 and (',"invalidEntries":' .. invalidEntries) or ""
   )
 end
 
