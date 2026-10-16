@@ -5,6 +5,7 @@
 -- Sections:
 --   1. validation of bindings.json entries and insights.json (stage A)
 --   2. incremental log reader (stage B)
+--   3. context log: line format and the recorder
 
 local R = {}
 
@@ -24,8 +25,8 @@ end
 -- insights = [...] }. Returns true, or false and a message for the health object.
 function R.checkInsights(decoded)
   if type(decoded) ~= "table" then return false, "insights.json is not a JSON object" end
-  if decoded.version ~= 2 then
-    return false, "insights.json is version " .. tostring(decoded.version) .. ", expected 2"
+  if decoded.version ~= 2 and decoded.version ~= 3 then
+    return false, "insights.json is version " .. tostring(decoded.version) .. ", expected 2 or 3"
   end
   if type(decoded.month) ~= "string" then return false, "insights.json has no month" end
   if not isArray(decoded.insights) then return false, "insights.json insights is not an array" end
@@ -217,6 +218,96 @@ end
 -- Delivery failed, was rejected, or the callback never reported ok.
 function R.fail(state)
   state.needReset = true
+end
+
+---------------------------------------------------------------------------
+-- 3. Context log
+--
+-- ~/.local/state/hyperdash/context.log, one event per line:
+--   YYYY-MM-DDTHH:MM:SS.mmm<TAB>kind<TAB>value<LF>   (local time)
+-- kind is app (value: a bundle ID), or lock, unlock, sleep, wake, start
+-- (value: "-"). No window titles, URLs, keys or names are ever written.
+---------------------------------------------------------------------------
+
+R.CONTEXT_KINDS = { app = true, lock = true, unlock = true, sleep = true, wake = true, start = true }
+
+-- "2026-10-16T09:30:12.045" for an epoch time with a fraction of a second.
+function R.contextTime(epoch)
+  local seconds = math.floor(epoch)
+  local millis = math.floor((epoch - seconds) * 1000 + 0.5)
+  if millis >= 1000 then seconds, millis = seconds + 1, 0 end
+  return os.date("%Y-%m-%dT%H:%M:%S", seconds) .. string.format(".%03d", millis)
+end
+
+-- A bundle ID is reverse-DNS text. Anything else could break the line format.
+function R.validBundleId(value)
+  return type(value) == "string" and #value > 0 and #value <= 255 and value ~= "-" and value:match("^[%w%.%-_]+$") ~= nil
+end
+
+-- The line to append, or nil and a reason.
+function R.contextLine(epoch, kind, value)
+  if not R.CONTEXT_KINDS[kind] then return nil, "unknown kind " .. tostring(kind) end
+  if kind == "app" then
+    if not R.validBundleId(value) then return nil, "invalid bundle ID" end
+  else
+    value = "-"
+  end
+  return R.contextTime(epoch) .. "\t" .. kind .. "\t" .. value .. "\n"
+end
+
+-- env = { path, now = function() -> epoch with fraction, open = io.open,
+--         ensureDirectory = function(path) }
+-- Each event opens the file, appends one line and closes it, so a log that
+-- was deleted or replaced is recreated on the next event.
+function R.newRecorder(env)
+  local recorder = { lastApp = nil, written = 0, failed = 0, lastError = nil }
+  local directory = env.path:match("^(.*)/[^/]+$")
+
+  function recorder.write(kind, value)
+    local line, reason = R.contextLine(env.now(), kind, value)
+    if not line then
+      recorder.lastError = reason
+      return false
+    end
+    if env.ensureDirectory then env.ensureDirectory(directory) end
+    local file = env.open(env.path, "ab")
+    if not file then
+      recorder.failed = recorder.failed + 1
+      recorder.lastError = "cannot open " .. env.path
+      return false
+    end
+    local ok = file:write(line)
+    file:close()
+    if not ok then
+      recorder.failed = recorder.failed + 1
+      recorder.lastError = "cannot write " .. env.path
+      return false
+    end
+    recorder.written = recorder.written + 1
+    return true
+  end
+
+  -- Repeated activation of the same app is one event.
+  function recorder.app(bundleId)
+    if bundleId == recorder.lastApp then return false end
+    if recorder.write("app", bundleId) then
+      recorder.lastApp = bundleId
+      return true
+    end
+    return false
+  end
+
+  return recorder
+end
+
+-- Order-independent text for a bundle ID to name map, to see whether it changed.
+function R.mapSignature(map)
+  local keys = {}
+  for key in pairs(map) do keys[#keys + 1] = key end
+  table.sort(keys)
+  local parts = {}
+  for _, key in ipairs(keys) do parts[#parts + 1] = key .. "=" .. tostring(map[key]) end
+  return table.concat(parts, "\n")
 end
 
 return R

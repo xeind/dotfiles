@@ -376,6 +376,11 @@ do
   check("insights v2 with empty array", ok == true, message)
   ok = R.checkInsights({ version = 2, month = "2026-10", insights = { { kind = "peak" } } })
   check("insights v2 with entries", ok == true)
+  ok = R.checkInsights({ version = 3, month = "2026-10", insights = {} })
+  check("insights v3 accepted", ok == true)
+  ok = R.checkInsights({ version = 4, month = "2026-10", insights = {} })
+  check("insights v4 rejected", ok == false)
+  check("bundle ID: a bare dash is rejected (readers reject it)", R.validBundleId("-") == false and R.validBundleId("a-") == true)
   ok, message = R.checkInsights({ version = 1, month = "2026-10", insights = {} })
   check("insights v1 rejected", ok == false and message:find("version 1", 1, true) ~= nil, message)
   ok = R.checkInsights({ month = "2026-10", insights = {} })
@@ -414,6 +419,124 @@ do
   local real = hs.json.decode(read(os.getenv("HOME") .. "/.config/karabiner/hyperdash/bindings.json"))
   local realValid, realDropped = R.sanitizeBindings(real)
   check("bindings: all 94 real entries valid", #realValid == #real and realDropped == 0, #realValid .. "/" .. #real)
+end
+
+---------------------------------------------------------------------------
+-- 11. Context log: format, validation, recorder
+---------------------------------------------------------------------------
+do
+  local base = os.time({ year = 2026, month = 10, day = 16, hour = 9, min = 30, sec = 12 })
+  check("contextTime: milliseconds", R.contextTime(base + 0.045) == "2026-10-16T09:30:12.045", R.contextTime(base + 0.045))
+  check("contextTime: whole second", R.contextTime(base) == "2026-10-16T09:30:12.000")
+  check("contextTime: rounds to the nearest ms", R.contextTime(base + 0.0004) == "2026-10-16T09:30:12.000" and R.contextTime(base + 0.0006) == "2026-10-16T09:30:12.001")
+  check("contextTime: .9996 rolls into the next second", R.contextTime(base + 0.9996) == "2026-10-16T09:30:13.000", R.contextTime(base + 0.9996))
+  check("contextTime: 23:59:59.9996 rolls into the next day", R.contextTime(os.time({ year = 2026, month = 10, day = 16, hour = 23, min = 59, sec = 59 }) + 0.9996) == "2026-10-17T00:00:00.000")
+
+  check("contextLine: app", R.contextLine(base + 0.5, "app", "com.mitchellh.ghostty") == "2026-10-16T09:30:12.500\tapp\tcom.mitchellh.ghostty\n")
+  for _, kind in ipairs({ "lock", "unlock", "sleep", "wake", "start" }) do
+    check("contextLine: " .. kind .. " value is -", R.contextLine(base, kind) == "2026-10-16T09:30:12.000\t" .. kind .. "\t-\n")
+    check("contextLine: " .. kind .. " ignores a given value", R.contextLine(base, kind, "secret title") == "2026-10-16T09:30:12.000\t" .. kind .. "\t-\n")
+  end
+  local line, why = R.contextLine(base, "focus", "x")
+  check("contextLine: unknown kind rejected", line == nil and why:find("unknown kind", 1, true) ~= nil, why)
+  for _, bad in ipairs({ "", "has space", "tab\there", "line\nbreak", "title: Inbox (3)", "a/b", string.rep("a", 256) }) do
+    check("contextLine: bad bundle ID rejected (" .. #bad .. " chars)", R.contextLine(base, "app", bad) == nil)
+  end
+  check("contextLine: nil bundle ID rejected", R.contextLine(base, "app", nil) == nil)
+  for _, good in ipairs({ "com.apple.finder", "org.hammerspoon.Hammerspoon", "com.example.my-app_2", "net.shinyfrog.bear" }) do
+    check("validBundleId: " .. good, R.validBundleId(good))
+  end
+
+  -- Recorder against a real file.
+  local dir = SCRATCH .. "/ctx"
+  local path = dir .. "/context.log"
+  local clock = base + 0.001
+  local ensured = {}
+  local recorder = R.newRecorder({
+    path = path,
+    now = function() return clock end,
+    open = io.open,
+    ensureDirectory = function(d) ensured[#ensured + 1] = d; os.execute("mkdir -p " .. d) end,
+  })
+  check("recorder: starts empty", recorder.written == 0 and recorder.lastApp == nil)
+  check("recorder: start", recorder.write("start") == true)
+  check("recorder: ensured its directory", ensured[1] == dir, ensured[1])
+  clock = base + 1.25
+  check("recorder: first app written", recorder.app("com.apple.finder") == true)
+  clock = base + 2
+  check("recorder: same app again is one event", recorder.app("com.apple.finder") == false)
+  clock = base + 3
+  check("recorder: next app written", recorder.app("com.mitchellh.ghostty") == true)
+  check("recorder: invalid app not written, not remembered", recorder.app("bad id") == false and recorder.lastApp == "com.mitchellh.ghostty")
+  clock = base + 4
+  check("recorder: lock", recorder.write("lock"))
+  clock = base + 5
+  check("recorder: back to the same app after a lock still writes", recorder.app("com.apple.finder") == true)
+  local f = io.open(path, "rb"); local text = f:read("a"); f:close()
+  local expected = table.concat({
+    "2026-10-16T09:30:12.001\tstart\t-\n",
+    "2026-10-16T09:30:13.250\tapp\tcom.apple.finder\n",
+    "2026-10-16T09:30:15.000\tapp\tcom.mitchellh.ghostty\n",
+    "2026-10-16T09:30:16.000\tlock\t-\n",
+    "2026-10-16T09:30:17.000\tapp\tcom.apple.finder\n",
+  })
+  check("recorder: file content", text == expected, text)
+  check("recorder: written count", recorder.written == 5, recorder.written)
+  -- Every line parses by the documented format and times never go backwards.
+  local last = ""
+  local formatOk, ordered = true, true
+  for stamp, kind, value in text:gmatch("(%d+%-%d+%-%d+T%d+:%d+:%d+%.%d+)\t(%a+)\t([^\t\n]+)\n") do
+    if not R.CONTEXT_KINDS[kind] then formatOk = false end
+    if stamp < last then ordered = false end
+    last = stamp
+  end
+  check("recorder: lines match the format", formatOk and select(2, text:gsub("\n", "")) == 5)
+  check("recorder: times non-decreasing", ordered)
+
+  -- A deleted log is recreated by the next event.
+  os.execute("rm -f " .. path)
+  check("recorder: writes again after the file was deleted", recorder.write("wake") == true)
+  f = io.open(path, "rb"); text = f:read("a"); f:close()
+  check("recorder: new file holds only the new line", select(2, text:gsub("\n", "")) == 1 and text:find("\twake\t-", 1, true) ~= nil)
+
+  -- Failures are counted, never raised.
+  local failing = R.newRecorder({ path = "/nonexistent-dir/x/context.log", now = function() return base end, open = io.open })
+  check("recorder: unwritable path returns false", failing.write("start") == false and failing.failed == 1 and failing.lastError ~= nil)
+  check("recorder: failed app is not remembered", failing.app("com.apple.finder") == false and failing.lastApp == nil)
+  local noWrite = R.newRecorder({ path = path, now = function() return base end,
+    open = function() return { write = function() return nil end, close = function() end } end })
+  check("recorder: failed write counted", noWrite.write("start") == false and noWrite.failed == 1)
+
+  -- mapSignature does not depend on key order.
+  check("mapSignature: order independent", R.mapSignature({ b = "2", a = "1" }) == R.mapSignature({ a = "1", b = "2" }))
+  check("mapSignature: sees a changed name", R.mapSignature({ a = "1" }) ~= R.mapSignature({ a = "2" }))
+  check("mapSignature: sees a new key", R.mapSignature({ a = "1" }) ~= R.mapSignature({ a = "1", b = "1" }))
+  check("mapSignature: empty map", R.mapSignature({}) == "")
+end
+
+-- 12. The context stream uses the same reader state machine as the usage log.
+do
+  local logPath = SCRATCH .. "/context-stream.log"
+  local function put(text, mode) local h = assert(io.open(logPath, mode or "wb")); h:write(text); h:close() end
+  put("")
+  local state = R.newState()
+  local env = { stat = hs.fs.attributes, open = io.open, chunk = 5 }
+  local lines = {}
+  for i = 0, 29 do lines[#lines + 1] = string.format("2026-10-16T09:%02d:00.%03d\tapp\tcom.apple.finder\n", i, i * 7 % 1000) end
+  local source = table.concat(lines)
+  local pagetext = ""
+  local pos, size = 1, 0
+  while pos <= #source do
+    size = (size % 37) + 11
+    put(source:sub(pos, pos + size - 1), "ab")
+    pos = pos + size
+    local action = R.plan(state, env, logPath)
+    if action.kind == "reset" then pagetext = action.text elseif action.kind == "append" then pagetext = pagetext .. action.text end
+    if action.kind == "reset" or action.kind == "append" then R.commit(state, action) end
+  end
+  local final = R.plan(state, env, logPath)
+  if final.kind == "append" then pagetext = pagetext .. final.text; R.commit(state, final) end
+  check("context stream: incremental text equals the file", pagetext == source, #pagetext .. " vs " .. #source)
 end
 
 os.execute("rm -rf " .. SCRATCH)

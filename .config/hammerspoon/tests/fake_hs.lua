@@ -12,6 +12,7 @@ local sandbox = {}
 
 function sandbox.new(options)
   local env = {
+    frontmost = options.frontmost,
     clock = options.startTime or os.time(), -- real time, so file mtimes line up
     timers = {},
     watchers = {}, -- path watchers
@@ -25,6 +26,9 @@ function sandbox.new(options)
     focused = 0,
     log = {},
     alerts = {},
+    runningApps = {},
+    installed = {},
+    bundleInfo = {},
     htmlCalls = 0,
   }
 
@@ -119,14 +123,19 @@ function sandbox.new(options)
   -- A model of window.hyperdash for the host tests. env.respond(code) returns
   -- what the page would answer; env.flush() answers every pending call.
   local page = { generation = nil, offset = 0, text = "", bindings = nil, insights = nil, health = nil,
-                 calls = {}, mode = {} }
+                 calls = {}, mode = {}, ctx = { generation = nil, offset = 0, text = "" } }
   env.page = page
   function env.respond(code)
     if code == "typeof window.hyperdash" then return "object" end
     local method, args = code:match("^window%.hyperdash%.(%w+)%((.*)%)$")
     if not method then
-      method, args = code:match("^(setIcons)%((.*)%)$")
-      if method then page.calls[#page.calls + 1] = { method = method, args = {}, bytes = #code } end
+      -- setIcons and setApps are plain page functions.
+      method, args = code:match("^(set%a+)%((.*)%)$")
+      if method == "setIcons" or method == "setApps" then
+        local decoded = hs.json.decode(args)
+        page.calls[#page.calls + 1] = { method = method, args = { decoded }, bytes = #code, at = env.clock }
+        if method == "setApps" then page.apps = decoded else page.icons = decoded end
+      end
       return nil
     end
     -- hs.json.decode drops nulls from arrays, which would shift arguments.
@@ -135,6 +144,21 @@ function sandbox.new(options)
     if leadingNull then table.insert(list, 1, false) end
     local a = list[1]
     page.calls[#page.calls + 1] = { method = method, args = list, bytes = #code, at = env.clock }
+    if (method == "reset" or method == "append") and type(a) == "table" and a.stream == "context" then
+      local ctx = page.ctx
+      if method == "reset" then
+        if page.mode.rejectContext then return { ok = false, reason = "generation", offset = ctx.offset } end
+        ctx.generation, ctx.offset, ctx.text = a.generation, a.offset, a.text
+        return { ok = true, generation = a.generation, offset = a.offset, height = 600 }
+      end
+      if page.mode.rejectContext then return { ok = false, reason = page.mode.rejectContext, offset = ctx.offset } end
+      if a.generation ~= ctx.generation then return { ok = false, reason = "generation", offset = ctx.offset } end
+      if a.from < ctx.offset then return { ok = false, reason = "duplicate", offset = ctx.offset } end
+      if a.from > ctx.offset then return { ok = false, reason = "gap", offset = ctx.offset } end
+      ctx.text = ctx.text .. a.text
+      ctx.offset = a.to
+      return { ok = true, offset = a.to, height = 600 }
+    end
     if method == "reset" then
       if page.mode.rejectReset then return { ok = false, reason = "generation", offset = page.offset } end
       page.generation, page.offset, page.text = a.generation, a.offset, a.text
@@ -178,6 +202,8 @@ function sandbox.new(options)
     page.mode.dead = false
     page.generation, page.offset, page.text = nil, 0, ""
     page.bindings, page.insights, page.health = nil, nil, nil
+    page.ctx = { generation = nil, offset = 0, text = "" }
+    page.apps, page.icons = nil, nil
     env.webview.navigation("didFinishNavigation")
   end
   -- Answer pending calls until none are left. Calls the page is told to
@@ -201,7 +227,18 @@ function sandbox.new(options)
   ---------------------------------------------------------------- hs
   local fakeHs = {
     json = hs.json,
-    fs = { attributes = hs.fs.attributes, pathToAbsolute = hs.fs.pathToAbsolute },
+    fs = {
+      attributes = hs.fs.attributes,
+      pathToAbsolute = hs.fs.pathToAbsolute,
+      mkdir = hs.fs.mkdir,
+      -- Installed bundles come from env.installed[folder], never from the disk.
+      dir = function(folder)
+        local names = env.installed[folder]
+        if not names then error("no such folder " .. folder) end
+        local i = 0
+        return function() i = i + 1; return names[i] end, {}
+      end,
+    },
     timer = {
       doAfter = function(delay, fn) return newTimer(delay, fn, false) end,
       doEvery = function(interval, fn) return newTimer(interval, fn, true) end,
@@ -214,7 +251,11 @@ function sandbox.new(options)
     alert = { show = function(message) env.alerts[#env.alerts + 1] = message end },
     drawing = { windowLevels = { floating = 3 } },
     application = {
+      runningApplications = function() return env.runningApps end,
+      frontmostApplication = function() return env.frontmost end,
+      infoForBundlePath = function(path) return env.bundleInfo[path] end,
       watcher = {
+        activated = 5,
         deactivated = 6,
         new = function(fn)
           local w = { fn = fn, started = false }
@@ -257,7 +298,7 @@ function sandbox.new(options)
     },
     caffeinate = {
       watcher = {
-        systemDidWake = 0, screensDidWake = 2, systemWillSleep = 1,
+        systemDidWake = 0, screensDidWake = 2, systemWillSleep = 1, screensDidLock = 10, screensDidUnlock = 11,
         new = function(fn)
           local w = { fn = fn, started = false }
           function w:start() self.started = true; return self end
@@ -290,7 +331,14 @@ function sandbox.new(options)
     end,
   }, { __index = _G })
 
-  local chunk, err = loadfile(options.moduleDir .. "/" .. (options.moduleFile or "hyperdash.lua"), "t", globals)
+  local path = options.moduleDir .. "/" .. (options.moduleFile or "hyperdash.lua")
+  local source = assert(io.open(path, "rb")):read("a")
+  if options.recordContext then
+    local edited, count = source:gsub("local RECORD_CONTEXT = false", "local RECORD_CONTEXT = true")
+    assert(count == 1, "RECORD_CONTEXT line not found")
+    source = edited
+  end
+  local chunk, err = load(source, "@" .. path, "t", globals)
   assert(chunk, err)
   env.module = chunk()
   env.webview = env.webviews[1]

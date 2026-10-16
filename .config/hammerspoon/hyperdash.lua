@@ -7,6 +7,10 @@
 -- replacement, truncation or rejected update, hyperdash.append() with new
 -- complete lines otherwise. Calls go out one at a time, and the consumed
 -- offset advances only when the page answers { ok = true }.
+--
+-- A second stream, the context log, goes through the same calls with
+-- stream = "context" and its own generation and offset. Hammerspoon writes
+-- that log itself, but only when RECORD_CONTEXT is true.
 
 local reader = require("hyperdash_core") -- pure helpers; see that file
 
@@ -19,6 +23,12 @@ local USAGE_LOG = HOME .. "/.local/state/karabiner/usage.log"
 local INSIGHTS = HOME .. "/.local/state/karabiner/insights.json"
 local INSIGHTS_TOOL = HOME .. "/.local/bin/hyperdash-insights" -- `yarn build:insights`
 local INSIGHTS_MAX_AGE = 3600 -- seconds; older insights are recomputed on open
+local INSIGHTS_CONTEXT_MIN_AGE = 300 -- seconds; a newer context log reruns a report older than this
+-- Context recording is OFF until the user approves it. When true, this module
+-- appends the frontmost app (bundle ID only) and lock, unlock, sleep and wake
+-- events to CONTEXT_LOG. No window titles, URLs or keys are recorded.
+local RECORD_CONTEXT = false
+local CONTEXT_LOG = HOME .. "/.local/state/hyperdash/context.log"
 local CALL_TIMEOUT = 5 -- seconds to wait for the page to answer one call
 local WIDTH = 408 -- card width plus the shadow margin on both sides
 local TOP_FRACTION = 0.18 -- open near the top of the screen, like Spotlight
@@ -123,8 +133,10 @@ end
 ---------------------------------------------------------------------------
 
 local logState = reader.newState()
+local ctxState = reader.newState() -- the context stream: its own generation and offset
 local fsEnv = reader.defaultEnv()
 local logReadError = nil -- message from the last failed read, cleared by the next good one
+local ctxReadError = nil
 
 -- Log half of the page's `health` object (status "ok" | "missing" | "unreadable").
 -- Opens the file but does not read it.
@@ -146,6 +158,24 @@ local function logHealth()
   }
 end
 
+-- Context half of `health`: "ok" | "missing" | "unreadable" | "disabled".
+-- "disabled" means recording is off; an old file may still exist and still
+-- reaches the page.
+local function contextHealth()
+  local attributes = hs.fs.attributes(CONTEXT_LOG)
+  local bytes = attributes and attributes.size or 0
+  local modified = attributes and os.date("%Y-%m-%dT%H:%M:%S", attributes.modification) or nil
+  if not RECORD_CONTEXT then return { status = "disabled", bytes = bytes, modified = modified } end
+  if not attributes then return { status = "missing", bytes = 0 } end
+  local file = io.open(CONTEXT_LOG, "r")
+  if not file or ctxReadError then
+    if file then file:close() end
+    return { status = "unreadable", bytes = bytes }
+  end
+  file:close()
+  return { status = "ok", bytes = bytes, modified = modified }
+end
+
 -- Insights half of `health`: "ok" | "stale" | "running" | "missing-tool" | "failed".
 local function insightsHealth()
   if insightsTask and insightsTask:isRunning() then return { status = "running" } end
@@ -163,15 +193,16 @@ local function insightsHealth()
 end
 
 local function encodeHealth()
-  local log, insights = logHealth(), insightsHealth()
+  local log, insights, context = logHealth(), insightsHealth(), contextHealth()
   local logExtra = ""
   if log.offset then logExtra = string.format(',"offset":%d,"generation":%d', log.offset, log.generation) end
   return string.format(
-    '{"log":{"status":%s,"bytes":%d,"modified":%s%s},"insights":{"status":%s,"message":%s},"bindings":{"status":%s%s}}',
+    '{"log":{"status":%s,"bytes":%d,"modified":%s%s},"insights":{"status":%s,"message":%s},"bindings":{"status":%s%s},"context":{"status":%s,"bytes":%d,"modified":%s}}',
     jsonString(log.status), log.bytes, jsonString(log.modified), logExtra,
     jsonString(insights.status), jsonString(insights.message),
     jsonString(bindingsCache.status),
-    bindingsCache.invalid > 0 and (',"invalidEntries":' .. bindingsCache.invalid) or ""
+    bindingsCache.invalid > 0 and (',"invalidEntries":' .. bindingsCache.invalid) or "",
+    jsonString(context.status), context.bytes, jsonString(context.modified)
   )
 end
 
@@ -252,25 +283,111 @@ end
 local sent = { bindings = nil, insights = nil, health = nil } -- what the page holds
 local APP_FOLDERS = { "/Applications", "/System/Applications", HOME .. "/Applications", "/System/Library/CoreServices" }
 
--- App icons as PNG data URLs, keyed by the app names in bindings.json.
--- Sent once after the page loads, since they never change between opens.
-local function readAppIcons()
+-- Bundle ID -> display name, for the context stream. Built from the
+-- installed bundles (scanned once) and the running apps (every time, since
+-- they change).
+local installedApps = nil
+local function scanInstalledApps()
+  local map = {}
+  for _, folder in ipairs(APP_FOLDERS) do
+    local ok, iterate, directory = pcall(hs.fs.dir, folder)
+    if ok and iterate then
+      for entry in iterate, directory do
+        if entry:sub(-4) == ".app" then
+          local info = hs.application.infoForBundlePath(folder .. "/" .. entry)
+          local id = info and info.CFBundleIdentifier
+          if reader.validBundleId(id) then
+            map[id] = info.CFBundleDisplayName or info.CFBundleName or entry:sub(1, -5)
+          end
+        end
+      end
+    end
+  end
+  return map
+end
+
+local function collectAppNames(running)
+  installedApps = installedApps or scanInstalledApps()
+  local map = {}
+  for id, name in pairs(installedApps) do map[id] = name end
+  for _, app in ipairs(running) do
+    local id = app:bundleID()
+    if reader.validBundleId(id) and app:name() then map[id] = app:name() end
+  end
+  return map
+end
+
+-- App icons as PNG data URLs. The apps in bindings.json are keyed by name,
+-- as before; those and the running regular apps are also keyed by bundle ID.
+-- Icons are cached: encoding one is the costly part.
+local iconCache = {} -- path -> { url, bundleId }
+local function iconFor(path)
+  if iconCache[path] == nil then
+    local info = hs.application.infoForBundlePath(path)
+    iconCache[path] = {
+      url = hs.image.iconForFile(path):setSize({ w = 36, h = 36 }):encodeAsURLString(true, "PNG"),
+      bundleId = info and info.CFBundleIdentifier,
+    }
+  end
+  return iconCache[path].url, iconCache[path].bundleId
+end
+
+local function readAppIcons(running)
   local icons = {}
   for _, binding in ipairs(bindingsCache.list) do
     if binding.app and not icons[binding.app] then
       for _, folder in ipairs(APP_FOLDERS) do
         local path = folder .. "/" .. binding.app .. ".app"
         if hs.fs.attributes(path) then
-          icons[binding.app] = hs.image.iconForFile(path):setSize({ w = 36, h = 36 }):encodeAsURLString(true, "PNG")
+          local url, bundleId = iconFor(path)
+          icons[binding.app] = url
+          if reader.validBundleId(bundleId) then icons[bundleId] = url end
           break
         end
       end
     end
   end
+  for _, app in ipairs(running) do
+    -- path() throws (NSBundle initWithURL: nil) for background processes
+    -- that have a bundle ID but no bundle, so ask only regular apps.
+    local id = app:bundleID()
+    local path = (reader.validBundleId(id) and app:kind() == 1) and app:path() or nil
+    if reader.validBundleId(id) and path and app:kind() == 1 and not icons[id] then icons[id] = iconFor(path) end
+  end
   return icons
 end
 
-local function resetCode(action)
+-- An empty Lua table encodes as a JSON array; the page expects an object.
+local function encodeMap(map)
+  if next(map) == nil then return "{}" end
+  return hs.json.encode(map)
+end
+
+-- What the page holds, as a signature: it is sent again only when it changes.
+local sentApps = { names = nil, icons = nil }
+local function sendApps()
+  local running = hs.application.runningApplications() -- listed once per sync
+  local names, icons = collectAppNames(running), readAppIcons(running)
+  local iconKeys = {}
+  for key in pairs(icons) do iconKeys[key] = 1 end
+  local namesSignature, iconsSignature = reader.mapSignature(names), reader.mapSignature(iconKeys)
+  if sentApps.names ~= namesSignature then
+    sentApps.names = namesSignature
+    send("window.hyperdash.setApps(" .. encodeMap(names) .. ")")
+  end
+  if sentApps.icons ~= iconsSignature then
+    sentApps.icons = iconsSignature
+    send("setIcons({\"apps\":" .. encodeMap(icons) .. "})")
+  end
+end
+
+local function resetCode(action, which)
+  if which == "context" then
+    return string.format(
+      "window.hyperdash.reset({\"stream\":\"context\",\"generation\":%d,\"text\":%s,\"offset\":%d})",
+      action.generation, jsonString(action.text), action.offset
+    )
+  end
   local health = encodeHealth()
   return string.format(
     "window.hyperdash.reset({\"generation\":%d,\"bindings\":%s,\"text\":%s,\"offset\":%d,\"insights\":%s,\"health\":%s})",
@@ -279,10 +396,11 @@ local function resetCode(action)
   ), health
 end
 
-local function appendCode(action)
+local function appendCode(action, which)
+  local stream = which == "context" and "\"stream\":\"context\"," or ""
   return string.format(
-    "window.hyperdash.append({\"generation\":%d,\"from\":%d,\"to\":%d,\"text\":%s})",
-    action.generation, action.from, action.to, jsonString(action.text)
+    "window.hyperdash.append({%s\"generation\":%d,\"from\":%d,\"to\":%d,\"text\":%s})",
+    stream, action.generation, action.from, action.to, jsonString(action.text)
   )
 end
 
@@ -324,47 +442,63 @@ local function runSync(forceHealth, done)
     afterQueued(done)
   end
 
-  local passes = 0
-  local function logPhase()
-    passes = passes + 1
-    local action = reader.plan(logState, fsEnv, USAGE_LOG)
-    if action.kind == "retry" and passes < MAX_LOG_PASSES then return logPhase() end
-    if action.kind == "none" or action.kind == "retry" then
-      logReadError = nil
-      return metadata()
+  -- One stream (usage or context): plan, send, and repeat until it is current.
+  local function streamPhase(which, after)
+    local passes = 0
+    local path = which == "usage" and USAGE_LOG or CONTEXT_LOG
+    local function setReadError(message)
+      if which == "usage" then logReadError = message else ctxReadError = message end
     end
-    if action.kind == "error" then
-      logReadError = action.message
-      print("hyperdash: " .. action.message)
-      return metadata()
-    end
-    logReadError = nil
-    local code, healthSent
-    if action.kind == "reset" then code, healthSent = resetCode(action) else code = appendCode(action) end
-    send(code, function(result)
-      local good = isOk(result)
-      if good and action.kind == "reset" then
-        good = result.generation == action.generation and result.offset == action.offset
-      elseif good then
-        good = result.offset == action.to
+    local function pass()
+      passes = passes + 1
+      local state = which == "usage" and logState or ctxState
+      local action = reader.plan(state, fsEnv, path)
+      if action.kind == "retry" and passes < MAX_LOG_PASSES then return pass() end
+      -- A context log that never existed has nothing to send.
+      if which == "context" and action.kind == "reset" and action.status == "missing" and state.generation == 0 then
+        setReadError(nil)
+        return after()
       end
-      if good then
-        reader.commit(logState, action)
-        if action.kind == "reset" then
-          -- The reset carried bindings, insights and health with it.
-          sent.bindings, sent.insights = bindingsCache.json, insightsCache.raw or false
-          sent.health = healthSent
+      if action.kind == "none" or action.kind == "retry" then
+        setReadError(nil)
+        return after()
+      end
+      if action.kind == "error" then
+        setReadError(action.message)
+        print("hyperdash: " .. action.message)
+        return after()
+      end
+      setReadError(nil)
+      local code, healthSent
+      if action.kind == "reset" then code, healthSent = resetCode(action, which) else code = appendCode(action, which) end
+      send(code, function(result)
+        local good = isOk(result)
+        if good and action.kind == "reset" then
+          good = result.generation == action.generation and result.offset == action.offset
+        elseif good then
+          good = result.offset == action.to
         end
-        adoptHeight(result)
-      else
-        -- Rejected, lost or unanswered: the page state is unknown.
-        reader.fail(logState)
-      end
-      if passes < MAX_LOG_PASSES then return logPhase() end
-      return metadata()
-    end)
+        if good then
+          reader.commit(state, action)
+          if action.kind == "reset" and which == "usage" then
+            -- The reset carried bindings, insights and health with it.
+            sent.bindings, sent.insights = bindingsCache.json, insightsCache.raw or false
+            sent.health = healthSent
+          end
+          adoptHeight(result)
+        else
+          -- Rejected, lost or unanswered: the page state is unknown.
+          reader.fail(state)
+        end
+        if passes < MAX_LOG_PASSES then return pass() end
+        return after()
+      end)
+    end
+    pass()
   end
-  logPhase()
+
+  sendApps()
+  streamPhase("usage", function() streamPhase("context", metadata) end)
 end
 
 -- Only one reconcile runs at a time. A request that arrives mid-run asks for
@@ -454,11 +588,36 @@ end
 
 -- The tool runs in the background so a slow disk never delays the panel;
 -- the page receives the result through the next reconcile.
+-- The context log is passed only when recording is on and the file exists:
+-- the tool exits 1 for a missing --context file.
+local function insightsArguments()
+  local arguments = { "--log", USAGE_LOG, "--bindings", BINDINGS, "--output", INSIGHTS }
+  if RECORD_CONTEXT and hs.fs.attributes(CONTEXT_LOG) then
+    arguments[#arguments + 1] = "--context"
+    arguments[#arguments + 1] = CONTEXT_LOG
+  end
+  return arguments
+end
+
+-- A report is due when it is missing or older than INSIGHTS_MAX_AGE. With
+-- recording on, a context log newer than the report also makes it due, but
+-- only once the report is INSIGHTS_CONTEXT_MIN_AGE old: opening the panel
+-- itself writes a context event, so without the wait every open would rerun.
+local function insightsDue()
+  local report = hs.fs.attributes(INSIGHTS)
+  if not report then return true end
+  local age = os.time() - report.modification
+  if age >= INSIGHTS_MAX_AGE then return true end
+  local context = RECORD_CONTEXT and hs.fs.attributes(CONTEXT_LOG)
+  return context and context.modification > report.modification and age >= INSIGHTS_CONTEXT_MIN_AGE or false
+end
+
+-- The tool runs in the background so a slow disk never delays the panel;
+-- the page receives the result through the next reconcile.
 local function refreshInsights()
   if insightsTask and insightsTask:isRunning() then return end
   if not hs.fs.attributes(INSIGHTS_TOOL) then return end
-  local attributes = hs.fs.attributes(INSIGHTS)
-  if attributes and os.time() - attributes.modification < INSIGHTS_MAX_AGE then return end
+  if not insightsDue() then return end
 
   insightsTask = hs.task.new(INSIGHTS_TOOL, function(exitCode, _, stderr)
     if exitCode ~= 0 then
@@ -472,7 +631,7 @@ local function refreshInsights()
       lastRunFailure = nil
     end
     requestSync()
-  end, { "--log", USAGE_LOG, "--bindings", BINDINGS, "--output", INSIGHTS })
+  end, insightsArguments())
   insightsTask:start()
 end
 
@@ -579,10 +738,12 @@ local function create()
       pageFailed = false
       refreshBindingsCache()
       pageReady = true
-      -- setIcons is a plain page function, not a window.hyperdash method.
-      send("setIcons(" .. hs.json.encode({ apps = readAppIcons() }) .. ")")
-      -- A fresh page holds nothing: the first sync is a reset.
+      -- A fresh page holds nothing: send names and icons again, and the
+      -- first sync of each stream is a reset. setApps and setIcons are plain
+      -- page functions, not window.hyperdash methods.
+      sentApps.names, sentApps.icons = nil, nil
       logState = reader.newState()
+      ctxState = reader.newState()
       sent.bindings, sent.insights, sent.health = nil, nil, nil
       requestSync()
       local callbacks = recoveryCallbacks
@@ -637,6 +798,49 @@ function M.toggle()
   pending[timer] = true
 end
 
+---------------------------------------------------------------------------
+-- Context recording (off unless RECORD_CONTEXT is true)
+---------------------------------------------------------------------------
+
+-- Held at module level: Hammerspoon stops a watcher nothing references.
+local contextRecorder = nil
+local contextAppWatcher = nil
+local contextSleepWatcher = nil
+
+local function startContextRecording()
+  contextRecorder = reader.newRecorder({
+    path = CONTEXT_LOG,
+    now = hs.timer.secondsSinceEpoch,
+    open = io.open,
+    ensureDirectory = function(directory)
+      if not hs.fs.attributes(directory) then hs.fs.mkdir(directory) end
+    end,
+  })
+  contextRecorder.write("start")
+  -- The app that is frontmost now, so the first Hyper events have an app.
+  local front = hs.application.frontmostApplication()
+  if front then contextRecorder.app(front:bundleID()) end
+
+  contextAppWatcher = hs.application.watcher.new(function(_, event, app)
+    if event == hs.application.watcher.activated and app then contextRecorder.app(app:bundleID()) end
+  end)
+  contextAppWatcher:start()
+
+  local watcher = hs.caffeinate.watcher
+  local kinds = {
+    [watcher.screensDidLock] = "lock",
+    [watcher.screensDidUnlock] = "unlock",
+    [watcher.systemWillSleep] = "sleep",
+    [watcher.systemDidWake] = "wake",
+  }
+  contextSleepWatcher = watcher.new(function(event)
+    local kind = kinds[event]
+    if kind then contextRecorder.write(kind) end
+  end)
+  contextSleepWatcher:start()
+end
+
 create()
+if RECORD_CONTEXT then startContextRecording() end
 
 return M
