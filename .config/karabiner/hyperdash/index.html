@@ -239,13 +239,15 @@
     --ink-light: #ffffff;
     --ink-dark: hsl(215 80% 14%);
 
-    /* Colour groups for the twelve activity categories */
-    --g-navigate: hsl(205 76% 76%);
-    --g-pointer: hsl(153 52% 68%);
-    --g-launch: hsl(36 100% 59%);
-    --g-windows: hsl(232 45% 71%);
-    --g-capture: hsl(0 100% 73%);
-    --g-system: hsl(201 43% 89%);
+    /* Colour groups for the twelve activity categories: blue ink only, as the site draws Blueprint syntax.
+       Groups part by lightness (at least 8 OKLCH points apart), from the code tokens' own hues: function,
+       constant, parameter, comment and string. Drafting cyan, the one hue the theme allows, marks Pointer */
+    --g-navigate: hsl(205 76% 78.7%);
+    --g-pointer: hsl(199 68% 51.2%);
+    --g-launch: hsl(212 63% 90.3%);
+    --g-windows: hsl(231 45% 75.1%);
+    --g-capture: hsl(213 100% 99.8%);
+    --g-system: hsl(217 26% 52.5%);
 
     /* Semantic: success, destructive, warning and info, each with a tinted background */
     --up: #7fd7b0;
