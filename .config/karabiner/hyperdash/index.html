@@ -925,10 +925,13 @@ var HyperdashModel = (() => {
   }
 
   // Keys. Returns an action for the page to run, or null to leave the event to the browser.
-  // ctx: { page, layer, highlight, selected, aboutOpen, layers, heatHas(key) }.
+  // ctx: { page, layer, highlight, selected, aboutOpen, layers, heatHas(key), controlFocused }.
   function routeKey(ctx, event) {
     if (event.metaKey || event.ctrlKey || event.altKey) return null;
     const name = event.key;
+
+    // Enter and Space activate a focused control normally.
+    if ((name === "Enter" || name === " ") && ctx.controlFocused) return null;
 
     if (name === "Escape") {
       if (ctx.aboutOpen) return { type: "closeAbout" };
@@ -1687,10 +1690,11 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") post({ action: "close" });
     return;
   }
-  // Enter and Space keep their normal meaning on a header button the user reached with Tab.
-  if ((event.key === "Enter" || event.key === " ") && event.target.closest?.(".header, .info")
-    && event.target.matches?.(":focus-visible")) return;
+  // A button focused from the keyboard (header, "i" or a list row) keeps its normal Enter and Space
+  // activation. A button focused by a mouse click does not, so Space still selects the Space binding.
+  const controlFocused = Boolean(event.target.closest?.(".header, .info, .item") && event.target.matches?.(":focus-visible"));
   const action = HyperdashModel.routeKey({
+    controlFocused,
     page: state.page,
     layer: state.layer,
     highlight: state.highlight,

@@ -325,3 +325,15 @@ test("with no bindings every logged combo is historical, and totals still agree"
   assert.deepEqual(rows.map((r) => [r.label, r.count, r.historical]), [["W U", 2, true], ["O T", 1, true]]);
   assert.equal(M.sumCounts(counts, null), 3);
 });
+
+test("routeKey: Enter and Space belong to a control focused from the keyboard", () => {
+  const layerPage = { page: null, layer: "w", highlight: null, selected: null, aboutOpen: false, layers: ["w"], heatHas: () => true };
+  // A focused header button or list row keeps normal activation.
+  assert.equal(M.routeKey({ ...layerPage, controlFocused: true }, { key: "Enter" }), null);
+  assert.equal(M.routeKey({ ...layerPage, controlFocused: true }, { key: " " }), null);
+  // Other keys still route while a control is focused.
+  assert.deepEqual(plain(M.routeKey({ ...layerPage, controlFocused: true }, { key: "u" })), { type: "select", key: "u" });
+  assert.deepEqual(plain(M.routeKey({ ...layerPage, controlFocused: true }, { key: "Escape" })), { type: "back" });
+  // Without keyboard focus on a control, Space selects the Space binding.
+  assert.deepEqual(plain(M.routeKey(layerPage, { key: " " })), { type: "select", key: "spacebar" });
+});
