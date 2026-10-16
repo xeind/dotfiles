@@ -1117,3 +1117,14 @@ test("aboutLines ends with the full status text, because the status line is clam
   assert.match(lines.at(-1), /CONTEXT LOG MISSING/, "the part a two-line clamp would cut is present");
   assert.ok(!M.aboutLines({ health: null, insights: null, summary: store.summary(), now: NOW }).some((l) => l.startsWith("Status:")), "no status text, no line");
 });
+
+test("fadeState: an edge fades only where content continues past it", () => {
+  assert.equal(M.fadeState({ scrollTop: 0, clientHeight: 240, scrollHeight: 240 }), "none", "content that fits");
+  assert.equal(M.fadeState({ scrollTop: 0, clientHeight: 240, scrollHeight: 600 }), "bottom", "at the top");
+  assert.equal(M.fadeState({ scrollTop: 100, clientHeight: 240, scrollHeight: 600 }), "both", "in the middle");
+  assert.equal(M.fadeState({ scrollTop: 360, clientHeight: 240, scrollHeight: 600 }), "top", "at the bottom");
+  assert.equal(M.fadeState({ scrollTop: 0.4, clientHeight: 240, scrollHeight: 600 }), "bottom", "sub-pixel scroll counts as the top");
+  assert.equal(M.fadeState({ scrollTop: 359.2, clientHeight: 240, scrollHeight: 600 }), "top", "a pixel short of the end counts as the end");
+  assert.equal(M.fadeState({ scrollTop: 0, clientHeight: 240, scrollHeight: 241 }), "none", "one pixel of overflow is not worth a fade");
+  assert.equal(M.fadeState({ scrollTop: 0, clientHeight: 0, scrollHeight: 0 }), "none", "a hidden area");
+});

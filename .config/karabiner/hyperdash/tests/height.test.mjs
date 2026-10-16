@@ -20,9 +20,17 @@ test("the page height never changes within a page", { skip: !existsSync(chrome) 
   const run = spawnSync(chrome, ["--headless=new", "--disable-gpu", "--virtual-time-budget=20000", "--window-size=408,1000", "--dump-dom", `file://${file}`], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   const match = /<pre id="probe-out">([\s\S]*?)<\/pre>/.exec(run.stdout || "");
   assert.ok(match, "the probe wrote no result: " + (run.stderr || "").slice(0, 400));
-  const { summary, steps, titles } = JSON.parse(match[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"));
+  const { summary, steps, titles, fades } = JSON.parse(match[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"));
   // A native tooltip clips at the card edge, so the card carries none: aria-label and visible text instead.
   assert.deepEqual(titles, [], "native tooltips inside the card");
+  // Edge fades appear only where content continues past that edge, and use a real mask.
+  const expected = {
+    "list top": ["bottom", true], "list middle": ["both", true], "list bottom": ["top", true], "list fits": [null, false],
+    "commands top": ["bottom", true], "commands middle": ["both", true], "commands bottom": ["top", true],
+    "insights middle": ["both", true], "insights fits": [null, false],
+  };
+  for (const [label, want] of Object.entries(expected)) assert.deepEqual(fades[label], want, `fade state for ${label}`);
+  assert.deepEqual(fades.sequences?.[0] === null || ["bottom", "top", "both"].includes(fades.sequences?.[0]), true);
   assert.ok(steps > 500, `the probe only ran ${steps} steps`);
   assert.deepEqual(Object.keys(summary).sort(), ["activity", "insights", "layer", "overview"]);
   for (const [page, heights] of Object.entries(summary)) {

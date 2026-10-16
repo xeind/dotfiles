@@ -112,7 +112,37 @@
   document.getElementById("about-toggle")?.click(); note("insights about");
   hyperdash.open({});
 
+  // Edge fades: top of the scroll, middle, bottom, and content that fits.
+  const fades = {};
+  const mask = (node) => getComputedStyle(node).webkitMaskImage;
+  const readFade = (label, node) => { node.dispatchEvent(new Event("scroll")); fades[label] = [node.getAttribute("data-fade"), mask(node) !== "none"]; };
+  hyperdash.open({});
+  const list = document.getElementById("list");
+  list.scrollTop = 0; readFade("list top", list);
+  list.scrollTop = 90; readFade("list middle", list);
+  list.scrollTop = list.scrollHeight; readFade("list bottom", list);
+  document.querySelector('#groupbar button[data-group="capture"]').click();
+  list.scrollTop = 0; readFade("list fits", list);
+  document.querySelector('#groupbar button[data-group="capture"]').click();
+  hyperdash.open({}); k("a");
+  const busiest = [...document.querySelectorAll(".bin")].sort((x, y) => Number(y.getAttribute("aria-label").split(" · ")[1].split(" ")[0]) - Number(x.getAttribute("aria-label").split(" · ")[1].split(" ")[0]))[0];
+  busiest.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  const cmds = document.querySelector(".cmds");
+  cmds.scrollTop = 0; readFade("commands top", cmds);
+  cmds.scrollTop = 60; readFade("commands middle", cmds);
+  cmds.scrollTop = cmds.scrollHeight; readFade("commands bottom", cmds);
+  k("Escape"); 
+  const seqs = document.querySelector(".seqs");
+  readFade("sequences", seqs);
+  hyperdash.open({}); k("i");
+  const insightBox = document.getElementById("insights");
+  hyperdash.setInsights(insights(5), healths.ok);
+  insightBox.scrollTop = 40; readFade("insights middle", insightBox);
+  hyperdash.setInsights(insights(1), healths.ok);
+  insightBox.scrollTop = 0; readFade("insights fits", insightBox);
+  hyperdash.open({});
+
   const summary = {};
   for (const [p, hs] of Object.entries(seen)) summary[p] = Object.fromEntries(Object.entries(hs).map(([h, labels]) => [h, { count: labels.length, examples: labels.slice(0, 4) }]));
-  document.getElementById("probe-out").textContent = JSON.stringify({ summary, titles, steps: Object.values(seen).reduce((n, hs) => n + Object.values(hs).reduce((m, l) => m + l.length, 0), 0) });
+  document.getElementById("probe-out").textContent = JSON.stringify({ summary, titles, fades, steps: Object.values(seen).reduce((n, hs) => n + Object.values(hs).reduce((m, l) => m + l.length, 0), 0) });
 })();

@@ -535,6 +535,17 @@
     overscroll-behavior: contain;
   }
 
+  /* Edge fade on every fixed-height scroll area: a real alpha mask, so it works on any theme background.
+     The page sets data-fade (top, bottom or both) only where content continues past that edge. The thin
+     scrollbar sits inside the mask; its thumb is never in a faded zone it could be lost in, because it is
+     at the top or bottom edge exactly when that edge has no fade. */
+  .fade[data-fade="top"] { -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 26px); mask-image: linear-gradient(to bottom, transparent 0, black 26px); }
+  .fade[data-fade="bottom"] { -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 26px), transparent 100%); mask-image: linear-gradient(to bottom, black calc(100% - 26px), transparent 100%); }
+  .fade[data-fade="both"] {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, black 26px, black calc(100% - 26px), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, black 26px, black calc(100% - 26px), transparent 100%);
+  }
+
   .list::-webkit-scrollbar { width: 4px; }
   .list::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
 
@@ -955,7 +966,7 @@
     <span class="delta" id="delta" hidden></span>
   </section>
 
-  <section class="about" id="about" hidden></section>
+  <section class="about fade" id="about" hidden></section>
 
   <section class="keyboard" id="keyboard"></section>
 
@@ -965,11 +976,11 @@
   <section class="detail" id="detail" hidden></section>
 
   <!-- Overview and layer pages: the binding list -->
-  <section class="list tabstop" id="list" tabindex="-1" aria-label="Bindings"></section>
+  <section class="list tabstop fade" id="list" tabindex="-1" aria-label="Bindings"></section>
   <p class="problem" id="problem" role="alert" hidden></p>
 
   <!-- Insights page -->
-  <section id="insights" hidden></section>
+  <section class="fade" id="insights" hidden></section>
 
   <!-- Activity page -->
   <section class="activity" id="activity" hidden>
@@ -1397,6 +1408,15 @@ var HyperdashModel = (() => {
   // draws a focus ring on Close. Pressing Tab turns them on before the browser moves focus.
   const tabStopsAfter = (enabled, event) => enabled || event.key === "Tab";
 
+  // Which edges of a scroll area have content past them: "top", "bottom", "both" or "none". A pixel of
+  // slack absorbs sub-pixel scroll positions.
+  function fadeState({ scrollTop, clientHeight, scrollHeight }) {
+    if (!(clientHeight > 0)) return "none";
+    const top = scrollTop > 1;
+    const bottom = scrollTop + clientHeight < scrollHeight - 1;
+    return top && bottom ? "both" : top ? "top" : bottom ? "bottom" : "none";
+  }
+
   // Navigation after a data update: the month stays by id, and a layer, selection or highlight
   // survives unless the layer it points at no longer exists.
   function reconcileNavigation(nav, months, layers) {
@@ -1821,7 +1841,7 @@ var HyperdashModel = (() => {
   }
 
   return {
-    THEMES, normalizeTheme, nextTheme,
+    THEMES, normalizeTheme, nextTheme, fadeState,
     GROUPS, GROUP_LABELS, CATEGORIES, CATEGORY_LABELS, CATEGORY_GROUP, groupOf, groupOfLayer, classifier,
     isValidDate, dateOf, addDays, dayLabel, clampDay, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
     localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
@@ -2138,6 +2158,7 @@ function render(announce = true) {
   renderStatus(broken);
   renderFooter();
 
+  refreshFades();
   if (announce) post({ action: "resize", height: document.body.scrollHeight });
 }
 
@@ -2705,7 +2726,7 @@ function renderPanel(m) {
     panelSignature = signature;
     const head = element("div", "panel-head");
     head.append(element("span", "", "Month view"), element("span", "", "all days combined"));
-    const body = element("div", "panel-body");
+    const body = element("div", "panel-body fade");
     body.append(element("p", "panel-note", "Pick a day (Enter) for its commands and sequences"));
     root.replaceChildren(head, body, element("p", "panel-note"));
     return;
@@ -2723,7 +2744,7 @@ function renderPanel(m) {
     const rows = M.commandsIn(day.events, bin);
     const head = element("div", "panel-head");
     head.append(element("span", "", `${M.binTime(bin)}–${M.binTime(bin + 1)} · ${rows.length} ${rows.length === 1 ? "command" : "commands"}`), element("span", "", "esc · sequences"));
-    const list = element("div", "cmds panel-body");
+    const list = element("div", "cmds panel-body fade");
     list.append(...rows.map((event) => commandRow(event, state.focusSec)));
     root.replaceChildren(head, list, element("p", "panel-note", withApp ? "App = last app before that second (the usage log has 1 s resolution)" : ""));
     list.scrollTop = scrollTop;
@@ -2733,7 +2754,7 @@ function renderPanel(m) {
 
   const head = element("div", "panel-head");
   head.append(element("span", "", "Observed sequences"), element("span", "", "≤ 10 s apart · 3+ times"));
-  const list = element("div", "seqs panel-body");
+  const list = element("div", "seqs panel-body fade");
   if (day.sequences.length === 0) list.append(element("p", "panel-note", "No pair recurred yet on this day"));
   for (const sequence of day.sequences.slice(0, 4)) {
     const entry = element("div", "seq");
@@ -2883,6 +2904,17 @@ function toggleAbout(open) {
 }
 
 // The header buttons, the "i" button and the list are Tab stops only once the user has pressed Tab.
+// Edge fades follow the scroll position: set after every render and on every scroll, no animation.
+function refreshFade(node) {
+  const next = HyperdashModel.fadeState(node);
+  if (next === "none") node.removeAttribute("data-fade");
+  else if (node.getAttribute("data-fade") !== next) node.setAttribute("data-fade", next);
+}
+
+function refreshFades() {
+  for (const node of document.querySelectorAll(".fade")) refreshFade(node);
+}
+
 function applyTabStops() {
   for (const node of document.querySelectorAll(".tabstop")) node.tabIndex = tabStops ? 0 : -1;
 }
@@ -2987,6 +3019,7 @@ const hyperdash = {
     if (dataError === null && state.page === null) renderList(state.layer !== null);
     else if (dataError === null && state.page === "insights" && !insightsData) renderInsights();
     else if (dataError === null && state.page === "activity") renderActivity(activityModel());
+    refreshFades();
     renderNow = null;
     return { ok: true, height: document.body.scrollHeight };
   },
@@ -3169,6 +3202,9 @@ document.addEventListener("keydown", (event) => {
   event.preventDefault();
   run(action);
 });
+
+// Scroll does not bubble, so listen in the capture phase for every scroll area at once.
+document.addEventListener("scroll", (event) => { if (event.target.classList?.contains("fade")) refreshFade(event.target); }, { capture: true, passive: true });
 
 buildKeyboard();
 hyperdash.reset({ generation: 0, bindings: [], text: "", offset: 0 });
