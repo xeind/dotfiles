@@ -60,10 +60,11 @@
     --q3t: var(--ink-dark);
     --q4t: var(--ink-dark);
 
-    /* Day view: shaded time (locked, asleep) and hatched unknown time */
-    --shade-locked: var(--line-strong);
-    --shade-asleep: var(--hover);
-    --hatch: var(--line-strong);
+    /* Activity coverage strip: app context recorded, screen locked, asleep, and the hatch for no app context */
+    --cov-recorded: hsl(220 5% 41%);
+    --cov-locked: hsl(220 5% 24%);
+    --cov-asleep: hsl(220 5% 17%);
+    --hatch: hsl(220 5% 36%);
 
     /* Overlays: edges, shadows */
     --edge: hsl(0 0% 100% / 0.07);
@@ -128,10 +129,11 @@
     --q3t: var(--ink-light);
     --q4t: var(--ink-light);
 
-    /* Day view: shaded time (locked, asleep) and hatched unknown time */
-    --shade-locked: var(--line-strong);
-    --shade-asleep: var(--hover);
-    --hatch: var(--line-strong);
+    /* Activity coverage strip: app context recorded, screen locked, asleep, and the hatch for no app context */
+    --cov-recorded: hsl(34 9% 64%);
+    --cov-locked: hsl(38 15% 84%);
+    --cov-asleep: hsl(42 20% 90%);
+    --hatch: hsl(36 10% 66%);
 
     /* Overlays: edges, shadows */
     --edge: hsl(30 20% 20% / 0.1);
@@ -196,10 +198,11 @@
     --q3t: var(--ink-dark);
     --q4t: var(--ink-dark);
 
-    /* Day view: shaded time (locked, asleep) and hatched unknown time */
-    --shade-locked: var(--line-strong);
-    --shade-asleep: var(--hover);
-    --hatch: var(--line-strong);
+    /* Activity coverage strip: app context recorded, screen locked, asleep, and the hatch for no app context */
+    --cov-recorded: hsl(0 0% 45%);
+    --cov-locked: hsl(0 0% 27%);
+    --cov-asleep: hsl(0 0% 21%);
+    --hatch: hsl(0 0% 40%);
 
     /* Overlays: edges, shadows */
     --edge: hsl(0 0% 100% / 0.07);
@@ -266,10 +269,11 @@
     --q3t: var(--ink-dark);
     --q4t: var(--ink-dark);
 
-    /* Day view: shaded time (locked, asleep) and hatched unknown time */
-    --shade-locked: var(--line-strong);
-    --shade-asleep: var(--hover);
-    --hatch: var(--line-strong);
+    /* Activity coverage strip: app context recorded, screen locked, asleep, and the hatch for no app context */
+    --cov-recorded: hsl(210 38% 66%);
+    --cov-locked: hsl(213 60% 30%);
+    --cov-asleep: hsl(213 70% 25%);
+    --hatch: hsl(211 40% 58%);
 
     /* Overlays: edges, shadows */
     --edge: hsl(0 0% 100% / 0.14);
@@ -683,10 +687,10 @@
   /* Always three rows (six group cells, then shading and scale), so the legend never changes the height. */
   .chart-legend {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1.1fr 1fr 1fr;
     grid-auto-rows: 15px;
     gap: 2px 8px;
-    height: 49px;
+    height: 66px;
     align-items: center;
     margin-top: 8px;
     font-family: var(--mono);
@@ -698,10 +702,11 @@
 
   .chart-legend > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .chart-legend .zero { color: var(--faint); }
-  .chart-legend .foot { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 10px; }
-  .chart-legend .foot span { white-space: nowrap; }
-  .chart-legend .scale { color: var(--faint); }
+  .chart-legend .row { grid-column: 1 / -1; display: flex; gap: 12px; align-items: center; }
+  .chart-legend .row span { white-space: nowrap; }
+  .chart-legend .row.scale-row { justify-content: space-between; color: var(--faint); }
 
+  .chart-legend .row .swatch { vertical-align: 1px; }
   .swatch { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; }
 
   /* Data state, about panel, error state */
@@ -829,16 +834,23 @@
   .seg[aria-pressed="true"] { background: var(--accent-bg); color: var(--accent-soft); border-color: var(--accent-edge); }
   .controls .note { margin-left: auto; font: 10px var(--mono); letter-spacing: 0.04em; color: var(--faint); white-space: nowrap; }
 
-  .chart .band-locked { fill: var(--shade-locked); }
-  .chart .band-asleep { fill: var(--shade-asleep); }
-  .chart .band-unknown { fill: url(#hatch); }
-  .chart .hatch-line { stroke: var(--hatch); stroke-width: 1.2; }
-  .chart .now-line { stroke: var(--accent-soft); stroke-width: 1; stroke-dasharray: 2 3; }
+  .chart .grid-line { stroke: var(--edge-soft); stroke-width: 1; }
+  .chart .now-line { stroke: var(--accent-soft); stroke-width: 1; stroke-dasharray: 1.5 3; }
+  .chart .now-label { fill: var(--accent-soft); }
+  .chart .hatch-line { stroke: var(--hatch); stroke-width: 1.1; }
+  .chart .cov-recorded { fill: var(--cov-recorded); }
+  .chart .cov-locked { fill: var(--cov-locked); stroke: var(--hatch); stroke-width: 0.6; }
+  .chart .cov-asleep { fill: var(--cov-asleep); stroke: var(--hatch); stroke-width: 0.6; }
+  .chart .cov-off { fill: none; stroke: var(--hatch); stroke-width: 0.8; }
+  .chart .cov-none { fill: url(#hatch); stroke: var(--hatch); stroke-width: 0.8; }
   .bin.selected { fill: var(--edge-soft); stroke: var(--accent-soft); stroke-width: 1; }
 
-  .swatch.shade-locked { background: var(--shade-locked); border: 1px solid var(--line-strong); }
-  .swatch.shade-asleep { background: var(--shade-asleep); }
-  .swatch.shade-unknown { background: repeating-linear-gradient(45deg, var(--hatch) 0 1.5px, transparent 1.5px 3px); }
+  /* Coverage legend: small bars, the same fills as the strip under the chart */
+  .swatch.cov-recorded, .swatch.cov-locked, .swatch.cov-asleep, .swatch.cov-none { width: 12px; height: 5px; border-radius: 1.5px; }
+  .swatch.cov-recorded { background: var(--cov-recorded); }
+  .swatch.cov-locked { background: var(--cov-locked); outline: 0.6px solid var(--hatch); }
+  .swatch.cov-asleep { background: var(--cov-asleep); outline: 0.6px solid var(--hatch); }
+  .swatch.cov-none { background: repeating-linear-gradient(45deg, var(--hatch) 0 1.1px, transparent 1.1px 3px); outline: 0.8px solid var(--hatch); }
 
   .appbar { display: flex; gap: 5px; height: 22px; margin-top: 8px; overflow: hidden; font: 10px var(--mono); letter-spacing: 0.04em; color: var(--faint); align-items: center; }
 
@@ -1170,6 +1182,32 @@ var HyperdashModel = (() => {
   }
 
   // Activity: presses per half-hour bin.
+
+  // What the app-context strip shows under one half-hour bin: the state that covers most of it, worded for the
+  // readout. Recorded time and a day without context data give no note.
+  const COVERAGE_NOTES = { none: "no app context", locked: "locked", asleep: "asleep" };
+  function coverageNote(segments, bin) {
+    if (!segments) return "";
+    const from = bin * 1800;
+    const to = from + 1800;
+    const seconds = { recorded: 0, locked: 0, asleep: 0, none: 0 };
+    for (const segment of segments) {
+      const overlap = Math.min(to, segment.to) - Math.max(from, segment.from);
+      if (overlap > 0) seconds[segment.state === "unknown" ? "none" : segment.state] += overlap;
+    }
+    let best = "recorded";
+    for (const kind of ["none", "locked", "asleep"]) if (seconds[kind] > seconds[best]) best = kind;
+    return COVERAGE_NOTES[best] || "";
+  }
+
+  // A count for a narrow cell: whole numbers below 10,000, then 12.3K, 123K, 1.2M. Never more than 5 characters.
+  function compactCount(n) {
+    if (n < 10000) return n.toLocaleString("en-US");
+    const trim = (x) => String(x).replace(/\.0$/, "");
+    if (n < 100000) { const k = Math.round(n / 100) / 10; if (k < 100) return `${trim(k)}K`; }
+    if (n < 1e6) { const k = Math.round(n / 1000); if (k < 1000) return `${k}K`; }
+    return `${trim(Math.round(n / 1e5) / 10)}M`;
+  }
 
   const binTime = (bin) => `${pad(Math.floor(bin / 2))}:${bin % 2 ? "30" : "00"}`;
 
@@ -1846,7 +1884,7 @@ var HyperdashModel = (() => {
     isValidDate, dateOf, addDays, dayLabel, clampDay, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
     localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
     monthOf, previousMonth, isMonthComplete, compareMonths,
-    sumCounts, buildRows, buildActivityFromCombos, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, describeBin,
+    sumCounts, buildRows, buildActivityFromCombos, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, compactCount, coverageNote, describeBin,
     formatWhen, describeHealth, aboutLines, routeKey,
   };
 })();
@@ -1926,7 +1964,7 @@ const INSIGHT_KINDS = {
 };
 
 // Activity chart geometry, in SVG user units (the viewBox is 1:1 with the card content).
-const CHART = { width: 326, top: 18, plot: 120, step: 4, height: 162 };
+const CHART = { width: 326, top: 18, plot: 120, step: 4, strip: 7, height: 172 };
 
 const BIN_HINT = "TAB · INSPECT 30-MINUTE BINS";
 
@@ -1964,6 +2002,7 @@ let months = [];
 let tabStops = false; // sequential focus is off after each open until Tab is pressed
 let theme = "manila";
 let lastActivity = null;
+let lastSegments = null;
 let groupCaptionOverride = null;
 let renderNow = null; // the "now" a protocol call supplied; interactions use the real clock
 let view = null;
@@ -2443,8 +2482,8 @@ function renderInsights() {
 }
 
 // Activity ------------------------------------------------------------------------------------------
-// Day view: one date, half-hour dots, locked or asleep time shaded, unknown time hatched, an interval
-// listing its commands, and recurring pairs. Month view: all days of the month combined, as before.
+// Day view: one date, half-hour dots, a strip under the axis for app-context coverage (recorded, locked,
+// asleep, none), an interval listing its commands, and recurring pairs. Month view: all days of the month combined, as before.
 
 const contextOn = () => {
   const status = health?.context?.status;
@@ -2519,6 +2558,7 @@ function renderChart(m) {
   const focusedBin = document.activeElement?.classList?.contains("bin") ? document.activeElement.dataset.bin : null;
 
   lastActivity = a;
+  lastSegments = segments;
 
   const { width, top, plot, step, height } = CHART;
   const binWidth = width / 48;
@@ -2563,24 +2603,47 @@ function renderChart(m) {
     return `<text x="${hour * (width / 24)}" y="${height - 3}" text-anchor="${anchor}">${hour}H</text>`;
   }).join("");
 
-  let bands = "";
+  const grid = [0, 6, 12, 18, 24].map((hour) => {
+    const x = hour * (width / 24);
+    return `<line class="grid-line" x1="${x}" x2="${x}" y1="${top}" y2="${base}"/>`;
+  }).join("");
+  const stripTop = base + 3;
+  let strip = "";
   let now = "";
+  let nowX = null;
   if (day) {
-    for (const segment of segments || []) {
-      if (segment.state === "recorded") continue;
-      bands += `<rect class="band-${segment.state}" x="${(segment.from / 86400 * width).toFixed(1)}" y="${top}" width="${((segment.to - segment.from) / 86400 * width).toFixed(1)}" height="${plot}"/>`;
+    const spans = segments || [{ from: 0, to: 86400, state: "off" }];
+    for (const segment of spans) {
+      const x = (segment.from / 86400 * width).toFixed(1);
+      const w = ((segment.to - segment.from) / 86400 * width).toFixed(1);
+      const kind = segment.state === "unknown" ? "none" : segment.state;
+      strip += `<rect class="cov-${kind}" x="${x}" y="${stripTop}" width="${w}" height="${CHART.strip}"/>`;
     }
     if (state.day === today()) {
-      const x = (HyperdashModel.absSeconds(currentNow()) - HyperdashModel.absSeconds(`${state.day}T00:00:00`)) / 86400 * width;
-      now = `<line class="now-line" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top}" y2="${base}"/>`;
+      nowX = (HyperdashModel.absSeconds(currentNow()) - HyperdashModel.absSeconds(`${state.day}T00:00:00`)) / 86400 * width;
     }
   }
 
+  // PEAK and NOW share the top row. When they would touch, NOW moves to the row below and away from the peak line.
+  let peakRow = 9;
+  let nowRow = 9;
+  let nowAnchor = nowX !== null && nowX > width - 24 ? "end" : "middle";
+  if (nowX !== null && a.total !== 0 && Math.abs(nowX - peakX) < 52) {
+    nowRow = 17;
+    nowAnchor = nowX >= peakX ? "start" : "end";
+  }
+  if (nowX !== null) {
+    const at = nowX.toFixed(1);
+    const labelX = (nowAnchor === "start" ? nowX + 3 : nowAnchor === "end" ? nowX - 3 : nowX).toFixed(1);
+    now = `<line class="now-line" x1="${at}" x2="${at}" y1="${top - 4}" y2="${base}"/>`
+      + `<text class="now-label" x="${labelX}" y="${nowRow}" text-anchor="${nowAnchor}">NOW</text>`;
+  }
+
   const peak = a.total === 0 ? "" : `<line class="peak-line" x1="${peakX}" x2="${peakX}" y1="${top - 4}" y2="${base}"/>`
-    + `<text class="peak-label" x="${peakX}" y="9" text-anchor="${peakAnchor}">PEAK ${a.peakHour}H</text>`;
+    + `<text class="peak-label" x="${peakX}" y="${peakRow}" text-anchor="${peakAnchor}">PEAK ${a.peakHour}H</text>`;
   root.innerHTML = `<svg class="chart" viewBox="0 0 ${width} ${height}" role="group" aria-label="Presses by half hour of day">`
-    + `<defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="hatch-line" x1="0" y1="0" x2="0" y2="5"/></pattern></defs>`
-    + `${bands}<line class="baseline" x1="0" x2="${width}" y1="${base}" y2="${base}"/>${now}${peak}`
+    + `<defs><pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="hatch-line" x1="0" y1="0" x2="0" y2="4"/></pattern></defs>`
+    + `${grid}<line class="baseline" x1="0" x2="${width}" y1="${base}" y2="${base}"/>${strip}${now}${peak}`
     + Object.entries(paths).map(([name, d]) => `<path class="dots ${name}" d="${d}"/>`).join("")
     + `${bins}${axis}</svg>`;
   const readout = element("div", "bin-readout");
@@ -2590,7 +2653,8 @@ function renderChart(m) {
 
   const legend = element("div", "chart-legend");
   const swatch = (color, label, n, className = "") => {
-    const item = element("span", "", n === null ? label : `${label} ${n.toLocaleString("en-US")}`);
+    const item = element("span", "", n === null ? label : `${label} ${HyperdashModel.compactCount(n)}`);
+    if (n !== null) item.setAttribute("aria-label", `${label.toLowerCase()} ${n.toLocaleString("en-US")}`);
     const dot = element("i", `swatch ${className}`);
     if (color) dot.style.background = color;
     item.prepend(dot);
@@ -2610,20 +2674,20 @@ function renderChart(m) {
       legend.append(cell);
     }
   }
-  const foot = element("div", "foot");
-  const shading = element("span");
-  if (segments) {
-    const kinds = new Set(segments.map((s) => s.state));
-    const items = [];
-    if (kinds.has("locked")) items.push(swatch(null, "LOCKED", null, "shade-locked"));
-    if (kinds.has("asleep")) items.push(swatch(null, "ASLEEP", null, "shade-asleep"));
-    if (kinds.has("unknown")) items.push(swatch(null, "UNKNOWN", null, "shade-unknown"));
-    shading.style.display = "inline-flex";
-    shading.style.gap = "10px";
-    shading.append(...items);
+  // Third row: the strip caption and the dot scale. Fourth row: the strip key. Month view keeps both rows, empty.
+  const caption = element("div", "row scale-row");
+  caption.append(element("span", "caption", !day ? "" : segments ? "APP CONTEXT" : "APP CONTEXT OFF"), element("span", "scale", a.perDot > 1 ? `1 DOT ≈ ${a.perDot} PRESSES` : ""));
+  const key = element("div", "row");
+  if (day) {
+    const kinds = new Set((segments || []).map((s) => (s.state === "unknown" ? "none" : s.state)));
+    if (segments) {
+      key.append(swatch(null, "RECORDED", null, "cov-recorded"));
+      if (kinds.has("locked")) key.append(swatch(null, "LOCKED", null, "cov-locked"));
+      if (kinds.has("asleep")) key.append(swatch(null, "ASLEEP", null, "cov-asleep"));
+      if (kinds.has("none")) key.append(swatch(null, "NO APP CONTEXT", null, "cov-none"));
+    }
   }
-  foot.append(shading, element("span", "scale", a.perDot > 1 ? `1 DOT ≈ ${a.perDot} PRESSES` : ""));
-  legend.append(foot);
+  legend.append(caption, key);
   root.append(legend);
 
   const refocus = focusedBin === null ? null : root.querySelector(`.bin[data-bin="${focusedBin}"]`);
@@ -2645,7 +2709,8 @@ function setReadout(readout, bin) {
     return;
   }
   const n = a.all[bin];
-  first.textContent = `${HyperdashModel.binTime(bin)}–${HyperdashModel.binTime(bin + 1)} · ${n.toLocaleString("en-US")} ${n === 1 ? "press" : "presses"}`;
+  const coverage = HyperdashModel.coverageNote(lastSegments, bin);
+  first.textContent = `${HyperdashModel.binTime(bin)}–${HyperdashModel.binTime(bin + 1)} · ${n.toLocaleString("en-US")} ${n === 1 ? "press" : "presses"}${coverage ? ` · ${coverage}` : ""}`;
   for (const group of GROUPS) {
     const cell = element("span");
     const dot = element("i");

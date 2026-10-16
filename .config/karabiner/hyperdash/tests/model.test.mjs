@@ -819,6 +819,51 @@ test("sessions, shared cases: spans and day intervals match the hand-worked valu
   }
 });
 
+test("coverage strip, shared cases: each day's runs tile the clipped day, and each half hour is worded by its largest state", () => {
+  const notes = { recorded: "", locked: "locked", asleep: "asleep", unknown: "no app context" };
+  const kinds = new Set();
+  for (const c of SHARED.sessions) {
+    const context = contextFrom(linesOf(c.context));
+    for (const date of Object.keys(c.days)) {
+      const segments = plain(context.segments(date, c.now));
+      let at = 0;
+      for (const s of segments) {
+        assert.equal(s.from, at, `${c.name}: ${date} runs are contiguous`);
+        assert.ok(s.to > s.from);
+        at = s.to;
+        kinds.add(s.state);
+      }
+      for (let bin = 0; bin < 48; bin++) {
+        // Second by second, the independent way.
+        const seconds = {};
+        for (let t = bin * 1800; t < (bin + 1) * 1800; t++) {
+          const run = segments.find((s) => t >= s.from && t < s.to);
+          if (run) seconds[run.state] = (seconds[run.state] || 0) + 1;
+        }
+        const order = ["unknown", "locked", "asleep", "recorded"];
+        const winner = order.reduce((best, kind) => ((seconds[kind] || 0) > (seconds[best] || 0) ? kind : best), "recorded");
+        const covered = Object.keys(seconds).length > 0;
+        assert.equal(M.coverageNote(segments, bin), covered ? notes[winner] : "", `${c.name}: ${date} bin ${bin}`);
+      }
+    }
+  }
+  assert.deepEqual([...kinds].sort(), ["asleep", "locked", "recorded", "unknown"], "the shared cases exercise every strip state");
+});
+
+test("compactCount: whole numbers below 10,000, then at most five characters", () => {
+  const cases = [[0, "0"], [999, "999"], [5632, "5,632"], [9999, "9,999"], [10000, "10K"], [12345, "12.3K"], [99949, "99.9K"], [99950, "100K"], [123456, "123K"], [999499, "999K"], [999500, "1M"], [1234567, "1.2M"]];
+  for (const [n, text] of cases) assert.equal(M.compactCount(n), text, String(n));
+  for (let n = 0; n < 3e6; n += 997) assert.ok(M.compactCount(n).length <= 5, `${n} -> ${M.compactCount(n)}`);
+});
+
+test("coverageNote: no segments (context off, or the month view) gives no note; a hand-worked mixed half hour", () => {
+  assert.equal(M.coverageNote(null, 5), "");
+  const runs = [{ from: 0, to: 3600, state: "unknown" }, { from: 3600, to: 4000, state: "recorded" }, { from: 4000, to: 5400, state: "locked" }];
+  assert.equal(M.coverageNote(runs, 0), "no app context", "00:00-00:30 is all unknown");
+  assert.equal(M.coverageNote(runs, 2), "locked", "01:00-01:30: 400 s recorded, 1400 s locked");
+  assert.equal(M.coverageNote(runs, 3), "", "after the last run nothing is known, so nothing is said");
+});
+
 test("attribution, shared cases ported from the Swift tests", () => {
   for (const c of SHARED.attribution) {
     const context = contextFrom(linesOf(c.context));

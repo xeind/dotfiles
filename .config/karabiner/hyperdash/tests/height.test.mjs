@@ -20,9 +20,11 @@ test("the page height never changes within a page", { skip: !existsSync(chrome) 
   const run = spawnSync(chrome, ["--headless=new", "--disable-gpu", "--virtual-time-budget=20000", "--window-size=408,1000", "--dump-dom", `file://${file}`], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   const match = /<pre id="probe-out">([\s\S]*?)<\/pre>/.exec(run.stdout || "");
   assert.ok(match, "the probe wrote no result: " + (run.stderr || "").slice(0, 400));
-  const { summary, steps, titles, fades } = JSON.parse(match[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"));
+  const { summary, steps, titles, clipped, fades } = JSON.parse(match[1].replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"));
   // A native tooltip clips at the card edge, so the card carries none: aria-label and visible text instead.
   assert.deepEqual(titles, [], "native tooltips inside the card");
+  // No legend cell may cut off its text, even with five-digit counts in every group.
+  assert.deepEqual(clipped, [], "legend cells wider than their box");
   // Edge fades appear only where content continues past that edge, and use a real mask.
   const expected = {
     "list top": ["bottom", true], "list middle": ["both", true], "list bottom": ["top", true], "list fits": [null, false],

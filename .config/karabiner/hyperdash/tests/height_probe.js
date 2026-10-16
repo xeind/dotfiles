@@ -4,9 +4,13 @@
   const H = () => document.body.scrollHeight;
   const seen = {}; // page -> { height -> [labels] }
   let page = "overview";
+  const clipped = []; // steps where a legend cell is wider than its box (its text would be cut off)
   const titles = []; // steps where a native tooltip source exists inside the card: a title attribute or an SVG <title>
   const note = (label) => {
     const h = H(); ((seen[page] ||= {})[h] ||= []).push(label);
+    for (const cell of document.querySelectorAll(".chart-legend > span, .chart-legend .row > span")) {
+      if (cell.scrollWidth > cell.clientWidth && clipped.length < 10) clipped.push(`${label}: "${cell.textContent}" ${cell.scrollWidth}>${cell.clientWidth}`);
+    }
     const t = document.querySelector("#card [title], #card svg title");
     if (t && titles.length < 10) titles.push(`${label}: <${t.tagName.toLowerCase()}> ${t.getAttribute?.("title") || t.textContent}`.slice(0, 120));
   };
@@ -101,6 +105,19 @@
   hyperdash.reset({ generation: 2, bindings, text: "", offset: 0, insights: insights(0), health: okHealth() }); note("empty log");
   hyperdash.reset({ generation: 3, bindings, text, offset: text.length, insights: insights(3), health: okHealth() }); note("full log again");
 
+  // Legend counts with five digits in every group must fit their cells, in every theme and in highlight mode.
+  {
+    const big = [["v", "q"], ["v", "u"], ["w", "f"], ["o", "t"], ["c", "e"], ["s", "d"]];
+    const rows = [];
+    for (const [layer, key] of big) for (let i = 0; i < 12345; i++) rows.push(`${stamp(at(0, 600 + (i % 3000)))}\t${layer}\t${key}`);
+    hyperdash.reset({ generation: 4, bindings, text: rows.join("\n") + "\n", offset: 0, insights: insights(3), health: okHealth() });
+    page = "activity"; hyperdash.open({}); k("a"); note("big counts");
+    for (const t of ["kozo", "nightingale", "blueprint", "manila"]) { hyperdash.setTheme(t); note(`big counts ${t}`); }
+    for (const l of ["w", "v", "o"]) { k(l); note(`big counts highlight ${l}`); k(l); }
+    k("Enter"); note("big counts month"); k("Enter");
+    hyperdash.reset({ generation: 5, bindings, text, offset: text.length, insights: insights(3), health: okHealth() });
+  }
+
   // Insights
   page = "insights"; hyperdash.open({}); k("i"); note("open insights");
   for (const n of [0, 1, 2, 3, 4, 5]) { hyperdash.setInsights(insights(n), healths.ok); note(`insights ${n}`); }
@@ -144,5 +161,5 @@
 
   const summary = {};
   for (const [p, hs] of Object.entries(seen)) summary[p] = Object.fromEntries(Object.entries(hs).map(([h, labels]) => [h, { count: labels.length, examples: labels.slice(0, 4) }]));
-  document.getElementById("probe-out").textContent = JSON.stringify({ summary, titles, fades, steps: Object.values(seen).reduce((n, hs) => n + Object.values(hs).reduce((m, l) => m + l.length, 0), 0) });
+  document.getElementById("probe-out").textContent = JSON.stringify({ summary, titles, clipped, fades, steps: Object.values(seen).reduce((n, hs) => n + Object.values(hs).reduce((m, l) => m + l.length, 0), 0) });
 })();
