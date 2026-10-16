@@ -33,12 +33,13 @@
     --ink-light: oklch(0.98 0.008 258);
     --ink-dark: oklch(0.18 0.03 258);
 
-    /* Families (categorical): matched lightness band L 0.56-0.67, chroma 0.12-0.15; system is a light neutral */
-    --f-launch: oklch(0.669 0.113 186.3);
-    --f-window: oklch(0.655 0.154 299);
-    --f-move: oklch(0.665 0.118 68);
-    --f-capture: oklch(0.56 0.12 355);
-    --f-system: oklch(0.82 0.02 245);
+    /* Colour groups for the twelve activity categories: L 0.54-0.67, chroma 0.11-0.15; system is a light neutral */
+    --g-launch: oklch(0.669 0.113 186.3);
+    --g-windows: oklch(0.655 0.154 299);
+    --g-navigate: oklch(0.665 0.118 68);
+    --g-capture: oklch(0.56 0.12 355);
+    --g-system: oklch(0.82 0.02 245);
+    --g-pointer: oklch(0.54 0.11 113);
 
     /* Semantic: up, down, warning, info, each with a tinted background */
     --up: oklch(0.85 0.16 155);
@@ -56,6 +57,11 @@
     --q2t: var(--ink-light);
     --q3t: var(--ink-dark);
     --q4t: var(--ink-dark);
+
+    /* Day view: shaded time (locked, asleep) and hatched unknown time */
+    --shade-locked: var(--line-strong);
+    --shade-asleep: var(--hover);
+    --hatch: var(--line-strong);
 
     /* Overlays */
     --edge: oklch(1 0 0 / 0.07);
@@ -332,15 +338,16 @@
     text-align: left;
   }
 
-  .fam-launch { --fam: var(--f-launch); }
-  .fam-window { --fam: var(--f-window); }
-  .fam-move { --fam: var(--f-move); }
-  .fam-capture { --fam: var(--f-capture); }
-  .fam-system { --fam: var(--f-system); }
+  .grp-launch { --grp: var(--g-launch); }
+  .grp-windows { --grp: var(--g-windows); }
+  .grp-navigate { --grp: var(--g-navigate); }
+  .grp-capture { --grp: var(--g-capture); }
+  .grp-system { --grp: var(--g-system); }
+  .grp-pointer { --grp: var(--g-pointer); }
 
-  .item { --fam-bg: color-mix(in oklab, var(--fam) 16%, var(--raised)); }
+  .item { --grp-bg: color-mix(in oklab, var(--grp) 16%, var(--raised)); }
 
-  .item .chip.layer { color: var(--fam); background: var(--fam-bg); border-color: color-mix(in oklab, var(--fam) 22%, transparent); }
+  .item .chip.layer { color: var(--grp); background: var(--grp-bg); border-color: color-mix(in oklab, var(--grp) 22%, transparent); }
 
   .item:hover { background: var(--raised); }
   .item.selected { background: var(--hover); }
@@ -373,8 +380,8 @@
     font-family: var(--mono);
     font-size: 10px;
     font-weight: 500;
-    background: var(--fam-bg);
-    color: var(--fam);
+    background: var(--grp-bg);
+    color: var(--grp);
   }
 
   /* Insights page */
@@ -440,11 +447,13 @@
   .chart .peak-line { stroke: var(--faint); stroke-dasharray: 3 3; }
   .dots { fill: none; stroke-width: 3.6; stroke-linecap: round; }
   .dots.blue { stroke: var(--accent); }
-  .dots.f-launch { stroke: var(--f-launch); }
-  .dots.f-window { stroke: var(--f-window); }
-  .dots.f-move { stroke: var(--f-move); }
-  .dots.f-capture { stroke: var(--f-capture); }
-  .dots.f-system { stroke: var(--f-system); }
+  .dots.g-launch { stroke: var(--g-launch); }
+  .dots.g-windows { stroke: var(--g-windows); }
+  .dots.g-navigate { stroke: var(--g-navigate); }
+  .dots.g-capture { stroke: var(--g-capture); }
+  .dots.g-system { stroke: var(--g-system); }
+  .dots.g-pointer { stroke: var(--g-pointer); }
+  .dots.lit { stroke: var(--accent-soft); }
   .dots.grey { stroke: var(--dim); }
 
   .chart-legend {
@@ -536,6 +545,104 @@
     color: var(--soft);
   }
 
+
+  /* Activity: day controls, shading, panels */
+
+  .controls { display: flex; align-items: center; gap: 5px; margin-top: 8px; }
+
+  .seg {
+    height: 22px;
+    padding: 0 8px;
+    border-radius: 7px;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    font: 500 10px var(--mono);
+    letter-spacing: 0.06em;
+    color: var(--soft);
+  }
+
+  .seg:hover { background: var(--hover); }
+  .seg[aria-pressed="true"] { background: var(--accent-bg); color: var(--accent-soft); border-color: var(--accent-edge); }
+  .controls .note { margin-left: auto; font: 10px var(--mono); letter-spacing: 0.04em; color: var(--faint); white-space: nowrap; }
+
+  .chart .band-locked { fill: var(--shade-locked); }
+  .chart .band-asleep { fill: var(--shade-asleep); }
+  .chart .band-unknown { fill: url(#hatch); }
+  .chart .hatch-line { stroke: var(--hatch); stroke-width: 1.2; }
+  .chart .now-line { stroke: var(--accent-soft); stroke-width: 1; stroke-dasharray: 2 3; }
+  .bin.selected { fill: var(--edge-soft); stroke: var(--accent-soft); stroke-width: 1; }
+
+  .swatch.shade-locked { background: var(--shade-locked); border: 1px solid var(--line-strong); }
+  .swatch.shade-asleep { background: var(--shade-asleep); }
+  .swatch.shade-unknown { background: repeating-linear-gradient(45deg, var(--hatch) 0 1.5px, transparent 1.5px 3px); }
+
+  .appbar { display: flex; gap: 5px; margin-top: 8px; overflow: hidden; font: 10px var(--mono); letter-spacing: 0.04em; color: var(--faint); align-items: center; }
+
+  .appchip {
+    flex: none;
+    height: 22px;
+    padding: 0 7px 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 7px;
+    background: var(--raised);
+    border: 1px solid var(--line);
+    font: 10.5px var(--mono);
+    color: var(--soft);
+  }
+
+  .appchip:hover { background: var(--hover); }
+  .appchip[aria-pressed="true"] { background: var(--accent-bg); color: var(--accent-soft); border-color: var(--accent-edge); }
+  .appchip .icon { width: 14px; height: 14px; }
+  .appchip .icon img { width: 14px; height: 14px; border-radius: 3.5px; }
+  .appchip .icon.mono { font-size: 8px; border-radius: 4px; }
+  .appchip b { font-weight: 400; color: var(--faint); }
+
+  .panel { margin-top: 8px; }
+  .panel-head { display: flex; justify-content: space-between; gap: 8px; font: 10px var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .panel-head span:last-child { color: var(--faint); text-align: right; }
+  .panel-note { margin-top: 4px; font: 9.5px var(--mono); letter-spacing: 0.02em; color: var(--faint); }
+  .cmds { max-height: 144px; margin-top: 4px; overflow-y: auto; overscroll-behavior: contain; }
+  .cmds::-webkit-scrollbar { width: 4px; }
+  .cmds::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+
+  .cmd {
+    display: grid;
+    grid-template-columns: 52px 16px 1fr auto;
+    align-items: center;
+    gap: 7px;
+    height: 24px;
+    padding: 0 4px;
+    border-radius: 6px;
+    font-size: 12.5px;
+  }
+
+  .cmd.focus { background: var(--hover); }
+  .cmd time { font: 10.5px var(--mono); color: var(--muted); }
+  .cmd .icon { width: 16px; height: 16px; }
+  .cmd .icon svg { width: 14px; height: 14px; }
+  .cmd-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cmd-app { font: 10px var(--mono); color: var(--faint); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .seqs { margin-top: 4px; }
+  .seq { padding: 4px 4px 5px; border-radius: 8px; }
+  .seq-title { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; }
+  .seq-title span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .seq-title span:last-child { font: 11px var(--mono); color: var(--muted); }
+  .seq-times { display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap; }
+  .time-chip { height: 17px; padding: 0 5px; border-radius: 5px; background: var(--hover); font: 10px var(--mono); color: var(--accent-soft); }
+  .time-chip:hover { background: var(--line-strong); }
+  .seq-more { font: 10px var(--mono); color: var(--faint); align-self: center; }
+
+  /* Category groups: share bar above the list */
+
+  .groupbar { display: flex; gap: 2px; height: 8px; margin-top: 8px; }
+  .groupbar button { border-radius: 3px; background: var(--grp); min-width: 3px; }
+  .groupbar button[aria-pressed="false"].dimmed { opacity: 0.35; }
+  .groupcap { margin-top: 4px; font: 9.5px var(--mono); letter-spacing: 0.04em; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .insight-meta { margin-top: 3px; font: 10px var(--mono); letter-spacing: 0.04em; color: var(--faint); }
+
   /* Footer: the keys that work on this page */
 
   .footer {
@@ -600,6 +707,8 @@
   <section class="keyboard" id="keyboard"></section>
 
   <!-- Layer page: detail strip -->
+  <section class="groupbar-wrap" id="groupwrap" hidden><div class="groupbar" id="groupbar"></div><p class="groupcap" id="groupcap"></p></section>
+
   <section class="detail" id="detail" hidden></section>
 
   <!-- Overview and layer pages: the binding list -->
@@ -610,7 +719,12 @@
   <section id="insights" hidden></section>
 
   <!-- Activity page -->
-  <section class="activity" id="activity" hidden></section>
+  <section class="activity" id="activity" hidden>
+    <div class="controls" id="controls"></div>
+    <div id="chart"></div>
+    <div class="appbar" id="appbar"></div>
+    <div class="panel" id="panel"></div>
+  </section>
 
   <p class="status" id="status"></p>
 
@@ -620,11 +734,6 @@
 <script id="hyperdash-model">
 // Pure logic: no DOM access, so tests/model.test.mjs can run this block in node:vm.
 var HyperdashModel = (() => {
-  // Layers grouped into command families. Legend order keeps neighbours distinct for colour-blind readers.
-  const FAMILY_OF = { o: "launch", b: "launch", r: "launch", w: "window", v: "move", c: "capture", s: "system", f: "system" };
-  const FAMILIES = ["window", "launch", "system", "move", "capture"];
-  const familyOf = (layer) => FAMILY_OF[layer] || "system";
-
   const PAGE_KEYS = { i: "insights", a: "activity" };
   const NAMED_KEYS = {
     ArrowUp: "up_arrow", ArrowDown: "down_arrow", ArrowLeft: "left_arrow", ArrowRight: "right_arrow",
@@ -636,6 +745,7 @@ var HyperdashModel = (() => {
   const INSIGHT_STATUSES = ["ok", "stale", "running", "missing-tool", "failed"];
   const LOG_STATUSES = ["ok", "missing", "unreadable"];
   const BINDINGS_STATUSES = ["ok", "missing", "invalid"];
+  const CONTEXT_STATUSES = ["ok", "missing", "unreadable", "disabled"];
 
   const pad = (n, width = 2) => String(n).padStart(width, "0");
 
@@ -674,11 +784,15 @@ var HyperdashModel = (() => {
   function normalizeBindings(list) {
     return list
       .filter((b) => b && typeof b === "object" && isText(b.layer) && isText(b.key) && b.layer !== "" && b.key !== "")
-      .map((b) => ({ ...b, label: isText(b.label) && b.label !== "" ? b.label : b.key }));
+      .map((b) => {
+        const entry = { ...b, label: isText(b.label) && b.label !== "" ? b.label : b.key };
+        if (!CATEGORIES.includes(entry.category)) delete entry.category;
+        return entry;
+      });
   }
 
   function normalizeInsights(raw) {
-    if (!raw || typeof raw !== "object" || raw.version !== 2 || !Array.isArray(raw.insights)) return null;
+    if (!raw || typeof raw !== "object" || (raw.version !== 2 && raw.version !== 3) || !Array.isArray(raw.insights)) return null;
     const insights = raw.insights
       .filter((item) => item && typeof item === "object" && isText(item.title) && isText(item.detail))
       .map((item) => ({
@@ -689,6 +803,9 @@ var HyperdashModel = (() => {
           ? item.keys.filter((pair) => Array.isArray(pair) && pair.length === 2 && isText(pair[0]) && isText(pair[1]))
           : [],
         value: typeof item.value === "number" ? item.value : 0,
+        // Version 3 adds the days a finding rests on and the app it concerns.
+        dates: Array.isArray(item.dates) ? item.dates.filter(isValidDate).slice(0, 7) : [],
+        app: isText(item.app) && BUNDLE_ID.test(item.app) ? item.app : null,
       }))
       .slice(0, 5);
     return {
@@ -713,7 +830,14 @@ var HyperdashModel = (() => {
       ? { status: raw.insights.status, message: isText(raw.insights.message) ? raw.insights.message : null }
       : null;
     const bindings = raw.bindings && BINDINGS_STATUSES.includes(raw.bindings.status) ? { status: raw.bindings.status } : null;
-    return { log, bindings, insights };
+    const context = raw.context && CONTEXT_STATUSES.includes(raw.context.status)
+      ? {
+        status: raw.context.status,
+        bytes: Number.isFinite(raw.context.bytes) ? raw.context.bytes : null,
+        modified: isValidTimestamp(raw.context.modified) ? raw.context.modified : null,
+      }
+      : null;
+    return { log, bindings, insights, context };
   }
 
   function validatePayload(data) {
@@ -784,9 +908,9 @@ var HyperdashModel = (() => {
   function describeBin(activity, bin) {
     const count = activity.all[bin];
     const parts = [`${binTime(bin)}–${binTime(bin + 1)}`, `${count} ${count === 1 ? "press" : "presses"}`];
-    for (const family of FAMILIES) {
-      const n = activity.byFamily[family][bin];
-      if (n > 0) parts.push(`${family.toUpperCase()} ${n}`);
+    for (const group of GROUPS) {
+      const n = activity.byGroup[group][bin];
+      if (n > 0) parts.push(`${GROUP_LABELS[group].toUpperCase()} ${n}`);
     }
     return parts.join(" · ");
   }
@@ -803,11 +927,12 @@ var HyperdashModel = (() => {
 
   function createStore() {
     const minuteCache = new Map();
-    let counts, bins, lastUsed, layerSet, pending, count, rejected, firstEvent, lastEvent;
+    let counts, bins, days, lastUsed, layerSet, pending, count, rejected, firstEvent, lastEvent;
 
     function clear() {
       counts = {};
       bins = {};
+      days = {};
       lastUsed = {};
       layerSet = Object.create(null);
       pending = [];
@@ -837,8 +962,18 @@ var HyperdashModel = (() => {
       const monthCounts = counts[month] || (counts[month] = {});
       monthCounts[id] = (monthCounts[id] || 0) + 1;
       const monthBins = bins[month] || (bins[month] = Object.create(null));
-      const layerBins = monthBins[layer] || (monthBins[layer] = new Array(48).fill(0));
-      layerBins[Number(time.slice(11, 13)) * 2 + (Number(time.slice(14, 16)) >= 30 ? 1 : 0)] += 1;
+      const comboBins = monthBins[id] || (monthBins[id] = new Array(48).fill(0));
+      const hour = Number(time.slice(11, 13));
+      const minute = Number(time.slice(14, 16));
+      comboBins[hour * 2 + (minute >= 30 ? 1 : 0)] += 1;
+      // Per-day events, for the day view. Kept in arrival order and sorted when read.
+      const date = time.slice(0, 10);
+      const day = days[date] || (days[date] = { sec: [], combo: [], sorted: true, cache: null });
+      const sec = hour * 3600 + minute * 60 + Number(time.slice(17, 19));
+      if (day.sec.length && sec < day.sec[day.sec.length - 1]) day.sorted = false;
+      day.sec.push(sec);
+      day.combo.push(id);
+      day.cache = null;
       if (!(id in lastUsed) || time > lastUsed[id]) lastUsed[id] = time;
       layerSet[layer] = true;
       count += 1;
@@ -907,18 +1042,37 @@ var HyperdashModel = (() => {
       return result;
     }
 
+    // A day's commands as { sec, combo, layer, key }, in time order (arrival order within a second).
+    function dayEvents(date) {
+      const day = days[date];
+      if (!day) return [];
+      if (!day.cache) {
+        const order = day.sec.map((_, index) => index);
+        if (!day.sorted) order.sort((a, b) => day.sec[a] - day.sec[b] || a - b);
+        day.cache = order.map((index) => {
+          const combo = day.combo[index];
+          const cut = combo.indexOf(" ");
+          return { sec: day.sec[index], combo, layer: combo.slice(0, cut), key: combo.slice(cut + 1) };
+        });
+      }
+      return day.cache;
+    }
+
     // Sorted, JSON-safe copy of every aggregate, for tests.
     function snapshot() {
       const sorted = (object) => Object.fromEntries(Object.keys(object).sort().map((k) => [k, object[k]]));
       const binCopy = {};
       for (const month of Object.keys(bins).sort()) {
-        binCopy[month] = sorted(Object.fromEntries(Object.keys(bins[month]).map((layer) => [layer, bins[month][layer].slice()])));
+        binCopy[month] = sorted(Object.fromEntries(Object.keys(bins[month]).map((combo) => [combo, bins[month][combo].slice()])));
       }
+      const dayCopy = {};
+      for (const date of Object.keys(days).sort()) dayCopy[date] = dayEvents(date).map((e) => `${e.sec} ${e.combo}`).sort();
       return JSON.parse(JSON.stringify({
         count, rejected, firstEvent, lastEvent,
         pending: pending.map((p) => `${p.time} ${p.layer} ${p.key}`).sort(),
         counts: Object.fromEntries(Object.keys(counts).sort().map((m) => [m, sorted(counts[m])])),
         bins: binCopy,
+        days: dayCopy,
         lastUsed: sorted(lastUsed),
         layers: Object.keys(layerSet).sort(),
       }));
@@ -932,6 +1086,8 @@ var HyperdashModel = (() => {
       snapshot,
       countsOf: (month) => counts[month] || EMPTY,
       binsOf: (month) => bins[month] || EMPTY,
+      dayEvents,
+      dayList: () => Object.keys(days).sort(),
       lastUsedOf: (id) => lastUsed[id] || null,
       layerList: () => Object.keys(layerSet),
       summary: () => ({ count, rejected, pending: pending.length, firstEvent, lastEvent }),
@@ -940,8 +1096,8 @@ var HyperdashModel = (() => {
 
   // The page side of the host protocol, apart from the DOM: which log generation is loaded, how many
   // bytes were consumed, and whether an append applies. The host advances its offset only after ok: true.
-  function createSession() {
-    const store = createStore();
+  function createSession(createBackingStore = createStore) {
+    const store = createBackingStore();
     let generation = null;
     let offset = 0;
 
@@ -993,26 +1149,28 @@ var HyperdashModel = (() => {
     return next;
   }
 
-  // Bins for one month: per-bin totals, family split, highlight hits and the dot scale.
-  function buildActivityFromBins(layerBins, highlight, capacity) {
+  // Bins for one month or one day: per-bin totals, group split, highlight hits and the dot scale.
+  // `comboBins` maps "layer key" to its 48 half-hour counts; `classify.groupOf` gives the colour group.
+  function buildActivityFromCombos(comboBins, classify, highlight, capacity) {
     const all = new Array(48).fill(0);
     const hit = new Array(48).fill(0);
-    const byFamily = {};
-    const familyTotals = {};
-    for (const family of FAMILIES) { byFamily[family] = new Array(48).fill(0); familyTotals[family] = 0; }
+    const byGroup = {};
+    const groupTotals = {};
+    for (const group of GROUPS) { byGroup[group] = new Array(48).fill(0); groupTotals[group] = 0; }
     let total = 0;
     let hitTotal = 0;
-    for (const layer of Object.keys(layerBins)) {
-      const family = familyOf(layer);
-      const row = layerBins[layer];
+    for (const combo of Object.keys(comboBins)) {
+      const group = classify.groupOf(combo);
+      const lit = highlight !== null && layerOfCombo(combo) === highlight;
+      const row = comboBins[combo];
       for (let bin = 0; bin < 48; bin++) {
         const n = row[bin];
         if (n === 0) continue;
         all[bin] += n;
-        byFamily[family][bin] += n;
-        familyTotals[family] += n;
+        byGroup[group][bin] += n;
+        groupTotals[group] += n;
         total += n;
-        if (layer === highlight) { hit[bin] += n; hitTotal += n; }
+        if (lit) { hit[bin] += n; hitTotal += n; }
       }
     }
     let peakHour = 0;
@@ -1022,7 +1180,264 @@ var HyperdashModel = (() => {
       if (n > peakCount) { peakHour = hour; peakCount = n; }
     }
     const perDot = Math.max(1, Math.ceil(Math.max(...all) / capacity));
-    return { all, hit, byFamily, familyTotals, total, hitTotal, peakHour, perDot };
+    return { all, hit, byGroup, groupTotals, total, hitTotal, peakHour, perDot };
+  }
+
+  // Activity categories and colour groups ------------------------------------------------------
+  // bindings.json gives each binding a category. Twelve categories share six colour groups: all twelve
+  // cannot stay pairwise distinct at the validator's floors, so colour is per group and the category
+  // name and glyph carry the rest. Without a category, the layer decides the group.
+  const CATEGORIES = [
+    "pointer", "text-navigation", "page-navigation", "tab-navigation", "window-switching", "window-arrangement",
+    "app-launch", "site-open", "capture", "system", "file", "launcher",
+  ];
+  const CATEGORY_LABELS = {
+    pointer: "Pointer", "text-navigation": "Text navigation", "page-navigation": "Page navigation",
+    "tab-navigation": "Tab navigation", "window-switching": "Window switching", "window-arrangement": "Window arrangement",
+    "app-launch": "App launch", "site-open": "Site open", capture: "Capture", system: "System", file: "File", launcher: "Launcher",
+  };
+  const CATEGORY_GROUP = {
+    pointer: "pointer",
+    "text-navigation": "navigate", "page-navigation": "navigate", "tab-navigation": "navigate",
+    "window-switching": "windows", "window-arrangement": "windows",
+    "app-launch": "launch", "site-open": "launch", launcher: "launch",
+    capture: "capture", system: "system", file: "system",
+  };
+  // Legend order keeps neighbours distinct for colour-blind readers.
+  const GROUPS = ["windows", "launch", "system", "navigate", "capture", "pointer"];
+  const GROUP_LABELS = { windows: "Windows", launch: "Launch", system: "System", navigate: "Navigate", capture: "Capture", pointer: "Pointer" };
+  const LAYER_GROUP = { o: "launch", b: "launch", r: "launch", w: "windows", v: "navigate", c: "capture", s: "system", f: "system" };
+  const groupOfLayer = (layer) => LAYER_GROUP[layer] || "system";
+  const groupOf = (layer, category) => CATEGORY_GROUP[category] || groupOfLayer(layer);
+  const layerOfCombo = (combo) => combo.slice(0, combo.indexOf(" "));
+
+  // Category and group for any combo ("layer key"), from the current bindings.
+  function classifier(bindings) {
+    const category = Object.create(null);
+    for (const b of bindings) if (CATEGORIES.includes(b.category)) category[`${b.layer} ${b.key}`] = b.category;
+    return {
+      categoryOf: (combo) => category[combo] || null,
+      groupOf: (combo) => groupOf(layerOfCombo(combo), category[combo]),
+    };
+  }
+
+  // Dates -----------------------------------------------------------------------------------------
+  const DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+  const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const isValidDate = (text) => typeof text === "string" && DATE.test(text) && isValidTimestamp(`${text}T00:00:00`);
+  const dateOf = (stamp) => stamp.slice(0, 10);
+  const dayNumber = (date) => { const [y, m, d] = date.split("-").map(Number); return Math.round(Date.UTC(y, m - 1, d) / 86400000); };
+  function addDays(date, count) {
+    const d = new Date((dayNumber(date) + count) * 86400000);
+    return `${pad(d.getUTCFullYear(), 4)}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  }
+  function dayLabel(date, today) {
+    if (date === today) return "Today";
+    if (date === addDays(today, -1)) return "Yesterday";
+    const d = new Date(dayNumber(date) * 86400000);
+    return `${WEEKDAYS[d.getUTCDay()]} ${SHORT_MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
+  }
+  // Stepping stays between the first recorded day and today.
+  function clampDay(date, firstDate, today) {
+    const first = firstDate && firstDate < today ? firstDate : today;
+    return date > today ? today : date < first ? first : date;
+  }
+
+  // Context stream -------------------------------------------------------------------------------
+  // Lines are "YYYY-MM-DDTHH:MM:SS.mmm<TAB>kind<TAB>value". Kinds: app (value is a bundle ID), lock,
+  // unlock, sleep, wake and start (value "-"). Rules, like the usage log: exactly 3 tab-separated
+  // fields, a real local timestamp with milliseconds, a known kind, a valid value. Others are rejected.
+  const CONTEXT_STAMP = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\.\d{3}$/;
+  const BUNDLE_ID = /^[A-Za-z0-9._-]+$/; // as Context.swift: any of these, but never a bare "-"
+  const CONTEXT_KINDS = ["app", "lock", "unlock", "sleep", "wake", "start"];
+
+  // Seconds on a local clock counted as if it were UTC, so day arithmetic ignores time zones.
+  function absSeconds(stamp) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/.exec(stamp);
+    return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) / 1000 + (m[7] ? +m[7] / 1000 : 0);
+  }
+
+  function createContextStore() {
+    const minuteCache = new Map();
+    let events, rejected, sorted, version, appList;
+
+    function clear() { events = []; rejected = 0; sorted = true; version = 0; appList = null; }
+    clear();
+
+    function ingest(text) {
+      for (const line of text.split("\n")) {
+        const clean = line.endsWith("\r") ? line.slice(0, -1) : line;
+        if (clean === "") continue;
+        const fields = clean.split("\t");
+        const match = fields.length === 3 ? CONTEXT_STAMP.exec(fields[0]) : null;
+        const [, kind, value] = fields;
+        if (!match || !CONTEXT_KINDS.includes(kind) || (kind === "app" ? !BUNDLE_ID.test(value) || value === "-" : value !== "-")) { rejected += 1; continue; }
+        const minute = match[1].slice(0, 16);
+        let ok = minuteCache.get(minute);
+        if (ok === undefined) { ok = isValidTimestamp(`${minute}:00`); minuteCache.set(minute, ok); }
+        if (!ok || Number(match[1].slice(17, 19)) > 59) { rejected += 1; continue; }
+        if (events.length && fields[0] < events[events.length - 1].t) sorted = false;
+        events.push({ t: fields[0], kind, value, abs: absSeconds(fields[0]) });
+        version += 1;
+        appList = null;
+      }
+    }
+
+    function ordered() {
+      if (!sorted) {
+        const indexed = events.map((event, index) => [event, index]);
+        indexed.sort((a, b) => (a[0].t < b[0].t ? -1 : a[0].t > b[0].t ? 1 : a[1] - b[1]));
+        events = indexed.map((pair) => pair[0]);
+        sorted = true;
+      }
+      return events;
+    }
+
+    // Sessions: spans of time the recorder is known to have run. A session starts at a `start` event and
+    // ends at the last context event before the next `start` (the last session ends at `now`). Sessions
+    // 60 s or less apart count as one, which bridges a Hammerspoon reload. Same rule as the insights tool
+    // (Context.swift). Lock and sleep inside a session do not end it. Everything outside is unknown.
+    // Spans are in seconds on the counted-as-UTC clock; events after `now` are ignored.
+    let spanCache = { key: null, spans: null };
+    function sessions(now) {
+      const nowAbs = absSeconds(now);
+      const key = `${version}|${nowAbs}`;
+      if (spanCache.key === key) return spanCache.spans;
+      const known = ordered().filter((event) => event.abs <= nowAbs);
+      const starts = known.filter((event) => event.kind === "start").map((event) => event.abs);
+      const spans = [];
+      let cursor = 0;
+      starts.forEach((start, index) => {
+        let end = nowAbs;
+        if (index + 1 < starts.length) {
+          const next = starts[index + 1];
+          while (cursor < known.length && known[cursor].abs < next) cursor += 1;
+          end = Math.max(start, cursor > 0 ? known[cursor - 1].abs : start);
+        }
+        const last = spans[spans.length - 1];
+        if (last && start - last.end <= 60) last.end = Math.max(last.end, end);
+        else spans.push({ start, end });
+      });
+      spanCache = { key, spans };
+      return spans;
+    }
+
+    // The app in front at a usage stamp (whole seconds): the last `app` or `start` event whose second is
+    // strictly before it. An app change in the same second counts later; a `start` clears the app; a press
+    // outside every session has no app.
+    function appAt(usageStamp, now = "9999-12-31T23:59:59") {
+      const t = absSeconds(usageStamp);
+      if (!sessions(now).some((span) => span.start <= t && t <= span.end)) return null;
+      if (appList === null) appList = ordered().filter((event) => event.kind === "app" || event.kind === "start");
+      let low = 0;
+      let high = appList.length;
+      while (low < high) {
+        const mid = (low + high) >> 1;
+        if (appList[mid].abs < t) low = mid + 1; else high = mid;
+      }
+      const last = low === 0 ? null : appList[low - 1];
+      return last && last.kind === "app" ? last.value : null;
+    }
+
+    // The day as consecutive intervals in seconds of the day: recorded, locked, asleep or unknown.
+    // Unknown is everything outside a session. Inside one, a lock or sleep shades the time until its
+    // unlock or wake, or until a `start` clears it. Whole seconds: an event acts from the next whole second.
+    function segments(date, now) {
+      const dayStart = absSeconds(`${date}T00:00:00`);
+      const limit = Math.min(dayStart + 86400, absSeconds(now));
+      if (!(limit > dayStart)) return [];
+      const spans = sessions(now).map((span) => ({ from: Math.ceil(span.start), to: Math.floor(span.end) + 1 }));
+      const list = ordered().filter((event) => event.abs <= absSeconds(now));
+      const points = new Set([dayStart, limit]);
+      for (const span of spans) { points.add(span.from); points.add(span.to); }
+      for (const event of list) points.add(Math.ceil(event.abs));
+      const edges = [...points].filter((point) => point >= dayStart && point <= limit).sort((x, y) => x - y);
+      let locked = false;
+      let asleep = false;
+      let index = 0;
+      const result = [];
+      for (let i = 0; i + 1 < edges.length; i++) {
+        const at = edges[i];
+        while (index < list.length && Math.ceil(list[index].abs) <= at) {
+          const kind = list[index++].kind;
+          if (kind === "start") { locked = false; asleep = false; } else if (kind === "lock") locked = true;
+          else if (kind === "unlock") locked = false; else if (kind === "sleep") asleep = true; else if (kind === "wake") asleep = false;
+        }
+        const inside = spans.some((span) => span.from <= at && at < span.to);
+        const state = !inside ? "unknown" : asleep ? "asleep" : locked ? "locked" : "recorded";
+        const last = result[result.length - 1];
+        if (last && last.state === state) last.to = edges[i + 1] - dayStart;
+        else result.push({ from: at - dayStart, to: edges[i + 1] - dayStart, state });
+      }
+      return result;
+    }
+
+    return {
+      reset: (text) => { clear(); ingest(text); },
+      append: (text) => ingest(text),
+      tick: () => 0,
+      appAt,
+      segments,
+      sessions,
+      countsOf: () => EMPTY,
+      binsOf: () => EMPTY,
+      summary: () => ({ count: events.length, rejected, pending: 0, firstEvent: events.length ? ordered()[0].t : null, lastEvent: events.length ? ordered()[events.length - 1].t : null }),
+      snapshot: () => JSON.parse(JSON.stringify({ rejected, events: ordered().map((e) => `${e.t} ${e.kind} ${e.value}`) })),
+      hasStart: () => events.some((event) => event.kind === "start"),
+      bundles: () => [...new Set(ordered().filter((e) => e.kind === "app").map((e) => e.value))],
+      version: () => version,
+    };
+  }
+
+  // A day's commands, in time order, each with the app that was in front at that second.
+  function attribute(events, date, context, now) {
+    return events.map((event) => ({
+      ...event,
+      app: context ? context.appAt(`${date}T${pad(Math.floor(event.sec / 3600))}:${pad(Math.floor(event.sec / 60) % 60)}:${pad(event.sec % 60)}`, now) : null,
+    }));
+  }
+
+  // Recurring adjacent pairs of different commands within `maxGap` seconds, in the day's own order.
+  // With an app, both commands of the pair must have been in that app.
+  function findSequences(events, { maxGap = 10, min = 3, app = null } = {}) {
+    const found = new Map();
+    for (let i = 0; i + 1 < events.length; i++) {
+      const a = events[i];
+      const b = events[i + 1];
+      if (b.sec - a.sec > maxGap || a.combo === b.combo) continue;
+      if (app !== null && (a.app !== app || b.app !== app)) continue;
+      const key = `${a.combo}>${b.combo}`;
+      let entry = found.get(key);
+      if (!entry) { entry = { from: a.combo, to: b.combo, count: 0, times: [] }; found.set(key, entry); }
+      entry.count += 1;
+      entry.times.push(a.sec);
+    }
+    return [...found.values()]
+      .filter((entry) => entry.count >= min)
+      .sort((x, y) => y.count - x.count || x.times[0] - y.times[0] || (x.from + x.to < y.from + y.to ? -1 : 1));
+  }
+
+  const clock = (sec) => `${pad(Math.floor(sec / 3600))}:${pad(Math.floor(sec / 60) % 60)}:${pad(sec % 60)}`;
+
+  // Commands whose second falls in a half-hour bin.
+  const commandsIn = (events, bin) => events.filter((event) => event.sec >= bin * 1800 && event.sec < (bin + 1) * 1800);
+
+  // Everything the day view shows for one date.
+  function buildDay({ usage, context, date, now, appFilter, highlight, classify, capacity }) {
+    const all = attribute(usage.dayEvents(date), date, context, now);
+    const apps = new Map();
+    for (const event of all) if (event.app !== null) apps.set(event.app, (apps.get(event.app) || 0) + 1);
+    const shown = appFilter === null ? all : all.filter((event) => event.app === appFilter);
+    const comboBins = {};
+    for (const event of shown) (comboBins[event.combo] || (comboBins[event.combo] = new Array(48).fill(0)))[Math.floor(event.sec / 1800)] += 1;
+    return {
+      date,
+      events: shown,
+      activity: buildActivityFromCombos(comboBins, classify, highlight, capacity),
+      apps: [...apps].map(([app, count]) => ({ app, count })).sort((a, b) => b.count - a.count || (a.app < b.app ? -1 : 1)),
+      sequences: findSequences(all, { app: appFilter }),
+      segments: context ? context.segments(date, now) : null,
+    };
   }
 
   // Data state
@@ -1038,6 +1453,8 @@ var HyperdashModel = (() => {
     "missing-tool": "ANALYSIS TOOL MISSING", failed: "ANALYSIS FAILED",
   };
 
+  const CONTEXT_TEXT = { ok: "APP CONTEXT OK", disabled: "APP CONTEXT OFF", missing: "CONTEXT LOG MISSING", unreadable: "CONTEXT LOG UNREADABLE" };
+
   // One status line. Inactivity is described by the last press; only the host's log status can say the log failed.
   function describeHealth({ health, lastEvent, rejected, now }) {
     const logStatus = health?.log?.status || null;
@@ -1050,8 +1467,10 @@ var HyperdashModel = (() => {
     if (rejected > 0) parts.push(`${rejected} BAD ${rejected === 1 ? "LINE" : "LINES"}`);
     if (bindingsStatus !== "ok") parts.push(bindingsStatus === "invalid" ? "BINDINGS FILE INVALID · RUN YARN BUILD" : "BINDINGS FILE MISSING · RUN YARN BUILD");
     if (analysis) parts.push(ANALYSIS_TEXT[analysis]);
+    const contextStatus = health?.context?.status || null;
+    if (contextStatus) parts.push(CONTEXT_TEXT[contextStatus]);
     const level = logBad || bindingsStatus !== "ok" || analysis === "failed" || analysis === "missing-tool" ? "error"
-      : analysis === "stale" || rejected > 0 ? "warn" : "ok";
+      : analysis === "stale" || rejected > 0 || contextStatus === "missing" || contextStatus === "unreadable" ? "warn" : "ok";
     return { text: parts.join(" · "), level };
   }
 
@@ -1078,6 +1497,10 @@ var HyperdashModel = (() => {
     }
     const since = insights?.recordingSince || summary.firstEvent;
     if (since) lines.push(`Recording since ${formatWhen(since, now)}`);
+    if (health?.context) {
+      lines.push(health.context.status === "disabled" ? "App context is off" : `App context ${health.context.status}`);
+      if (health.context.status === "ok") lines.push("The usage log has 1 s resolution: an app change in the same second as a press counts after it");
+    }
     return lines;
   }
 
@@ -1093,6 +1516,7 @@ var HyperdashModel = (() => {
     if (name === "Escape") {
       if (ctx.aboutOpen) return { type: "closeAbout" };
       if (ctx.highlight !== null) return { type: "highlight", layer: ctx.highlight };
+      if (ctx.page === "activity" && ctx.interval != null) return { type: "clearInterval" };
       if (ctx.page !== null) return { type: "back" };
       if (ctx.selected !== null) return { type: "select", key: null };
       if (ctx.layer !== null) return { type: "back" };
@@ -1102,15 +1526,19 @@ var HyperdashModel = (() => {
 
     if (name === "ArrowLeft" || name === "ArrowRight") {
       const step = name === "ArrowLeft" ? -1 : 1;
+      // In the day view the arrows walk days (Shift: weeks); everywhere else they walk months as before.
+      if (ctx.page === "activity" && ctx.activityMode === "day") return { type: "day", step: event.shiftKey ? step * 7 : step };
       if (event.shiftKey) return { type: "month", step };
       if (ctx.layer === null && ctx.page !== "insights") return { type: "month", step };
     }
     if (ctx.page === "insights") return null;
 
     const key = NAMED_KEYS[name] || (name.length === 1 ? name.toLowerCase() : "");
+    if (ctx.page === "activity" && name === "Home") return { type: "today" };
     if (!/^[a-z0-9]$/.test(key) && !NAMED_VALUES.has(key)) return null;
 
     if (ctx.page === "activity") {
+      if (name === "Enter") return { type: "toggleMode" };
       return ctx.layers.includes(key) ? { type: "highlight", layer: key } : { type: "ignore" };
     }
     if (ctx.layer !== null) return { type: "select", key };
@@ -1120,16 +1548,18 @@ var HyperdashModel = (() => {
   }
 
   return {
-    FAMILIES, familyOf, localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
+    GROUPS, GROUP_LABELS, CATEGORIES, CATEGORY_LABELS, CATEGORY_GROUP, groupOf, groupOfLayer, classifier,
+    isValidDate, dateOf, addDays, dayLabel, clampDay, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
+    localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
     monthOf, previousMonth, isMonthComplete, compareMonths,
-    sumCounts, buildRows, buildActivityFromBins, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, describeBin,
+    sumCounts, buildRows, buildActivityFromCombos, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, describeBin,
     formatWhen, describeHealth, aboutLines, routeKey,
   };
 })();
 </script>
 
 <script>
-const { FAMILIES, familyOf } = HyperdashModel;
+const { GROUPS, GROUP_LABELS, CATEGORY_LABELS, groupOf } = HyperdashModel;
 const LAYER_NAMES = {
   b: "Browse", o: "Open", w: "Window", c: "Capture",
   f: "Finder", s: "System", v: "Move", r: "Launcher",
@@ -1169,6 +1599,22 @@ const LAYER_GLYPHS = {
   o: lineIcon('<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>'),
 };
 
+// One glyph per activity category, reusing the layer glyphs where the meaning matches.
+const CATEGORY_GLYPHS = {
+  pointer: LAYER_GLYPHS.v,
+  "text-navigation": lineIcon('<path d="M9 4h6M9 20h6M12 4v16"/>'),
+  "page-navigation": lineIcon('<path d="M7 9l5-5 5 5M7 15l5 5 5-5"/>'),
+  "tab-navigation": lineIcon('<path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/>'),
+  "window-switching": lineIcon('<rect x="3" y="8" width="13" height="12" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-3"/>'),
+  "window-arrangement": lineIcon('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M12 4v16"/>'),
+  "app-launch": LAYER_GLYPHS.o,
+  "site-open": LAYER_GLYPHS.b,
+  capture: LAYER_GLYPHS.c,
+  system: LAYER_GLYPHS.s,
+  file: LAYER_GLYPHS.f,
+  launcher: LAYER_GLYPHS.r,
+};
+
 const ICON_KEYBOARD = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="2.5" y="5.5" width="19" height="13" rx="3"/><path d="M6.5 9.5h.01M10 9.5h.01M13.5 9.5h.01M17 9.5h.01M8 14.5h8"/></svg>';
 const ICON_BACK = '<svg width="12" height="12" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>';
 
@@ -1191,9 +1637,23 @@ const CHART = { width: 326, top: 18, plot: 120, step: 4, height: 162 };
 const BIN_HINT = "TAB · INSPECT 30-MINUTE BINS";
 
 // Navigation state. The month is kept by its YYYY-MM id so data updates never move it.
-const state = { monthId: null, layer: null, selected: null, page: null, highlight: null, aboutOpen: false };
+const state = {
+  monthId: null, layer: null, selected: null, page: null, highlight: null, aboutOpen: false,
+  activityMode: "day", day: null, interval: null, focusSec: null, appFilter: null, group: null,
+};
+let classify = HyperdashModel.classifier([]);
+let labelByCombo = {};
+let appNames = {};
+let appNamesVersion = 0;
+let controlsSignature = null;
+let chartSignature = null;
+let appbarSignature = null;
+let panelSignature = null;
+let groupSignature = null;
 const session = HyperdashModel.createSession();
 const store = session.store;
+const contextSession = HyperdashModel.createSession(HyperdashModel.createContextStore);
+const context = contextSession.store;
 let insightsData = null;
 let health = null;
 let dataError = null;
@@ -1204,7 +1664,6 @@ let iconVersion = 0;
 let listScope = null;
 let listSignature = null;
 let listSelected = null;
-let activitySignature = null;
 let headerMode = null;
 let bindings = [];
 let months = [];
@@ -1307,7 +1766,8 @@ function render(announce = true) {
   const inLayer = state.layer !== null;
   const page = state.page;
   const broken = dataError !== null;
-  const activity = !broken && page === "activity" ? buildActivity() : null;
+  const am = !broken && page === "activity" ? activityModel() : null;
+  const activity = am ? am.a : null;
 
   // Swap the header icon only when the mode changes, so a focused Back button keeps focus.
   const mode = inLayer || page ? "back" : "home";
@@ -1334,12 +1794,21 @@ function render(announce = true) {
   $("totals").hidden = insightsPage || broken;
   $("keyboard").hidden = page !== null || broken;
 
-  $("month-label").textContent = monthLabel(view.month).toUpperCase();
-  $("previous-month").disabled = months.indexOf(state.monthId) === 0;
-  $("next-month").disabled = months.indexOf(state.monthId) === months.length - 1;
+  // The pill walks days in the Activity day view and months everywhere else.
+  const dayMode = am?.mode === "day";
+  if (dayMode) {
+    $("month-label").textContent = HyperdashModel.dayLabel(state.day, today()).toUpperCase();
+    $("previous-month").disabled = state.day <= firstDay();
+    $("next-month").disabled = state.day >= today();
+  } else {
+    $("month-label").textContent = monthLabel(view.month).toUpperCase();
+    $("previous-month").disabled = months.indexOf(state.monthId) === 0;
+    $("next-month").disabled = months.indexOf(state.monthId) === months.length - 1;
+  }
 
-  $("total").textContent = view.total.toLocaleString("en-US");
-  $("total-unit").textContent = (view.total === 1 ? "PRESS" : "PRESSES")
+  const shownTotal = activity ? activity.total : view.total;
+  $("total").textContent = shownTotal.toLocaleString("en-US");
+  $("total-unit").textContent = (shownTotal === 1 ? "PRESS" : "PRESSES")
     + (inLayer ? ` · ${view.used.length} OF ${view.scoped.length} USED` : "");
 
   // The percentage shows only when both months are complete (see compareMonths).
@@ -1375,6 +1844,7 @@ function render(announce = true) {
 
   const listed = page === null && !broken;
   $("list").hidden = !listed;
+  renderGroupbar(listed);
   $("problem").hidden = !broken;
   $("problem").textContent = broken ? `Cannot show the dashboard. ${dataError}` : "";
   $("detail").hidden = !inLayer || broken;
@@ -1387,7 +1857,7 @@ function render(announce = true) {
   }
   if (listed) renderList(inLayer);
   else if (!broken && page === "insights") renderInsights();
-  else if (!broken) renderActivity(activity);
+  else if (!broken) renderActivity(am);
   renderStatus(broken);
   renderFooter();
 
@@ -1413,9 +1883,46 @@ function renderStatus(broken) {
   }
 }
 
+// Share of presses per colour group, above the list. Clicking a segment filters the list to that group.
+function renderGroupbar(visible) {
+  const wrap = $("groupwrap");
+  const totals = {};
+  let sum = 0;
+  if (visible) {
+    for (const row of view.scoped) {
+      if (row.count === 0) continue;
+      const group = groupOf(row.layer, row.category);
+      totals[group] = (totals[group] || 0) + row.count;
+      sum += row.count;
+    }
+  }
+  wrap.hidden = !visible || sum === 0;
+  if (wrap.hidden) return;
+  const signature = `${state.group}|${GROUPS.map((g) => totals[g] || 0).join(",")}`;
+  if (signature === groupSignature) return;
+  groupSignature = signature;
+  const share = (n) => `${Math.round((n / sum) * 100)}%`;
+  $("groupbar").replaceChildren(...GROUPS.filter((g) => totals[g]).map((group) => {
+    const segment = element("button", `grp-${group}`);
+    segment.style.flex = String(totals[group]);
+    segment.dataset.group = group;
+    segment.setAttribute("aria-pressed", String(state.group === group));
+    segment.setAttribute("aria-label", `${GROUP_LABELS[group]} ${totals[group]} presses, filter the list`);
+    segment.title = `${GROUP_LABELS[group]} · ${totals[group].toLocaleString("en-US")} · ${share(totals[group])}`;
+    segment.tabIndex = -1;
+    if (state.group !== null && state.group !== group) segment.classList.add("dimmed");
+    return segment;
+  }));
+  const top = GROUPS.filter((g) => totals[g]).sort((a, b) => totals[b] - totals[a]).slice(0, 3);
+  $("groupcap").textContent = state.group
+    ? `${GROUP_LABELS[state.group].toUpperCase()} ONLY · CLICK AGAIN TO CLEAR`
+    : `BY GROUP · ${top.map((g) => `${GROUP_LABELS[g].toUpperCase()} ${share(totals[g])}`).join(" · ")}`;
+}
+
 function emptyMessage() {
   if (health?.log && health.log.status !== "ok") return `Usage log ${health.log.status} — nothing to show`;
   if (store.summary().count === 0) return "No presses recorded yet";
+  if (state.page === "activity" && state.activityMode === "day") return `No presses on ${HyperdashModel.dayLabel(state.day, today()).toLowerCase()}`;
   return `Nothing logged in ${monthLabel(view.month)} yet`;
 }
 
@@ -1446,7 +1953,7 @@ function iconFor(b) {
       template = monogram(b.app || b.site);
     } else {
       template = element("span", "icon");
-      template.innerHTML = LAYER_GLYPHS[b.layer] || lineIcon('<circle cx="12" cy="12" r="3"/>');
+      template.innerHTML = CATEGORY_GLYPHS[b.category] || LAYER_GLYPHS[b.layer] || lineIcon('<circle cx="12" cy="12" r="3"/>');
     }
     iconCache.set(id, template);
   }
@@ -1458,10 +1965,10 @@ function iconFor(b) {
 function renderList(inLayer) {
   const list = $("list");
   const scope = `${state.layer}|${view.month}`;
-  const rows = inLayer ? view.scoped : view.used;
+  const rows = (inLayer ? view.scoped : view.used).filter((row) => state.group === null || groupOf(row.layer, row.category) === state.group);
 
   // Skip the rebuild when nothing a row shows has changed, so hover, scroll and focus stay put.
-  const signature = `${scope}|${inLayer}|${state.selected}|${iconVersion}|`
+  const signature = `${scope}|${inLayer}|${state.selected}|${state.group}|${iconVersion}|`
     + (rows.length === 0 ? emptyMessage() : rows.map((r) => `${r.layer} ${r.key} ${r.count} ${r.label}`).join("\n"));
   if (signature === listSignature) return;
   listSignature = signature;
@@ -1481,7 +1988,7 @@ function renderList(inLayer) {
   let selected = null;
   let focusTarget = null;
   for (const b of rows) {
-    const item = element("button", `item fam-${familyOf(b.layer)}`);
+    const item = element("button", `item grp-${groupOf(b.layer, b.category)}`);
     item.tabIndex = -1; // the list is one Tab stop; typing selects bindings
     item.dataset.layer = b.layer;
     item.dataset.key = b.key;
@@ -1555,7 +2062,7 @@ function renderDetail() {
     const last = store.lastUsedOf(`${binding.layer} ${binding.key}`);
     facts.push(last ? `last ${timeAgo(last)}` : "never used");
     text.append(
-      element("div", "detail-title", `${symbol(binding.key)} · ${binding.label}`),
+      element("div", "detail-title", `${symbol(binding.key)} · ${binding.label}${binding.category ? ` · ${CATEGORY_LABELS[binding.category]}` : ""}`),
       element("div", "detail-value", facts.join(" · ")),
     );
   }
@@ -1605,8 +2112,12 @@ function renderInsights() {
 
     const text = element("div", "insight-text");
     text.append(element("div", "insight-title", item.title), element("div", "insight-detail", item.detail));
+    // Version 3 findings name the days they rest on and, when one applies, the app.
+    const meta = [...item.dates.map((date) => HyperdashModel.dayLabel(date, today())), ...(item.app ? [appName(item.app)] : [])];
+    if (meta.length) text.append(element("div", "insight-meta", meta.join(" · ").toUpperCase()));
 
-    const card = element(keys.length ? "button" : "div", "insight");
+    const clickable = keys.length > 0 || item.dates.length > 0;
+    const card = element(clickable ? "button" : "div", "insight");
     card.append(marker, text);
     if (keys.length) {
       const chips = element("div", "chips");
@@ -1617,26 +2128,92 @@ function renderInsights() {
       card.append(chips);
       // The card describes the report's month, so open the combo in that month.
       card.addEventListener("click", () => openCombo(keys[0][0], keys[0][1], insightsData.month));
+    } else if (item.dates.length) {
+      // No command to open: show the first supporting day in Activity.
+      card.addEventListener("click", () => openDay(item.dates[0], item.app));
     }
     list.append(card);
   }
   root.append(list);
 }
 
-function buildActivity() {
-  return HyperdashModel.buildActivityFromBins(store.binsOf(state.monthId), state.highlight, Math.floor(CHART.plot / CHART.step));
+// Activity ------------------------------------------------------------------------------------------
+// Day view: one date, half-hour dots, locked or asleep time shaded, unknown time hatched, an interval
+// listing its commands, and recurring pairs. Month view: all days of the month combined, as before.
+
+const contextOn = () => {
+  const status = health?.context?.status;
+  return status === "ok" || (status === undefined && context.summary().count > 0);
+};
+
+function today() {
+  return HyperdashModel.dateOf(currentNow());
 }
 
-function renderActivity(a) {
-  const root = $("activity");
+function appName(bundle) {
+  return appNames[bundle] || bundle.split(".").pop();
+}
 
-  // Skip the rebuild when the bins and highlight are unchanged, so hover and focus stay put.
-  const signature = `${view.month}|${state.highlight}|${a.perDot}|${a.all.join(",")}|${a.hit.join(",")}|${a.total === 0 ? emptyMessage() : ""}`;
-  if (signature === activitySignature) return;
-  activitySignature = signature;
+function firstDay() {
+  const days = store.dayList();
+  return days.length ? days[0] : today();
+}
+
+function activityModel() {
+  const M = HyperdashModel;
+  const capacity = Math.floor(CHART.plot / CHART.step);
+  if (state.activityMode === "day") {
+    const day = M.buildDay({
+      usage: store, context: contextOn() ? context : null, date: state.day, now: currentNow(),
+      appFilter: contextOn() ? state.appFilter : null, highlight: state.highlight, classify, capacity,
+    });
+    return { mode: "day", day, a: day.activity };
+  }
+  return { mode: "month", day: null, a: M.buildActivityFromCombos(store.binsOf(state.monthId), classify, state.highlight, capacity) };
+}
+
+function dayCaption() {
+  const M = HyperdashModel;
+  if (state.activityMode === "month") return "ALL DAYS COMBINED";
+  if (state.day === today()) return "UNFINISHED";
+  return M.dayLabel(state.day, today()).toUpperCase();
+}
+
+function renderControls() {
+  const M = HyperdashModel;
+  const t = today();
+  const yesterday = M.addDays(t, -1);
+  const day = state.activityMode === "day";
+  const signature = `${state.activityMode}|${state.day}|${t}|${dayCaption()}`;
+  if (signature === controlsSignature) return;
+  controlsSignature = signature;
+  const button = (label, pressed, action) => {
+    const node = element("button", "seg", label);
+    node.setAttribute("aria-pressed", String(pressed));
+    node.dataset.action = action;
+    return node;
+  };
+  $("controls").replaceChildren(
+    button("TODAY", day && state.day === t, "today"),
+    button("YESTERDAY", day && state.day === yesterday, "yesterday"),
+    button("MONTH", !day, "month"),
+    element("span", "note", dayCaption()),
+  );
+}
+
+// One column of dots per half hour. In the day view the plot also shows what the clock was doing.
+function renderChart(m) {
+  const root = $("chart");
+  const a = m.a;
+  const day = m.mode === "day";
+  const segments = day ? m.day.segments : null;
+  const signature = [m.mode, day ? state.day : view.month, state.highlight, state.interval, a.perDot, a.all.join(","), a.hit.join(","),
+    a.total === 0 ? emptyMessage() : "", segments ? segments.map((s) => `${s.state}${s.from}-${s.to}`).join(",") : ""].join("|");
+  if (signature === chartSignature) return;
+  chartSignature = signature;
   const focusedBin = document.activeElement?.classList?.contains("bin") ? document.activeElement.dataset.bin : null;
 
-  if (a.total === 0) {
+  if (a.total === 0 && !day) {
     root.replaceChildren(element("p", "empty-list", emptyMessage()));
     return;
   }
@@ -1645,10 +2222,9 @@ function renderActivity(a) {
   const binWidth = width / 48;
   const centre = top + plot / 2;
   const highlighting = state.highlight !== null;
-  const paths = { grey: "" };
-  for (const family of FAMILIES) paths[`f-${family}`] = "";
-  const lightClass = highlighting ? `f-${familyOf(state.highlight)}` : null;
-  const busiest = a.all.indexOf(Math.max(...a.all));
+  const paths = { grey: "", lit: "" };
+  for (const group of GROUPS) paths[`g-${group}`] = "";
+  const busiest = a.total === 0 ? -1 : a.all.indexOf(Math.max(...a.all));
   let bins = "";
 
   for (let bin = 0; bin < 48; bin++) {
@@ -1659,23 +2235,22 @@ function renderActivity(a) {
     const at = (j) => `M${x} ${(centre + (j - (dots - 1) / 2) * step).toFixed(1)}h0`;
 
     if (highlighting) {
-      // The highlighted layer sits at the bottom of the column in its family colour.
+      // The highlighted layer sits at the bottom of the column in the selection colour.
       const lit = a.hit[bin] ? Math.min(dots, Math.max(1, Math.round(a.hit[bin] / a.perDot))) : 0;
-      for (let j = 0; j < dots; j++) paths[j >= dots - lit ? lightClass : "grey"] += at(j);
+      for (let j = 0; j < dots; j++) paths[j >= dots - lit ? "lit" : "grey"] += at(j);
     } else {
-      // Dots split across families in proportion to their presses, stacked in legend order.
+      // Dots split across groups in proportion to their presses, stacked in legend order.
       let used = 0;
       let seen = 0;
-      for (const family of FAMILIES) {
-        seen += a.byFamily[family][bin];
+      for (const group of GROUPS) {
+        seen += a.byGroup[group][bin];
         const upTo = Math.round((seen / count) * dots);
-        for (let j = used; j < upTo; j++) paths[`f-${family}`] += at(j);
+        for (let j = used; j < upTo; j++) paths[`g-${group}`] += at(j);
         used = upTo;
       }
     }
-    // One Tab stop (the busiest bin); ← → move between bins inside the chart.
     const description = HyperdashModel.describeBin(a, bin);
-    bins += `<rect class="bin" data-bin="${bin}" tabindex="${bin === busiest ? 0 : -1}" role="img" aria-label="${description}" x="${(bin * binWidth).toFixed(1)}" y="${top}" width="${binWidth.toFixed(1)}" height="${plot}"><title>${description}</title></rect>`;
+    bins += `<rect class="bin${day && state.interval === bin ? " selected" : ""}" data-bin="${bin}" tabindex="${bin === busiest ? 0 : -1}" role="img" aria-label="${description}" x="${(bin * binWidth).toFixed(1)}" y="${top}" width="${binWidth.toFixed(1)}" height="${plot}"><title>${description}</title></rect>`;
   }
 
   const base = top + plot + 6;
@@ -1686,29 +2261,49 @@ function renderActivity(a) {
     return `<text x="${hour * (width / 24)}" y="${height - 3}" text-anchor="${anchor}">${hour}H</text>`;
   }).join("");
 
+  let bands = "";
+  let now = "";
+  if (day) {
+    for (const segment of segments || []) {
+      if (segment.state === "recorded") continue;
+      bands += `<rect class="band-${segment.state}" x="${(segment.from / 86400 * width).toFixed(1)}" y="${top}" width="${((segment.to - segment.from) / 86400 * width).toFixed(1)}" height="${plot}"/>`;
+    }
+    if (state.day === today()) {
+      const x = (HyperdashModel.absSeconds(currentNow()) - HyperdashModel.absSeconds(`${state.day}T00:00:00`)) / 86400 * width;
+      now = `<line class="now-line" x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${top}" y2="${base}"/>`;
+    }
+  }
+
+  const peak = a.total === 0 ? "" : `<line class="peak-line" x1="${peakX}" x2="${peakX}" y1="${top - 4}" y2="${base}"/>`
+    + `<text class="peak-label" x="${peakX}" y="9" text-anchor="${peakAnchor}">PEAK ${a.peakHour}H</text>`;
   root.innerHTML = `<svg class="chart" viewBox="0 0 ${width} ${height}" role="group" aria-label="Presses by half hour of day">`
-    + `<line class="baseline" x1="0" x2="${width}" y1="${base}" y2="${base}"/>`
-    + `<line class="peak-line" x1="${peakX}" x2="${peakX}" y1="${top - 4}" y2="${base}"/>`
-    + `<text class="peak-label" x="${peakX}" y="9" text-anchor="${peakAnchor}">PEAK ${a.peakHour}H</text>`
+    + `<defs><pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="hatch-line" x1="0" y1="0" x2="0" y2="5"/></pattern></defs>`
+    + `${bands}<line class="baseline" x1="0" x2="${width}" y1="${base}" y2="${base}"/>${now}${peak}`
     + Object.entries(paths).map(([name, d]) => `<path class="dots ${name}" d="${d}"/>`).join("")
     + `${bins}${axis}</svg>`;
-  root.append(element("div", "bin-readout", BIN_HINT));
+  root.append(element("div", "bin-readout", a.total === 0 ? emptyMessage() : BIN_HINT));
 
   const legend = element("div", "chart-legend");
-  const swatch = (color, label, n) => {
-    const item = element("span", "", `${label} ${n.toLocaleString("en-US")}`);
-    const dot = element("i", "swatch");
-    dot.style.background = color;
+  const swatch = (color, label, n, className = "") => {
+    const item = element("span", "", n === null ? label : `${label} ${n.toLocaleString("en-US")}`);
+    const dot = element("i", `swatch ${className}`);
+    if (color) dot.style.background = color;
     item.prepend(dot);
     return item;
   };
   if (highlighting) {
     legend.append(
-      swatch(`var(--f-${familyOf(state.highlight)})`, (LAYER_NAMES[state.highlight] || state.highlight).toUpperCase(), a.hitTotal),
+      swatch("var(--accent-soft)", (LAYER_NAMES[state.highlight] || state.highlight).toUpperCase(), a.hitTotal),
       swatch("var(--dim)", "OTHER", a.total - a.hitTotal),
     );
   } else {
-    for (const family of FAMILIES) legend.append(swatch(`var(--f-${family})`, family.toUpperCase(), a.familyTotals[family]));
+    for (const group of GROUPS) if (a.groupTotals[group] > 0) legend.append(swatch(`var(--g-${group})`, GROUP_LABELS[group].toUpperCase(), a.groupTotals[group]));
+  }
+  if (segments) {
+    const kinds = new Set(segments.map((s) => s.state));
+    if (kinds.has("locked")) legend.append(swatch(null, "LOCKED", null, "shade-locked"));
+    if (kinds.has("asleep")) legend.append(swatch(null, "ASLEEP", null, "shade-asleep"));
+    if (kinds.has("unknown")) legend.append(swatch(null, "UNKNOWN", null, "shade-unknown"));
   }
   if (a.perDot > 1) legend.append(element("span", "scale", `1 DOT ≈ ${a.perDot} PRESSES`));
   root.append(legend);
@@ -1721,10 +2316,133 @@ function renderActivity(a) {
   }
 }
 
+function appIcon(bundle) {
+  const name = appName(bundle);
+  const source = icons.apps[bundle] || icons.apps[name];
+  const node = element("span", "icon");
+  if (source) {
+    const image = element("img");
+    image.src = source;
+    node.append(image);
+    return node;
+  }
+  node.classList.add("mono");
+  node.textContent = name.charAt(0).toUpperCase();
+  node.style.background = "var(--hover)";
+  node.style.color = "var(--soft)";
+  return node;
+}
+
+function renderAppbar(m) {
+  const root = $("appbar");
+  root.hidden = m.mode !== "day";
+  if (root.hidden) return;
+  const status = health?.context?.status;
+  const on = contextOn();
+  const signature = `${on}|${status}|${state.appFilter}|${m.day.apps.map((x) => `${x.app}${x.count}`).join(",")}|${iconVersion}|${appNamesVersion}`;
+  if (signature === appbarSignature) return;
+  appbarSignature = signature;
+  if (!on) {
+    root.replaceChildren(element("span", "", status === "disabled" || status === undefined ? "App context off" : `App context ${status}`));
+    return;
+  }
+  if (m.day.apps.length === 0) {
+    root.replaceChildren(element("span", "", "No app activity recorded this day"));
+    return;
+  }
+  root.replaceChildren(...m.day.apps.slice(0, 3).map(({ app, count }) => {
+    const chip = element("button", "appchip");
+    chip.dataset.app = app;
+    chip.setAttribute("aria-pressed", String(state.appFilter === app));
+    chip.title = app;
+    chip.append(appIcon(app), element("span", "", appName(app)), element("b", "", String(count)));
+    return chip;
+  }));
+}
+
+function commandRow(event, focusSec) {
+  const row = element("div", `cmd grp-${classify.groupOf(event.combo)}${event.sec === focusSec ? " focus" : ""}`);
+  const category = classify.categoryOf(event.combo);
+  const glyphNode = element("span", "icon");
+  glyphNode.innerHTML = CATEGORY_GLYPHS[category] || LAYER_GLYPHS[event.layer] || lineIcon('<circle cx="12" cy="12" r="3"/>');
+  const label = labelByCombo[event.combo] || `${event.layer.toUpperCase()} ${event.key.length === 1 ? event.key.toUpperCase() : event.key}`;
+  row.append(element("time", "", HyperdashModel.clock(event.sec)), glyphNode, element("span", "cmd-label", label));
+  row.append(element("span", "cmd-app", event.app ? appName(event.app) : ""));
+  return row;
+}
+
+function comboLabel(combo) {
+  const cut = combo.indexOf(" ");
+  const key = combo.slice(cut + 1);
+  return labelByCombo[combo] || `${combo.slice(0, cut).toUpperCase()} ${key.length === 1 ? key.toUpperCase() : key}`;
+}
+
+// Below the chart: the commands of the selected interval, or the recurring sequences of the day.
+function renderPanel(m) {
+  const root = $("panel");
+  const M = HyperdashModel;
+  if (m.mode !== "day") {
+    const signature = "month";
+    if (signature === panelSignature) return;
+    panelSignature = signature;
+    root.replaceChildren(element("p", "panel-note", "Pick a day (Enter) for its commands and sequences"));
+    return;
+  }
+  const day = m.day;
+  const withApp = contextOn();
+  const signature = [state.day, state.interval, state.focusSec, state.appFilter, day.events.length, day.events.length ? day.events[day.events.length - 1].sec : "",
+    day.sequences.map((s) => `${s.from}>${s.to}${s.count}`).join(","), withApp, appNamesVersion, iconVersion].join("|");
+  if (signature === panelSignature) return;
+  panelSignature = signature;
+  const scrollTop = root.querySelector(".cmds")?.scrollTop ?? 0;
+
+  if (state.interval !== null) {
+    const bin = state.interval;
+    const rows = M.commandsIn(day.events, bin);
+    const head = element("div", "panel-head");
+    head.append(element("span", "", `${M.binTime(bin)}–${M.binTime(bin + 1)} · ${rows.length} ${rows.length === 1 ? "command" : "commands"}`), element("span", "", "esc · sequences"));
+    const list = element("div", "cmds");
+    list.append(...rows.map((event) => commandRow(event, state.focusSec)));
+    root.replaceChildren(head, list);
+    if (withApp) root.append(element("p", "panel-note", "App = last app before that second (the usage log has 1 s resolution)"));
+    list.scrollTop = scrollTop;
+    list.querySelector(".focus")?.scrollIntoView({ block: "nearest" });
+    return;
+  }
+
+  const head = element("div", "panel-head");
+  head.append(element("span", "", "Observed sequences"), element("span", "", "≤ 10 s apart · 3+ times"));
+  const list = element("div", "seqs");
+  if (day.sequences.length === 0) list.append(element("p", "panel-note", "No pair recurred yet on this day"));
+  for (const sequence of day.sequences.slice(0, 4)) {
+    const entry = element("div", "seq");
+    const title = element("div", "seq-title");
+    title.append(element("span", "", `${comboLabel(sequence.from)} → ${comboLabel(sequence.to)}`), element("span", "", `×${sequence.count}`));
+    const times = element("div", "seq-times");
+    for (const sec of sequence.times.slice(0, 4)) {
+      const chip = element("button", "time-chip", M.clock(sec));
+      chip.dataset.sec = String(sec);
+      if (sec !== sequence.times[0]) chip.tabIndex = -1; // one Tab stop per sequence
+      times.append(chip);
+    }
+    if (sequence.times.length > 4) times.append(element("span", "seq-more", `+${sequence.times.length - 4}`));
+    entry.append(title, times);
+    list.append(entry);
+  }
+  root.replaceChildren(head, list);
+}
+
+function renderActivity(m) {
+  renderControls();
+  renderChart(m);
+  renderAppbar(m);
+  renderPanel(m);
+}
+
 function renderFooter() {
   const hints = dataError !== null ? [["esc", "close"]]
     : state.page === "insights" ? [["⇧ ← →", "month"], ["esc", "back"]]
-    : state.page === "activity" ? [["W", "highlight layer"], ["← →", "month"], ["esc", state.highlight ? "clear" : "back"]]
+    : state.page === "activity" ? [["W", "highlight"], ["← →", state.activityMode === "day" ? "day" : "month"], ["↵", state.activityMode === "day" ? "month" : "day"], ["esc", state.highlight || state.interval !== null ? "clear" : "back"]]
     : state.layer === null
       ? [["W", "layer"], ["I", "insights"], ["A", "activity"], ["← →", "month"]]
       : [["key", "select"], ["⇧ ← →", "month"], ["esc", state.selected ? "clear" : "back"]];
@@ -1751,6 +2469,7 @@ function select(key) {
 }
 
 function openLayer(layer) {
+  state.group = null;
   state.layer = layer;
   state.selected = null;
   render();
@@ -1758,7 +2477,7 @@ function openLayer(layer) {
 
 // Back to the overview from a layer or a page.
 function closeLayer() {
-  Object.assign(state, { layer: null, selected: null, page: null, highlight: null });
+  Object.assign(state, { layer: null, selected: null, page: null, highlight: null, interval: null, focusSec: null, appFilter: null, group: null });
   render();
 }
 
@@ -1774,13 +2493,48 @@ function openCombo(layer, key, month) {
   render();
 }
 
+// Activity on one day, optionally filtered to an app (only while app context is on).
+function openDay(date, app = null) {
+  Object.assign(state, { page: "activity", activityMode: "day", day: HyperdashModel.clampDay(date, firstDay(), today()), interval: null, focusSec: null, appFilter: app && contextOn() ? app : null });
+  render();
+}
+
+function toggleMode() {
+  if (state.activityMode === "day") {
+    const month = state.day.slice(0, 7);
+    if (months.includes(month)) state.monthId = month;
+    Object.assign(state, { activityMode: "month", interval: null, focusSec: null, appFilter: null });
+  } else {
+    Object.assign(state, { activityMode: "day", day: HyperdashModel.clampDay(state.day, firstDay(), today()) });
+  }
+  render();
+}
+
 function toggleHighlight(layer) {
   if (!layers.includes(layer)) return;
   state.highlight = state.highlight === layer ? null : layer;
   render();
 }
 
+function changeDay(step) {
+  const next = HyperdashModel.clampDay(HyperdashModel.addDays(state.day, step), firstDay(), today());
+  if (next === state.day) return;
+  Object.assign(state, { day: next, interval: null, focusSec: null });
+  render();
+}
+
+function setDay(date, mode = "day") {
+  Object.assign(state, { day: date, activityMode: mode, interval: null, focusSec: null });
+  render();
+}
+
+function selectInterval(bin, sec = null) {
+  Object.assign(state, { interval: bin, focusSec: sec });
+  render();
+}
+
 function changeMonth(step) {
+  if (state.page === "activity" && state.activityMode === "day") { changeDay(step); return; }
   const next = months.indexOf(state.monthId) + step;
   if (next < 0 || next >= months.length) return;
   state.monthId = months[next];
@@ -1808,7 +2562,12 @@ function begin(data) {
 
 // Keeps months, layers and navigation consistent after data or bindings change.
 function reconcile(now) {
+  classify = HyperdashModel.classifier(bindings);
+  labelByCombo = {};
+  for (const b of bindings) labelByCombo[`${b.layer} ${b.key}`] = b.label;
   months = store.months(now);
+  state.day = HyperdashModel.clampDay(state.day || HyperdashModel.dateOf(now), firstDay(), HyperdashModel.dateOf(now));
+  if (!contextOn()) state.appFilter = null;
   const known = new Set(bindings.map((b) => b.layer));
   for (const layer of store.layerList()) known.add(layer);
   layers = [...known];
@@ -1825,6 +2584,11 @@ const hyperdash = {
   // Full load for startup and recovery: discards all event state and parses `text` (bytes 0 to `offset`).
   reset(data) {
     const now = begin(data);
+    if (data?.stream === "context") {
+      const result = contextSession.reset(data, now);
+      reconcile(now);
+      return finish(result);
+    }
     const checked = HyperdashModel.validatePayload({ bindings: data?.bindings, log: data?.text, insights: data?.insights, health: data?.health });
     dataError = checked.ok ? null : checked.error;
     bindings = checked.ok ? checked.bindings : [];
@@ -1840,7 +2604,7 @@ const hyperdash = {
   // New complete lines covering bytes [from, to). Applied only for the current generation, in order.
   append(data) {
     const now = begin(data);
-    const result = session.append(data, now);
+    const result = (data?.stream === "context" ? contextSession : session).append(data, now);
     if (!result.ok) { renderNow = null; return result; }
     reconcile(now);
     return finish(result);
@@ -1854,6 +2618,15 @@ const hyperdash = {
     iconVersion += 1;
     iconCache.clear();
     reconcile(now);
+    return finish({ ok: true });
+  },
+
+  // Display names for bundle IDs, e.g. { "com.mitchellh.ghostty": "Ghostty" }.
+  setApps(map) {
+    begin();
+    appNames = {};
+    if (map && typeof map === "object") for (const [id, name] of Object.entries(map)) if (typeof name === "string") appNames[id] = name;
+    appNamesVersion += 1;
     return finish({ ok: true });
   },
 
@@ -1871,7 +2644,7 @@ const hyperdash = {
     renderStatus(dataError !== null);
     if (dataError === null && state.page === null) renderList(state.layer !== null);
     else if (dataError === null && state.page === "insights" && !insightsData) renderInsights();
-    else if (dataError === null && state.page === "activity") renderActivity(buildActivity());
+    else if (dataError === null && state.page === "activity") renderActivity(activityModel());
     renderNow = null;
     return { ok: true, height: document.body.scrollHeight };
   },
@@ -1881,10 +2654,13 @@ const hyperdash = {
     const now = begin(data);
     store.tick(now);
     reconcile(now);
-    Object.assign(state, { layer: null, selected: null, page: null, highlight: null, aboutOpen: false, monthId: months[months.length - 1] });
+    Object.assign(state, {
+      layer: null, selected: null, page: null, highlight: null, aboutOpen: false, monthId: months[months.length - 1],
+      activityMode: "day", day: HyperdashModel.dateOf(now), interval: null, focusSec: null, appFilter: null, group: null,
+    });
     listScope = null;
     listSignature = null;
-    activitySignature = null;
+    controlsSignature = chartSignature = appbarSignature = panelSignature = groupSignature = null;
     // Every open starts with no focused control and no Tab stops, so Space or a letter never activates a
     // stray button and the window becoming key draws no focus ring. The list starts at the top.
     tabStops = false;
@@ -1923,6 +2699,10 @@ function run(action) {
     case "highlight": toggleHighlight(action.layer); break;
     case "openLayer": openLayer(action.layer); break;
     case "openPage": openPage(action.page); break;
+    case "day": changeDay(action.step); break;
+    case "today": setDay(today()); break;
+    case "toggleMode": toggleMode(); break;
+    case "clearInterval": Object.assign(state, { interval: null, focusSec: null }); render(); break;
     default: break;
   }
 }
@@ -1940,6 +2720,12 @@ $("activity").addEventListener("focusout", showBin);
 $("activity").addEventListener("mouseout", showBin);
 $("activity").addEventListener("keydown", (event) => {
   const bin = event.target.closest?.(".bin");
+  if (bin && (event.key === "Enter" || event.key === " ") && state.activityMode === "day") {
+    event.preventDefault();
+    event.stopPropagation();
+    selectInterval(state.interval === Number(bin.dataset.bin) ? null : Number(bin.dataset.bin));
+    return;
+  }
   if (!bin || event.shiftKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
   const bins = [...$("activity").querySelectorAll(".bin")];
   const next = bins[bins.indexOf(bin) + (event.key === "ArrowLeft" ? -1 : 1)];
@@ -1949,6 +2735,38 @@ $("activity").addEventListener("keydown", (event) => {
   bin.tabIndex = -1;
   next.tabIndex = 0;
   next.focus();
+});
+
+// Activity: day buttons, app chips, interval bins and sequence timestamps.
+$("activity").addEventListener("click", (event) => {
+  const target = event.target;
+  const button = target.closest?.("[data-action]");
+  const chip = target.closest?.(".appchip");
+  const time = target.closest?.(".time-chip");
+  const bin = target.closest?.(".bin");
+  if (button) {
+    const action = button.dataset.action;
+    if (action === "today") setDay(today());
+    else if (action === "yesterday") setDay(HyperdashModel.addDays(today(), -1));
+    else if (state.activityMode === "day") toggleMode();
+  } else if (chip) {
+    state.appFilter = state.appFilter === chip.dataset.app ? null : chip.dataset.app;
+    state.interval = null;
+    state.focusSec = null;
+    render();
+  } else if (time) {
+    const sec = Number(time.dataset.sec);
+    selectInterval(Math.floor(sec / 1800), sec);
+  } else if (bin && state.activityMode === "day") {
+    selectInterval(state.interval === Number(bin.dataset.bin) ? null : Number(bin.dataset.bin));
+  }
+});
+
+$("groupbar").addEventListener("click", (event) => {
+  const segment = event.target.closest("button");
+  if (!segment) return;
+  state.group = state.group === segment.dataset.group ? null : segment.dataset.group;
+  render();
 });
 
 $("list").addEventListener("click", (event) => {
@@ -1986,6 +2804,8 @@ document.addEventListener("keydown", (event) => {
     highlight: state.highlight,
     selected: state.selected,
     aboutOpen: state.aboutOpen,
+    activityMode: state.activityMode,
+    interval: state.interval,
     layers,
     heatHas: (key) => view.heat.has(key),
   }, event);

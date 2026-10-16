@@ -137,10 +137,10 @@ test("validatePayload: shapes", () => {
   assert.equal(ok.health, null);
 });
 
-test("normalizeInsights: only version 2 is accepted", () => {
+test("normalizeInsights: versions 2 and 3 are accepted, others are not", () => {
   const item = { kind: "rising", title: "t", detail: "d", keys: [["w", "u"], ["bad"]], value: 1 };
   assert.equal(M.normalizeInsights({ version: 1, insights: [item] }), null);
-  assert.equal(M.normalizeInsights({ version: 3, insights: [item] }), null);
+  assert.equal(M.normalizeInsights({ version: 4, insights: [item] }), null);
   assert.equal(M.normalizeInsights({ version: 2 }), null);
   const parsed = plain(M.normalizeInsights({
     version: 2, generated: NOW, month: "2026-10", recordingSince: "2026-10-14T13:06:00", rejectedLines: 2,
@@ -151,12 +151,25 @@ test("normalizeInsights: only version 2 is accepted", () => {
   assert.equal(parsed.insights.length, 5);
   assert.deepEqual(parsed.insights[0].keys, [["w", "u"]]);
   assert.equal(M.normalizeInsights({ version: 2, generated: "junk", insights: [] }).generated, null);
+  // Version 2 has no dates or app; version 3 carries them.
+  assert.deepEqual(plain(parsed.insights[0].dates), []);
+  assert.equal(parsed.insights[0].app, null);
+  const v3 = plain(M.normalizeInsights({ version: 3, generated: NOW, month: "2026-10", insights: [
+    { ...item, dates: ["2026-10-14", "2026-10-15", "2026-02-30", "x"], app: "com.mitchellh.ghostty" },
+    { ...item, dates: "2026-10-14", app: "has space" },
+  ] }));
+  assert.deepEqual(v3.insights[0].dates, ["2026-10-14", "2026-10-15"]);
+  assert.equal(v3.insights[0].app, "com.mitchellh.ghostty");
+  assert.deepEqual(v3.insights[1].dates, []);
+  assert.equal(v3.insights[1].app, null);
 });
 
 test("normalizeHealth: unknown statuses are dropped", () => {
   assert.equal(M.normalizeHealth("x"), null);
   const health = plain(M.normalizeHealth({ log: { status: "ok", bytes: 10, modified: NOW }, insights: { status: "weird" } }));
-  assert.deepEqual(health, { log: { status: "ok", bytes: 10, modified: NOW }, bindings: null, insights: null });
+  assert.deepEqual(health, { log: { status: "ok", bytes: 10, modified: NOW }, bindings: null, insights: null, context: null });
+  assert.deepEqual(plain(M.normalizeHealth({ context: { status: "disabled" } })).context, { status: "disabled", bytes: null, modified: null });
+  assert.equal(M.normalizeHealth({ context: { status: "weird" } }).context, null);
   assert.deepEqual(plain(M.normalizeHealth({ bindings: { status: "invalid" } })).bindings, { status: "invalid" });
 });
 
@@ -233,7 +246,7 @@ test("buildRows: logged combos with no binding become historical rows", () => {
   assert.equal(M.sumCounts(counts, "w"), 13);
 });
 
-test("buildActivity and describeBin: exact counts with the family split", () => {
+test("activity by colour group and describeBin: exact counts with the group split", () => {
   const presses = [
     { month: "2026-10", layer: "w", key: "u", bin: 28 },
     { month: "2026-10", layer: "w", key: "u", bin: 28 },
@@ -241,14 +254,15 @@ test("buildActivity and describeBin: exact counts with the family split", () => 
     { month: "2026-10", layer: "o", key: "t", bin: 29 },
     { month: "2026-09", layer: "w", key: "u", bin: 3 },
   ];
-  const a = R.buildActivity(presses, "2026-10", "w", 30);
+  const classify = M.classifier([]);
+  const a = R.buildActivity(presses, "2026-10", "w", 30, classify);
   assert.equal(a.total, 4);
   assert.equal(a.hitTotal, 2);
   assert.equal(a.peakHour, 14);
   assert.equal(a.perDot, 1);
-  assert.equal(M.describeBin(a, 28), "14:00–14:30 · 3 presses · WINDOW 2 · MOVE 1");
+  assert.equal(M.describeBin(a, 28), "14:00–14:30 · 3 presses · WINDOWS 2 · NAVIGATE 1");
   assert.equal(M.describeBin(a, 29), "14:30–15:00 · 1 press · LAUNCH 1");
-  const dense = R.buildActivity(Array(95).fill({ month: "2026-10", layer: "w", key: "u", bin: 5 }), "2026-10", null, 30);
+  const dense = R.buildActivity(Array(95).fill({ month: "2026-10", layer: "w", key: "u", bin: 5 }), "2026-10", null, 30, classify);
   assert.equal(dense.perDot, 4);
 });
 
@@ -378,7 +392,7 @@ function reference(text, now) {
   const bins = {};
   for (const p of parsed.presses) {
     (counts[p.month] ||= {})[`${p.layer} ${p.key}`] = (counts[p.month][`${p.layer} ${p.key}`] || 0) + 1;
-    ((bins[p.month] ||= {})[p.layer] ||= new Array(48).fill(0))[p.bin] += 1;
+    ((bins[p.month] ||= {})[`${p.layer} ${p.key}`] ||= new Array(48).fill(0))[p.bin] += 1;
   }
   return plain({ parsed, counts, bins });
 }
@@ -563,10 +577,11 @@ test("totals, rankings, last use and Activity agree after reset+append versus a 
       assert.deepEqual(a, c);
       assert.equal(M.sumCounts(incremental.store.countsOf(month), layer), M.sumCounts(R.countCombos(oracle.presses, month), layer));
     }
+    const classify = M.classifier([{ layer: "v", key: "q", category: "pointer" }, { layer: "w", key: "u", category: "tab-navigation" }]);
     for (const highlight of [null, "w"]) {
       assert.deepEqual(
-        plain(M.buildActivityFromBins(incremental.store.binsOf(month), highlight, 30)),
-        plain(R.buildActivity(oracle.presses, month, highlight, 30)),
+        plain(M.buildActivityFromCombos(incremental.store.binsOf(month), classify, highlight, 30)),
+        plain(R.buildActivity(oracle.presses, month, highlight, 30, classify)),
         `activity ${month} ${highlight}`,
       );
     }
@@ -628,4 +643,378 @@ test("tabStopsAfter: tab stops stay off until the user presses Tab", () => {
   assert.equal(M.tabStopsAfter(false, { key: " " }), false);
   assert.equal(M.tabStopsAfter(false, { key: "Tab" }), true);
   assert.equal(M.tabStopsAfter(true, { key: "w" }), true, "once on, they stay on until the next open");
+});
+
+// ---------------------------------------------------------------------------------------------
+// Round 4: categories, day view, app context, sequences
+
+const ctxLine = (stamp, kind, value = "-") => `${stamp}\t${kind}\t${value}`;
+const contextFrom = (lines) => { const store = M.createContextStore(); store.reset(lines.join("\n") + "\n"); return store; };
+
+test("categories: twelve categories fall into at most six colour groups, and the layer is the fallback", () => {
+  assert.equal(M.CATEGORIES.length, 12);
+  assert.ok(M.GROUPS.length <= 6);
+  for (const category of M.CATEGORIES) {
+    assert.ok(M.GROUPS.includes(M.CATEGORY_GROUP[category]), category);
+    assert.ok(M.CATEGORY_LABELS[category], `label for ${category}`);
+  }
+  assert.equal(M.groupOf("v", "pointer"), "pointer");
+  assert.equal(M.groupOf("v", "tab-navigation"), "navigate");
+  assert.equal(M.groupOf("v", undefined), "navigate", "no category: the layer family");
+  assert.equal(M.groupOf("o", "site-open"), "launch");
+  assert.equal(M.groupOf("zz", null), "system", "unknown layer");
+  const classify = M.classifier([{ layer: "w", key: "u", category: "tab-navigation" }, { layer: "w", key: "h", category: "bogus" }, { layer: "w", key: "y" }]);
+  assert.equal(classify.categoryOf("w u"), "tab-navigation");
+  assert.equal(classify.groupOf("w u"), "navigate");
+  assert.equal(classify.categoryOf("w h"), null, "an unknown category is ignored");
+  assert.equal(classify.groupOf("w h"), "windows");
+  assert.equal(classify.groupOf("w y"), "windows");
+  assert.equal(classify.groupOf("x spacebar"), "system");
+  assert.equal(M.normalizeBindings([{ layer: "w", key: "u", label: "x", category: "pointer" }, { layer: "w", key: "i", label: "y", category: "nope" }])[1].category, undefined);
+});
+
+test("dates: stepping, labels and clamping", () => {
+  assert.equal(M.addDays("2026-10-31", 1), "2026-11-01");
+  assert.equal(M.addDays("2026-03-01", -1), "2026-02-28");
+  assert.equal(M.addDays("2024-03-01", -1), "2024-02-29");
+  assert.equal(M.addDays("2026-01-01", -1), "2025-12-31");
+  assert.equal(M.dayLabel("2026-10-16", "2026-10-16"), "Today");
+  assert.equal(M.dayLabel("2026-10-15", "2026-10-16"), "Yesterday");
+  assert.equal(M.dayLabel("2026-10-12", "2026-10-16"), "Mon Oct 12");
+  assert.equal(M.clampDay("2026-10-20", "2026-10-10", "2026-10-16"), "2026-10-16");
+  assert.equal(M.clampDay("2026-10-01", "2026-10-10", "2026-10-16"), "2026-10-10");
+  assert.equal(M.clampDay("2026-10-12", "2026-10-10", "2026-10-16"), "2026-10-12");
+  assert.equal(M.clampDay("2026-10-01", null, "2026-10-16"), "2026-10-16");
+  assert.equal(M.isValidDate("2026-02-30"), false);
+  assert.equal(M.isValidDate("2026-10-16"), true);
+  assert.equal(M.isValidDate("2026-10-16T00:00:00"), false);
+});
+
+test("context log: valid lines, rejected lines, and the value rules", () => {
+  const store = M.createContextStore();
+  store.reset([
+    ctxLine("2026-10-16T09:00:00.000", "start"),
+    ctxLine("2026-10-16T09:00:01.250", "app", "com.mitchellh.ghostty"),
+    ctxLine("2026-10-16T09:10:00.500", "lock"),
+    ctxLine("2026-10-16T09:20:00.500", "unlock"),
+    ctxLine("2026-10-16T09:00:01", "app", "com.x"),             // no milliseconds
+    ctxLine("2026-10-16T09:00:01.250", "app", "has space"),     // bad bundle id
+    ctxLine("2026-10-16T09:00:01.250", "app", "-"),              // a bare dash (Context.swift rejects it too; "-x" is valid)
+    ctxLine("2026-10-16T09:00:01.250", "lock", "extra"),         // value must be "-"
+    ctxLine("2026-10-16T09:00:01.250", "focus", "-"),            // unknown kind
+    ctxLine("2026-02-30T09:00:01.250", "app", "com.x"),          // impossible date
+    ctxLine("2026-10-16T09:00:61.250", "app", "com.x"),          // second 61
+    "2026-10-16T09:00:01.250\tapp",                                // two fields
+    "",
+  ].join("\n"));
+  const summary = store.summary();
+  assert.equal(summary.count, 4);
+  assert.equal(summary.rejected, 8);
+  assert.equal(summary.firstEvent, "2026-10-16T09:00:00.000");
+  assert.equal(summary.lastEvent, "2026-10-16T09:20:00.500");
+  assert.deepEqual(plain(store.bundles()), ["com.mitchellh.ghostty"]);
+});
+
+test("attribution: the last app event strictly before the second; same-second changes count later", () => {
+  const context = contextFrom([
+    ctxLine("2026-10-16T09:00:00.000", "start"),
+    ctxLine("2026-10-16T09:59:59.900", "app", "com.a"),
+    ctxLine("2026-10-16T10:00:00.000", "app", "com.b"),   // exactly at the second: not before it
+    ctxLine("2026-10-16T10:00:07.250", "app", "com.c"),   // same second as the press at 10:00:07
+    ctxLine("2026-10-16T10:00:09.999", "app", "com.d"),
+  ]);
+  assert.equal(context.appAt("2026-10-16T09:59:59"), null, "nothing before the first app event");
+  assert.equal(context.appAt("2026-10-16T10:00:00"), "com.a", "an app event at 10:00:00.000 is not strictly before 10:00:00");
+  assert.equal(context.appAt("2026-10-16T10:00:01"), "com.b");
+  assert.equal(context.appAt("2026-10-16T10:00:07"), "com.b", "an app launched in the same second is attributed to where the press came from");
+  assert.equal(context.appAt("2026-10-16T10:00:08"), "com.c");
+  assert.equal(context.appAt("2026-10-16T10:00:10"), "com.d");
+});
+
+test("attribution agrees with a plain linear scan on random events", () => {
+  let seed = 5; const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const stampOf = (sec, ms = null) => `2026-10-16T${String(Math.floor(sec / 3600)).padStart(2, "0")}:${String(Math.floor(sec / 60) % 60).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}${ms === null ? "" : "." + String(ms).padStart(3, "0")}`;
+  const events = [{ t: stampOf(0, 0), kind: "start", value: "-" }];
+  const lines = [ctxLine(stampOf(0, 0), "start")];
+  for (let i = 0; i < 300; i++) {
+    const t = stampOf(Math.floor(random() * 3000), Math.floor(random() * 1000));
+    const value = `com.app${Math.floor(random() * 6)}`;
+    events.push({ t, kind: "app", value });
+    lines.push(ctxLine(t, "app", value));
+  }
+  const context = contextFrom(lines);
+  const now = "2026-10-16T12:00:00";
+  for (let sec = 0; sec < 3100; sec += 1) {
+    const stamp = stampOf(sec);
+    assert.equal(context.appAt(stamp, now), R.appAtNaive(events, stamp, M.absSeconds(now)), stamp);
+  }
+});
+
+test("the day split: events by date, sorted, across midnight and out of order", () => {
+  const store = M.createStore();
+  store.reset([
+    "2026-10-15T23:59:58\tw\tu",
+    "2026-10-16T00:00:00\tw\ti",
+    "2026-10-16T00:00:02\tv\tq",
+    "2026-10-16T00:00:01\tv\tq",     // out of order
+    "2026-10-16T00:00:01\to\tt",     // same second, later in the log
+    "2026-10-17T00:00:03\tw\tu",     // after now
+  ].join("\n") + "\n", "2026-10-16T12:00:00");
+  assert.deepEqual(plain(store.dayList()), ["2026-10-15", "2026-10-16"]);
+  assert.deepEqual(plain(store.dayEvents("2026-10-15").map((e) => [e.sec, e.combo])), [[86398, "w u"]]);
+  assert.deepEqual(plain(store.dayEvents("2026-10-16").map((e) => [e.sec, e.combo])), [[0, "w i"], [1, "v q"], [1, "o t"], [2, "v q"]], "sorted, ties in log order");
+  assert.deepEqual(plain(store.dayEvents("2026-10-18")), []);
+  store.tick("2026-10-17T12:00:00");
+  assert.equal(store.dayEvents("2026-10-17").length, 1, "a future event joins its day when its time comes");
+});
+
+test("day split agrees with the reference parser on a synthetic log", () => {
+  const text = syntheticLog(800, 17);
+  const store = fresh(text, FUTURE_NOW);
+  const oracle = R.parseLog(text, FUTURE_NOW);
+  const dates = [...new Set(oracle.presses.map((p) => p.date))].sort();
+  assert.deepEqual(plain(store.dayList()), dates);
+  for (const date of dates) {
+    const expected = oracle.presses.filter((p) => p.date === date).map((p) => `${p.sec} ${p.layer} ${p.key}`).sort();
+    const actual = plain(store.dayEvents(date).map((e) => `${e.sec} ${e.layer} ${e.key}`).sort());
+    assert.deepEqual(actual, expected, date);
+    assert.deepEqual(plain(store.dayEvents(date).map((e) => e.sec)), plain(store.dayEvents(date).map((e) => e.sec)).sort((a, b) => a - b), "time order");
+  }
+  // Incremental delivery gives the same days as a full parse.
+  const cut = text.indexOf("\n", Math.floor(text.length / 2)) + 1;
+  const session = M.createSession();
+  session.reset({ generation: 1, text: text.slice(0, cut), offset: cut }, FUTURE_NOW);
+  session.append({ generation: 1, from: cut, to: text.length, text: text.slice(cut) }, FUTURE_NOW);
+  assert.deepEqual(session.store.snapshot().days, store.snapshot().days);
+});
+
+test("commandsIn: a half-hour bin holds seconds 1800*bin to 1800*bin+1799", () => {
+  const events = [0, 1799, 1800, 3599, 3600].map((sec) => ({ sec, combo: "w u" }));
+  assert.deepEqual(M.commandsIn(events, 0).map((e) => e.sec), [0, 1799]);
+  assert.deepEqual(M.commandsIn(events, 1).map((e) => e.sec), [1800, 3599]);
+  assert.deepEqual(M.commandsIn(events, 2).map((e) => e.sec), [3600]);
+  assert.equal(M.clock(0), "00:00:00");
+  assert.equal(M.clock(86399), "23:59:59");
+  assert.equal(M.clock(3725), "01:02:05");
+});
+
+function runsOf(segments) { return segments.map((s) => [s.from, s.to, s.state]); }
+
+const SHARED = JSON.parse(readFileSync(new URL("./session_cases.json", import.meta.url), "utf8"));
+const linesOf = (rows) => rows.map(([stamp, kind, value]) => ctxLine(stamp, kind, value));
+const eventsOf = (rows) => rows.map(([t, kind, value]) => ({ t, kind, value }));
+const NOW_END = "2026-10-16T23:59:59";
+
+test("sessions, shared cases: spans and day intervals match the hand-worked values (also checked by Swift)", () => {
+  for (const c of SHARED.sessions) {
+    const context = contextFrom(linesOf(c.context));
+    const spans = plain(context.sessions(c.now)).map((s) => [s.start, s.end]);
+    assert.deepEqual(spans, c.spans.map(([a, b]) => [M.absSeconds(a), M.absSeconds(b)]), `${c.name}: spans`);
+    for (const [date, expected] of Object.entries(c.days)) {
+      assert.deepEqual(plain(runsOf(context.segments(date, c.now))), expected, `${c.name}: ${date}`);
+    }
+    for (const [stamp, app] of c.presses) assert.equal(context.appAt(stamp, c.now), app, `${c.name}: press ${stamp}`);
+  }
+});
+
+test("attribution, shared cases ported from the Swift tests", () => {
+  for (const c of SHARED.attribution) {
+    const context = contextFrom(linesOf(c.context));
+    assert.deepEqual(plain(c.presses.map((stamp) => context.appAt(stamp, c.now))), c.expected, c.name);
+  }
+});
+
+test("the reference session calculation agrees with the hand-worked shared cases", () => {
+  for (const c of SHARED.sessions) {
+    const events = eventsOf(c.context);
+    const nowSeconds = M.absSeconds(c.now);
+    assert.deepEqual(R.sessionSpansNaive(events, nowSeconds).map((s) => [s.start, s.end]), c.spans.map(([a, b]) => [M.absSeconds(a), M.absSeconds(b)]), c.name);
+    for (const [date, expected] of Object.entries(c.days)) {
+      assert.deepEqual(R.segmentsBrute(events, date, nowSeconds).map((r) => [r.from, r.to, r.state]), expected, `${c.name}: ${date}`);
+    }
+    for (const [stamp, app] of c.presses) assert.equal(R.appAtNaive(events, stamp, nowSeconds), app, `${c.name}: ${stamp}`);
+  }
+});
+
+test("intervals and attribution agree with the second-by-second calculation on random context logs", () => {
+  let seed = 41; const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const stampAt = (sec, ms) => `2026-10-16T${String(Math.floor(sec / 3600)).padStart(2, "0")}:${String(Math.floor(sec / 60) % 60).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
+  for (let round = 0; round < 25; round++) {
+    const rows = [];
+    for (let i = 0; i < 40; i++) {
+      const kind = ["start", "app", "app", "lock", "unlock", "sleep", "wake"][Math.floor(random() * 7)];
+      rows.push([stampAt(Math.floor(random() * 80000), Math.floor(random() * 1000)), kind, kind === "app" ? `com.app${Math.floor(random() * 4)}` : "-"]);
+    }
+    const now = "2026-10-16T21:00:00";
+    const context = contextFrom(linesOf(rows));
+    const events = eventsOf(rows);
+    const nowSeconds = M.absSeconds(now);
+    assert.deepEqual(plain(runsOf(context.segments("2026-10-16", now))), R.segmentsBrute(events, "2026-10-16", nowSeconds).map((r) => [r.from, r.to, r.state]), `round ${round}`);
+    for (let k = 0; k < 120; k++) {
+      const sec = Math.floor(random() * 75600);
+      const stamp = stampAt(sec, 0).slice(0, 19);
+      assert.equal(context.appAt(stamp, now), R.appAtNaive(events, stamp, nowSeconds), `round ${round} ${stamp}`);
+    }
+  }
+});
+
+test("sequences: recurring adjacent pairs within 10 s, against a plain calculation", () => {
+  const events = [];
+  let sec = 100;
+  for (let i = 0; i < 40; i++) { events.push({ sec, combo: "v q", app: "com.a" }); sec += 2; events.push({ sec, combo: "v u", app: "com.a" }); sec += 30; }
+  for (let i = 0; i < 4; i++) { events.push({ sec, combo: "w i", app: "com.b" }); sec += 3; events.push({ sec, combo: "w u", app: "com.b" }); sec += 20; }
+  events.push({ sec, combo: "w i", app: "com.a" }); sec += 11; events.push({ sec, combo: "w u", app: "com.a" }); // 11 s: too far apart
+  sec += 5; events.push({ sec, combo: "w u", app: "com.a" }); sec += 2; events.push({ sec, combo: "w u", app: "com.a" }); // same command twice: not a pair
+  const found = M.findSequences(events);
+  assert.deepEqual(plain(found.map((s) => [`${s.from} > ${s.to}`, s.count])), R.sequencesNaive(events, 10, 3, null).map((s) => [s.key, s.count]));
+  assert.deepEqual(plain(found.map((s) => [`${s.from} > ${s.to}`, s.count])), [["v q > v u", 40], ["w i > w u", 4]]);
+  assert.equal(found[0].times.length, 40);
+  assert.equal(found[0].times[0], 100);
+  // Fewer than three occurrences is not recurring.
+  assert.deepEqual(plain(M.findSequences(events.slice(0, 4))), []);
+  // An app filter keeps pairs whose two commands were both in that app.
+  const inB = M.findSequences(events, { app: "com.b" });
+  assert.deepEqual(plain(inB.map((s) => [`${s.from} > ${s.to}`, s.count])), R.sequencesNaive(events, 10, 3, "com.b").map((s) => [s.key, s.count]));
+  assert.deepEqual(plain(inB.map((s) => s.count)), [4]);
+  // A different gap limit.
+  assert.equal(M.findSequences(events, { maxGap: 1 }).length, 0);
+  // Random days agree with the plain calculation.
+  let seed = 3; const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const combos = ["a 1", "a 2", "b 1", "c 1"];
+  for (let round = 0; round < 20; round++) {
+    const day = []; let t = 0;
+    for (let i = 0; i < 300; i++) { t += Math.floor(random() * 14); day.push({ sec: t, combo: combos[Math.floor(random() * 4)], app: random() < 0.5 ? "x" : "y" }); }
+    for (const app of [null, "x"]) {
+      // Ties in count may order differently (the model breaks them by first time), so compare sorted by count then name.
+      const byCountThenName = (x, y) => y[1] - x[1] || (x[0] < y[0] ? -1 : 1);
+      assert.deepEqual(plain(M.findSequences(day, { app }).map((s) => [`${s.from} > ${s.to}`, s.count])).sort(byCountThenName), R.sequencesNaive(day, 10, 3, app).map((s) => [s.key, s.count]).sort(byCountThenName));
+    }
+  }
+});
+
+test("a day: events, apps, sequences and shading come together, and the app filter narrows them", () => {
+  const usage = fresh([
+    "2026-10-16T10:00:00\tv\tq", "2026-10-16T10:00:03\tv\tu", "2026-10-16T10:00:20\tv\tq", "2026-10-16T10:00:22\tv\tu",
+    "2026-10-16T10:01:00\tv\tq", "2026-10-16T10:01:02\tv\tu", "2026-10-16T10:40:00\tw\ti",
+  ].join("\n") + "\n", "2026-10-16T12:00:00");
+  const context = contextFrom([
+    ctxLine("2026-10-16T09:00:00.000", "start"),
+    ctxLine("2026-10-16T09:59:00.000", "app", "com.firefox"),
+    ctxLine("2026-10-16T10:00:21.500", "app", "com.ghostty"),
+    ctxLine("2026-10-16T10:30:00.000", "lock"),
+    ctxLine("2026-10-16T10:35:00.000", "unlock"),
+  ]);
+  const classify = M.classifier([{ layer: "v", key: "q", category: "pointer" }, { layer: "v", key: "u", category: "page-navigation" }]);
+  const make = (appFilter) => M.buildDay({ usage, context, date: "2026-10-16", now: "2026-10-16T12:00:00", appFilter, highlight: null, classify, capacity: 30 });
+  const all = make(null);
+  assert.deepEqual(plain(all.events.map((e) => e.app)), ["com.firefox", "com.firefox", "com.firefox", "com.ghostty", "com.ghostty", "com.ghostty", "com.ghostty"]);
+  assert.deepEqual(plain(all.apps), [{ app: "com.ghostty", count: 4 }, { app: "com.firefox", count: 3 }]);
+  assert.equal(all.activity.total, 7);
+  assert.equal(all.activity.groupTotals.pointer, 3);
+  assert.equal(all.activity.groupTotals.navigate, 3);
+  assert.equal(all.activity.groupTotals.windows, 1);
+  assert.deepEqual(plain(all.sequences.map((s) => [s.from, s.to, s.count])), [["v q", "v u", 3]]);
+  assert.ok(all.segments.some((s) => s.state === "locked" && s.from === 37800 && s.to === 38100));
+  const ghostty = make("com.ghostty");
+  assert.equal(ghostty.events.length, 4);
+  assert.equal(ghostty.activity.total, 4);
+  assert.deepEqual(plain(ghostty.sequences), [], "only two pairs happened in that app: below the threshold");
+  assert.deepEqual(plain(ghostty.apps), plain(all.apps), "the app list always shows the whole day");
+  // Without context: no apps, no shading.
+  const bare = M.buildDay({ usage, context: null, date: "2026-10-16", now: "2026-10-16T12:00:00", appFilter: null, highlight: null, classify, capacity: 30 });
+  assert.equal(bare.segments, null);
+  assert.deepEqual(plain(bare.apps), []);
+  assert.ok(bare.events.every((e) => e.app === null));
+});
+
+test("the day view's dot counts agree with the month view's bins for the same events", () => {
+  const text = syntheticLog(600, 33);
+  const store = fresh(text, FUTURE_NOW);
+  const classify = M.classifier([]);
+  const month = M.buildActivityFromCombos(store.binsOf("2026-10"), classify, null, 30);
+  const days = store.dayList().filter((d) => d.startsWith("2026-10"));
+  const sum = new Array(48).fill(0);
+  for (const date of days) {
+    const day = M.buildDay({ usage: store, context: null, date, now: FUTURE_NOW, appFilter: null, highlight: null, classify, capacity: 30 });
+    day.activity.all.forEach((n, bin) => { sum[bin] += n; });
+  }
+  assert.deepEqual(sum, plain(month.all));
+});
+
+test("context stream protocol: its own generation and offset, rejections apply nothing", () => {
+  const usage = M.createSession();
+  const contextSession = M.createSession(M.createContextStore);
+  const first = `${ctxLine("2026-10-16T09:00:00.000", "start")}\n${ctxLine("2026-10-16T09:00:05.000", "app", "com.a")}\n`;
+  const second = `${ctxLine("2026-10-16T09:10:00.000", "app", "com.b")}\n`;
+  usage.reset({ generation: 7, text: "", offset: 0 }, NOW);
+  assert.deepEqual(plain(contextSession.reset({ generation: 1, text: first, offset: first.length }, NOW)), { ok: true, generation: 1, offset: first.length });
+  assert.equal(contextSession.generation, 1);
+  assert.equal(usage.generation, 7, "the usage stream is untouched");
+  const ok = { generation: 1, from: first.length, to: first.length + second.length, text: second };
+  assert.equal(contextSession.append({ ...ok, generation: 2 }, NOW).reason, "generation");
+  assert.equal(contextSession.append({ ...ok, from: first.length + 3 }, NOW).reason, "gap");
+  assert.equal(contextSession.append({ ...ok, from: 0, to: first.length }, NOW).reason, "duplicate");
+  assert.equal(contextSession.append({ ...ok, text: 4 }, NOW).reason, "invalid");
+  assert.equal(contextSession.store.summary().count, 2, "rejected appends change nothing");
+  assert.deepEqual(plain(contextSession.append(ok, NOW)), { ok: true, offset: first.length + second.length });
+  assert.equal(contextSession.append(ok, NOW).reason, "duplicate");
+  assert.equal(contextSession.store.appAt("2026-10-16T09:11:00"), "com.b");
+  // Incremental delivery equals one full load, at every line boundary.
+  const full = contextFrom((first + second).trim().split("\n")).snapshot();
+  assert.deepEqual(contextSession.store.snapshot(), full);
+  for (const cut of [0, first.indexOf("\n") + 1, first.length]) {
+    const part = M.createSession(M.createContextStore);
+    part.reset({ generation: 1, text: (first + second).slice(0, cut), offset: cut }, NOW);
+    part.append({ generation: 1, from: cut, to: (first + second).length, text: (first + second).slice(cut) }, NOW);
+    assert.deepEqual(part.store.snapshot(), full, `cut ${cut}`);
+  }
+  // A reset discards earlier events and takes the new generation.
+  assert.equal(contextSession.reset({ generation: 2, text: "", offset: 0 }, NOW).ok, true);
+  assert.equal(contextSession.store.summary().count, 0);
+  assert.equal(contextSession.append(ok, NOW).reason, "generation");
+});
+
+test("health.context: disabled reads as 'App context off'; missing and unreadable warn", () => {
+  assert.equal(M.normalizeHealth({ context: { status: "ok", bytes: 10, modified: NOW } }).context.status, "ok");
+  const off = M.describeHealth({ health: { log: { status: "ok" }, context: { status: "disabled" } }, lastEvent: "2026-10-15T14:02:00", rejected: 0, now: NOW });
+  assert.match(off.text, /APP CONTEXT OFF/);
+  assert.equal(off.level, "ok");
+  assert.match(M.describeHealth({ health: { context: { status: "ok" } }, lastEvent: null, rejected: 0, now: NOW }).text, /APP CONTEXT OK/);
+  const missing = M.describeHealth({ health: { context: { status: "missing" } }, lastEvent: null, rejected: 0, now: NOW });
+  assert.match(missing.text, /CONTEXT LOG MISSING/);
+  assert.equal(missing.level, "warn");
+  assert.equal(M.describeHealth({ health: { context: { status: "unreadable" } }, lastEvent: null, rejected: 0, now: NOW }).level, "warn");
+  const store = M.createStore();
+  const lines = M.aboutLines({ health: { context: { status: "ok" } }, insights: null, summary: store.summary(), now: NOW });
+  assert.ok(lines.some((l) => /1 s resolution/.test(l)), "the resolution limit is stated");
+  assert.ok(M.aboutLines({ health: { context: { status: "disabled" } }, insights: null, summary: store.summary(), now: NOW }).includes("App context is off"));
+});
+
+test("routeKey: the Activity day view walks days, Enter switches views, Escape clears an interval first", () => {
+  const day = { page: "activity", layer: null, highlight: null, selected: null, aboutOpen: false, layers: ["w", "v"], heatHas: () => false, activityMode: "day", interval: null };
+  assert.deepEqual(plain(M.routeKey(day, { key: "ArrowLeft" })), { type: "day", step: -1 });
+  assert.deepEqual(plain(M.routeKey(day, { key: "ArrowRight" })), { type: "day", step: 1 });
+  assert.deepEqual(plain(M.routeKey(day, { key: "ArrowLeft", shiftKey: true })), { type: "day", step: -7 });
+  assert.deepEqual(plain(M.routeKey(day, { key: "Enter" })), { type: "toggleMode" });
+  assert.deepEqual(plain(M.routeKey(day, { key: "Home" })), { type: "today" });
+  assert.deepEqual(plain(M.routeKey(day, { key: "w" })), { type: "highlight", layer: "w" });
+  assert.deepEqual(plain(M.routeKey({ ...day, interval: 26 }, { key: "Escape" })), { type: "clearInterval" });
+  assert.deepEqual(plain(M.routeKey({ ...day, interval: 26, highlight: "w" }, { key: "Escape" })), { type: "highlight", layer: "w" }, "a highlight clears first");
+  assert.deepEqual(plain(M.routeKey(day, { key: "Escape" })), { type: "back" });
+  // Month view keeps the old arrows.
+  const month = { ...day, activityMode: "month" };
+  assert.deepEqual(plain(M.routeKey(month, { key: "ArrowLeft" })), { type: "month", step: -1 });
+  assert.deepEqual(plain(M.routeKey(month, { key: "ArrowRight", shiftKey: true })), { type: "month", step: 1 });
+  assert.deepEqual(plain(M.routeKey(month, { key: "Enter" })), { type: "toggleMode" });
+  // Enter on a focused control still belongs to the control.
+  assert.equal(M.routeKey({ ...day, controlFocused: true }, { key: "Enter" }), null);
+});
+
+test("insights: version 3 dates and app ride along; version 2 still loads", () => {
+  const v3 = plain(M.normalizeInsights({ version: 3, generated: NOW, month: "2026-10", recordingSince: null, rejectedLines: 0,
+    insights: [{ kind: "burst", title: "Reading bursts", detail: "d", keys: [], value: 3, dates: ["2026-10-14"], app: "org.mozilla.firefox" }] }));
+  assert.deepEqual(v3.insights[0].dates, ["2026-10-14"]);
+  assert.equal(v3.insights[0].app, "org.mozilla.firefox");
+  assert.equal(M.normalizeInsights({ version: 2, insights: [{ kind: "peak", title: "t", detail: "d" }] }).insights.length, 1);
+  assert.equal(M.normalizeInsights({ version: 1, insights: [] }), null);
 });
