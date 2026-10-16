@@ -32,6 +32,9 @@ local CONTEXT_LOG = HOME .. "/.local/state/hyperdash/context.log"
 local CALL_TIMEOUT = 5 -- seconds to wait for the page to answer one call
 local WIDTH = 408 -- card width plus the shadow margin on both sides
 local TOP_FRACTION = 0.18 -- open near the top of the screen, like Spotlight
+local THEME_KEY = "hyperdash.theme" -- hs.settings key; survives reloads and restarts
+local DEFAULT_THEME = "manila"
+local THEMES = { manila = true, kozo = true, nightingale = true, blueprint = true }
 
 local webview = nil
 local height = 600 -- replaced by the page's own height after each render
@@ -50,6 +53,13 @@ local function readFile(path)
   local content = file:read("a")
   file:close()
   return content
+end
+
+-- The saved theme, or the default when nothing valid is saved.
+local function savedTheme()
+  local value = hs.settings.get(THEME_KEY)
+  if type(value) == "string" and THEMES[value] then return value end
+  return DEFAULT_THEME
 end
 
 local function nowIso()
@@ -754,6 +764,10 @@ local function create()
   controller:setCallback(function(message)
     if message.body.action == "close" then
       if showing then cancelShow = true else hide(true) end
+    elseif message.body.action == "theme" then
+      -- The page has already applied it; save a valid name and say nothing back.
+      local name = message.body.theme
+      if type(name) == "string" and THEMES[name] then hs.settings.set(THEME_KEY, name) end
     elseif message.body.action == "resize" then
       height = message.body.height
       if open then place() end
@@ -782,6 +796,9 @@ local function create()
       -- first sync of each stream is a reset. setApps and setIcons are plain
       -- page functions, not window.hyperdash methods.
       sentApps.names, sentApps.icons = nil, nil
+      -- A fresh page shows the default theme: apply the saved one first, after
+      -- a reload too.
+      send("window.hyperdash.setTheme(" .. jsonString(savedTheme()) .. ")")
       logState = reader.newState()
       ctxState = reader.newState()
       sent.bindings, sent.insights, sent.health = nil, nil, nil

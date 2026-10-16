@@ -894,6 +894,113 @@ do
   check("report over an hour old still reruns", #env.tasks == 1, #env.tasks)
 end
 
+---------------------------------------------------------------------------
+-- Watchers must stay reachable (commit b0b076d), and the saved theme
+---------------------------------------------------------------------------
+do
+  -- Only the module may keep the context watchers alive. The fake holds them
+  -- weakly, so a watcher the module forgot about is collected, as in the app.
+  local home, p = baseHome("gc")
+  write(p.log, lines(0, 2))
+  local env = sandbox.new({ moduleDir = MODULE_DIR, home = home, startTime = noon(), recordContext = true, weakWatchers = true })
+  collectgarbage("collect")
+  collectgarbage("collect")
+  check("GC: the context app watcher survives a collection", env.appWatchers[2] ~= nil, "collected")
+  check("GC: the sleep watcher survives a collection", env.sleepWatchers[1] ~= nil, "collected")
+  check("GC: the module table exposes them", env.module.contextRecording and env.module.contextRecording.app ~= nil
+    and env.module.contextRecording.sleep ~= nil and env.module.contextRecording.recorder ~= nil)
+  -- And they still work after the collection.
+  if env.appWatchers[2] then
+    env.appWatchers[2].fn("Ghostty", 5, fakeApp("com.mitchellh.ghostty", "Ghostty", "/Applications/Ghostty.app"))
+    local f = io.open(contextPath(home), "rb")
+    local text = f and f:read("a") or ""
+    if f then f:close() end
+    check("GC: app events are still recorded after a collection", text:find("com.mitchellh.ghostty", 1, true) ~= nil, text)
+  else
+    check("GC: app events are still recorded after a collection", false, "watcher gone")
+  end
+end
+
+do
+  local KEY = "hyperdash.theme"
+  local function load(settings, name)
+    local home, p = baseHome(name)
+    write(p.log, lines(0, 2))
+    local env = sandbox.new({ moduleDir = MODULE_DIR, home = home, startTime = noon(), settings = settings })
+    env.webview.navigation("didFinishNavigation")
+    env.flush()
+    return env
+  end
+  local function indexOf(env, prefix)
+    for i, call in ipairs(env.js) do if call.code:find(prefix, 1, true) == 1 then return i end end
+  end
+
+  -- Default.
+  local settings = {}
+  local env = load(settings, "theme_default")
+  check("theme default: manila is sent on first load", env.page.theme == "manila", env.page.theme)
+  local themeAt, resetAt = indexOf(env, "window.hyperdash.setTheme("), indexOf(env, "window.hyperdash.reset(")
+  check("theme default: sent before the first reset", themeAt ~= nil and resetAt ~= nil and themeAt < resetAt, tostring(themeAt) .. " / " .. tostring(resetAt))
+  check("theme default: exactly one setTheme call", env.page.themeCalls == 1, env.page.themeCalls)
+  check("theme default: nothing is saved by loading", settings[KEY] == nil)
+  check("theme default: no script errors", (env.scriptErrors or 0) == 0)
+
+  -- Saved themes.
+  for _, name in ipairs({ "manila", "kozo", "nightingale", "blueprint" }) do
+    local e = load({ [KEY] = name }, "theme_saved_" .. name)
+    check("theme saved: " .. name .. " is sent", e.page.theme == name, e.page.theme)
+  end
+
+  -- Bad saved values count as manila.
+  for label, bad in pairs({ unknown = "neon", number = 5, table = {}, upper = "Kozo", empty = "", boolean = true }) do
+    local e = load({ [KEY] = bad }, "theme_bad_" .. label)
+    check("theme saved bad (" .. label .. "): manila", e.page.theme == "manila", tostring(e.page.theme))
+  end
+
+  -- A message from the page saves a valid name and sends nothing back.
+  settings = {}
+  env = load(settings, "theme_message")
+  local calls = #env.js
+  env.controller.callback({ body = { action = "theme", theme = "nightingale" } })
+  check("theme message: saved", settings[KEY] == "nightingale", settings[KEY])
+  check("theme message: not echoed to the page", #env.js == calls and env.page.themeCalls == 1)
+  env.controller.callback({ body = { action = "theme", theme = "blueprint" } })
+  check("theme message: the latest choice wins", settings[KEY] == "blueprint")
+
+  -- Invalid names are ignored.
+  for label, bad in pairs({ unknown = "neon", upper = "Manila", number = 7, table = { "kozo" }, empty = "", boolean = false }) do
+    env.controller.callback({ body = { action = "theme", theme = bad } })
+    check("theme message invalid (" .. label .. "): ignored", settings[KEY] == "blueprint", tostring(settings[KEY]))
+  end
+  env.controller.callback({ body = { action = "theme" } })
+  check("theme message without a name: ignored", settings[KEY] == "blueprint")
+  check("theme messages do not disturb other messages", pcall(env.controller.callback, { body = { action = "resize", height = 500 } }))
+
+  -- A reload of Hammerspoon (a new module instance) finds the saved theme.
+  local again = load(settings, "theme_restart")
+  check("theme: survives a restart", again.page.theme == "blueprint", again.page.theme)
+
+  -- Page recovery resends it.
+  settings = {}
+  env = load(settings, "theme_recovery")
+  env.controller.callback({ body = { action = "theme", theme = "kozo" } })
+  env.killPage()
+  env.module.toggle()
+  env.advance(0)
+  env.flush()
+  env.finishReload()
+  env.flush()
+  check("theme recovery: the reloaded page gets the saved theme", env.page.theme == "kozo", env.page.theme)
+  check("theme recovery: the theme is sent before the reset", (function()
+    local last = 0
+    for i, call in ipairs(env.js) do if call.code:find("^window%.hyperdash%.setTheme") then last = i end end
+    local resetAfter
+    for i = math.max(last, 1), #env.js do if env.js[i].code:find("^window%.hyperdash%.reset") then resetAfter = i break end end
+    return last > 0 and resetAfter ~= nil
+  end)())
+  check("theme recovery: the panel opened", env.shown == 1, env.shown)
+end
+
 os.execute("rm -rf " .. SCRATCH)
 report[#report + 1] = string.format("passed=%d failed=%d", passed, failed)
 return table.concat(report, "\n")

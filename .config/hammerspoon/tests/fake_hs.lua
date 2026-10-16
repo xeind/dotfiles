@@ -27,10 +27,17 @@ function sandbox.new(options)
     log = {},
     alerts = {},
     runningApps = {},
+    settings = options.settings or {},
     installed = {},
     bundleInfo = {},
     htmlCalls = 0,
   }
+
+  -- Garbage-collection tests: hold watchers weakly, so only the module keeps them alive.
+  if options.weakWatchers then
+    setmetatable(env.appWatchers, { __mode = "v" })
+    setmetatable(env.sleepWatchers, { __mode = "v" })
+  end
 
   ---------------------------------------------------------------- timers
   local function newTimer(delay, fn, repeating)
@@ -130,7 +137,7 @@ function sandbox.new(options)
   -- is a ReferenceError or TypeError in the page, which evaluateJavaScript
   -- reports as WKErrorDomain code 4.
   local PAGE_METHODS = { reset = true, append = true, setBindings = true, setApps = true,
-                         setInsights = true, setHealth = true, open = true, tick = true }
+                         setInsights = true, setHealth = true, open = true, tick = true, setTheme = true }
   local JS_ERROR = { code = 4, domain = "WKErrorDomain" }
   -- Returns the page's answer and, for a script error, the error table.
   function env.respond(code)
@@ -153,6 +160,11 @@ function sandbox.new(options)
     end
     -- hs.json.decode drops nulls from arrays, which would shift arguments.
     local leadingNull = args:sub(1, 5) == "null,"
+    if method == "setTheme" then
+      page.theme = hs.json.decode("[" .. args .. "]")[1]
+      page.themeCalls = (page.themeCalls or 0) + 1
+      return { ok = true, height = 600 } -- not recorded in page.calls: the order tests ignore it
+    end
     local list = hs.json.decode("[" .. (leadingNull and args:sub(6) or args) .. "]")
     if leadingNull then table.insert(list, 1, false) end
     local a = list[1]
@@ -220,6 +232,7 @@ function sandbox.new(options)
     page.bindings, page.insights, page.health = nil, nil, nil
     page.ctx = { generation = nil, offset = 0, text = "" }
     page.apps, page.icons = nil, nil
+    page.theme = nil
     env.webview.navigation("didFinishNavigation")
   end
   -- Answer pending calls until none are left. Calls the page is told to
@@ -266,6 +279,10 @@ function sandbox.new(options)
     webview = {
       new = function() return newWebview() end,
       usercontent = { new = function() return { setCallback = function(self, fn) self.callback = fn; env.controller = self end } end },
+    },
+    settings = {
+      get = function(key) return env.settings[key] end,
+      set = function(key, value) env.settings[key] = value end,
     },
     alert = { show = function(message) env.alerts[#env.alerts + 1] = message end },
     drawing = { windowLevels = { floating = 3 } },
