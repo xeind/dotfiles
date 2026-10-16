@@ -202,7 +202,7 @@ do
   check("cold: offset is the byte count", r.offset == #lines(0, 50))
   check("cold: bindings and insights ride along", #r.bindings == 2 and r.insights ~= nil and r.health.log.status == "ok")
   check("cold: health reports offset and generation", r.health.log.offset == nil or true)
-  check("cold: names, icons, then one reset, nothing else", methods(env) == "setApps,setIcons,reset", methods(env))
+  check("cold: one reset, then names and icons (own timer), nothing else", methods(env) == "reset,setApps,setIcons", methods(env))
   check("cold: calls never overlapped", (env.overlap or 0) == 0, env.overlap)
   check("cold: panel not shown by loading", env.shown == 0)
 end
@@ -235,7 +235,7 @@ do
   write(p.log, lines(30, 5) .. "2026-10-15T11:0", "ab") -- ends mid-line
   toggle(env)
   local seq = methods(env)
-  check("append: reset, then append, then tick,open", seq:match("^setApps,setIcons,reset,append,") ~= nil and seq:match("tick,open$") ~= nil, seq)
+  check("append: reset, then append, then tick,open", seq:match("^reset,setApps,setIcons,append,") ~= nil and seq:match("tick,open$") ~= nil, seq)
   local append
   for _, c in ipairs(env.page.calls) do if c.method == "append" then append = c.args[1] end end
   check("append: carries only the new lines", append.text == lines(30, 5), append and #append.text)
@@ -468,11 +468,17 @@ end
 ---------------------------------------------------------------------------
 -- Round 4: context recorder and context stream
 ---------------------------------------------------------------------------
-local function fakeApp(id, name, path, kind)
+-- `pathThrows` models Hammerspoon's app:path() on a background process that
+-- has a bundle ID but no bundle: it raises NSInvalidArgumentException
+-- (-[NSBundle initWithURL:]: nil URL argument).
+local function fakeApp(id, name, path, kind, pathThrows)
   return {
     bundleID = function() return id end,
     name = function() return name end,
-    path = function() return path end,
+    path = function()
+      if pathThrows then error("NSInvalidArgumentException: -[NSBundle initWithURL:]: nil URL argument") end
+      return path
+    end,
     kind = function() return kind or 1 end,
   }
 end
@@ -597,7 +603,7 @@ do
   write(p.log, lines(0, 20))
   write(contextPath(home), ctxLines(0, 15))
   local env = startPanel(home, noon())
-  check("streams: names, icons, usage reset, context reset (in order)", methods(env):gsub("^setApps,setIcons,", "") == "reset,reset", methods(env))
+  check("streams: usage reset, names and icons, context reset (in order)", methods(env) == "reset,setApps,setIcons,reset", methods(env))
   check("streams: usage page holds the usage log", env.page.text == lines(0, 20))
   check("streams: context page holds the context log", env.page.ctx.text == ctxLines(0, 15))
   check("streams: both generation 1", env.page.generation == 1 and env.page.ctx.generation == 1)
@@ -750,7 +756,7 @@ do
   }
   env.runningApps = {
     fakeApp("com.mitchellh.ghostty", "Ghostty (running)", "/Applications/Ghostty.app"),
-    fakeApp("com.example.helper", "Helper", "/Applications/Helper.app", 2),
+    fakeApp("com.example.helper", "Helper", nil, 2, true),
     fakeApp(nil, "No bundle", "/x"),
   }
   env.webview.navigation("didFinishNavigation")
@@ -766,7 +772,7 @@ do
   check("icons: binding app keyed by name and by bundle ID", icons and icons["Finder"] ~= nil and icons["com.apple.finder"] == icons["Finder"])
   check("icons: running regular app keyed by bundle ID", icons and icons["com.mitchellh.ghostty"] ~= nil)
   check("icons: background app has no icon", icons and icons["com.example.helper"] == nil)
-  check("setApps: sent before the usage reset", methods(env):find("^setApps,setIcons,reset") ~= nil, methods(env))
+  check("setApps: sent right after the first usage reset", methods(env):find("^reset,setApps,setIcons") ~= nil, methods(env))
 
   -- Unchanged apps are not resent; a new running app is.
   local count = function(m) local n = 0 for _, c in ipairs(env.page.calls) do if c.method == m then n = n + 1 end end return n end
@@ -781,8 +787,8 @@ do
   -- Empty maps encode as objects.
   local env2 = startPanel((function() local h, q = baseHome("ctx_apps_empty"); write(q.log, lines(0, 1)); return h end)(), noon())
   local raw
-  for _, call in ipairs(env2.js) do if call.code:find("^setApps") then raw = call.code end end
-  check("setApps: empty map is {} not []", raw == "setApps({})", raw)
+  for _, call in ipairs(env2.js) do if call.code:find("^window%.hyperdash%.setApps") then raw = call.code end end
+  check("setApps: empty map is {} not []", raw == "window.hyperdash.setApps({})", raw)
 end
 
 ---------------------------------------------------------------------------

@@ -125,18 +125,31 @@ function sandbox.new(options)
   local page = { generation = nil, offset = 0, text = "", bindings = nil, insights = nil, health = nil,
                  calls = {}, mode = {}, ctx = { generation = nil, offset = 0, text = "" } }
   env.page = page
+  -- The page API, read from index.html: window.hyperdash has exactly these
+  -- methods, and setIcons is the only plain global function. Anything else
+  -- is a ReferenceError or TypeError in the page, which evaluateJavaScript
+  -- reports as WKErrorDomain code 4.
+  local PAGE_METHODS = { reset = true, append = true, setBindings = true, setApps = true,
+                         setInsights = true, setHealth = true, open = true, tick = true }
+  local JS_ERROR = { code = 4, domain = "WKErrorDomain" }
+  -- Returns the page's answer and, for a script error, the error table.
   function env.respond(code)
     if code == "typeof window.hyperdash" then return "object" end
     local method, args = code:match("^window%.hyperdash%.(%w+)%((.*)%)$")
+    if method and not PAGE_METHODS[method] then
+      env.scriptErrors = (env.scriptErrors or 0) + 1
+      return nil, JS_ERROR
+    end
     if not method then
-      -- setIcons and setApps are plain page functions.
-      method, args = code:match("^(set%a+)%((.*)%)$")
-      if method == "setIcons" or method == "setApps" then
+      method, args = code:match("^(setIcons)%((.*)%)$")
+      if method then
         local decoded = hs.json.decode(args)
         page.calls[#page.calls + 1] = { method = method, args = { decoded }, bytes = #code, at = env.clock }
-        if method == "setApps" then page.apps = decoded else page.icons = decoded end
+        page.icons = decoded
+        return nil
       end
-      return nil
+      env.scriptErrors = (env.scriptErrors or 0) + 1
+      return nil, JS_ERROR
     end
     -- hs.json.decode drops nulls from arrays, which would shift arguments.
     local leadingNull = args:sub(1, 5) == "null,"
@@ -177,6 +190,9 @@ function sandbox.new(options)
       page.text = page.text .. a.text
       page.offset = a.to
       return { ok = true, offset = a.to, height = 600 }
+    elseif method == "setApps" then
+      page.apps = a
+      return { ok = true, height = 600 }
     elseif method == "setBindings" then
       page.bindings, page.health = list[1], list[2]
       return { ok = true, height = 600 }
@@ -210,6 +226,9 @@ function sandbox.new(options)
   -- ignore (mode.silent) stay pending, so tests can exercise the watchdog.
   function env.flush(limit)
     for _ = 1, limit or 200 do
+      -- Each turn of the run loop first runs timers that are due now, as the
+      -- real one does; the page answers after that.
+      env.advance(0)
       local call
       for _, c in ipairs(env.js) do if not c.answered then call = c; break end end
       if not call or page.mode.silent then return end
@@ -218,8 +237,8 @@ function sandbox.new(options)
         -- A terminated WebContent process: no result, WKErrorDomain code 5.
         if call.callback then call.callback(nil, { code = 5, domain = "WKErrorDomain" }) end
       else
-        local result = env.respond(call.code)
-        if call.callback then call.callback(result, { code = 0 }) end
+        local result, err = env.respond(call.code)
+        if call.callback then call.callback(result, err or { code = 0 }) end
       end
     end
   end

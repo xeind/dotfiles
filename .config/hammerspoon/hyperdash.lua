@@ -381,6 +381,23 @@ local function sendApps()
   end
 end
 
+-- Names and icons are not needed for a sync to finish, and building them
+-- calls into AppKit, which can raise (app:path() did, for background
+-- processes). Running them inside the sync once left `syncing` set forever,
+-- so every later open waited on it. They run on their own retained timer: a
+-- failure there cannot touch the sync's state. pcall is not enough, because
+-- it does not catch a native Objective-C exception; the timer boundary does.
+local appsTimer = nil
+local function scheduleApps()
+  if appsTimer then return end -- one pending run covers every request
+  appsTimer = hs.timer.doAfter(0, function()
+    appsTimer = nil
+    if not pageReady then return end -- the next load sends them again
+    local ok, err = pcall(sendApps)
+    if not ok then print("hyperdash: apps: " .. tostring(err)) end
+  end)
+end
+
 local function resetCode(action, which)
   if which == "context" then
     return string.format(
@@ -497,7 +514,7 @@ local function runSync(forceHealth, done)
     pass()
   end
 
-  sendApps()
+  scheduleApps()
   streamPhase("usage", function() streamPhase("context", metadata) end)
 end
 
