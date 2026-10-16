@@ -175,15 +175,17 @@ test("normalizeHealth: unknown statuses are dropped", () => {
 
 test("describeHealth: inactivity is neutral; only the host can say the log failed", () => {
   const quiet = M.describeHealth({ health: null, lastEvent: "2026-10-15T14:02:00", rejected: 0, now: NOW });
-  assert.equal(quiet.text, "LAST PRESS 14:02");
+  assert.equal(quiet.text, "LAST 14:02", "a healthy line uses short labels");
+  assert.equal(quiet.full, "LAST PRESS 14:02", "the tooltip keeps the full wording");
+  assert.equal(quiet.compact, true);
   assert.equal(quiet.level, "ok");
   const older = M.describeHealth({ health: null, lastEvent: "2026-10-12T14:02:00", rejected: 0, now: NOW });
-  assert.equal(older.text, "LAST PRESS OCT 12 14:02");
+  assert.equal(older.text, "LAST OCT 12 14:02");
   assert.equal(M.describeHealth({ health: null, lastEvent: null, rejected: 0, now: NOW }).text, "NO PRESSES RECORDED");
 
   const health = { log: { status: "ok" }, insights: { status: "ok" } };
   assert.equal(M.describeHealth({ health, lastEvent: "2026-10-15T14:02:00", rejected: 1, now: NOW }).text,
-    "LOG OK · LAST PRESS 14:02 · 1 BAD LINE · ANALYSIS OK");
+    "LOG OK · LAST PRESS 14:02 · 1 BAD LINE · ANALYSIS OK", "a warning keeps the full wording");
   assert.equal(M.describeHealth({ health, lastEvent: null, rejected: 3, now: NOW }).level, "warn");
 
   const missing = M.describeHealth({ health: { log: { status: "missing" }, insights: null }, lastEvent: null, rejected: 0, now: NOW });
@@ -977,9 +979,10 @@ test("context stream protocol: its own generation and offset, rejections apply n
 test("health.context: disabled reads as 'App context off'; missing and unreadable warn", () => {
   assert.equal(M.normalizeHealth({ context: { status: "ok", bytes: 10, modified: NOW } }).context.status, "ok");
   const off = M.describeHealth({ health: { log: { status: "ok" }, context: { status: "disabled" } }, lastEvent: "2026-10-15T14:02:00", rejected: 0, now: NOW });
-  assert.match(off.text, /APP CONTEXT OFF/);
+  assert.equal(off.text, "LOG OK · LAST 14:02 · CONTEXT OFF");
+  assert.match(off.full, /APP CONTEXT OFF/, "the tooltip says App context off in full");
   assert.equal(off.level, "ok");
-  assert.match(M.describeHealth({ health: { context: { status: "ok" } }, lastEvent: null, rejected: 0, now: NOW }).text, /APP CONTEXT OK/);
+  assert.match(M.describeHealth({ health: { context: { status: "ok" } }, lastEvent: null, rejected: 0, now: NOW }).full, /APP CONTEXT OK/);
   const missing = M.describeHealth({ health: { context: { status: "missing" } }, lastEvent: null, rejected: 0, now: NOW });
   assert.match(missing.text, /CONTEXT LOG MISSING/);
   assert.equal(missing.level, "warn");
@@ -1017,4 +1020,22 @@ test("insights: version 3 dates and app ride along; version 2 still loads", () =
   assert.equal(v3.insights[0].app, "org.mozilla.firefox");
   assert.equal(M.normalizeInsights({ version: 2, insights: [{ kind: "peak", title: "t", detail: "d" }] }).insights.length, 1);
   assert.equal(M.normalizeInsights({ version: 1, insights: [] }), null);
+});
+
+test("describeHealth: the healthy line is short enough for one line; warnings and errors keep every word", () => {
+  // The card fits about 55 characters of the status font.
+  const worst = M.describeHealth({
+    health: { log: { status: "ok" }, bindings: { status: "ok" }, insights: { status: "running" }, context: { status: "disabled" } },
+    lastEvent: "2026-10-12T14:02:00", rejected: 0, now: NOW,
+  });
+  assert.equal(worst.level, "ok");
+  assert.ok(worst.text.length <= 55, `${worst.text.length}: ${worst.text}`);
+  const stale = M.describeHealth({ health: { log: { status: "ok" }, insights: { status: "stale" }, context: { status: "ok" } }, lastEvent: "2026-10-15T14:02:00", rejected: 0, now: NOW });
+  assert.equal(stale.level, "warn");
+  assert.equal(stale.compact, false);
+  assert.equal(stale.text, "LOG OK · LAST PRESS 14:02 · ANALYSIS STALE · APP CONTEXT OK");
+  const broken = M.describeHealth({ health: { log: { status: "unreadable" }, bindings: { status: "invalid" }, insights: { status: "failed" } }, lastEvent: null, rejected: 2, now: NOW });
+  assert.equal(broken.level, "error");
+  assert.equal(broken.text, "LOG UNREADABLE · 2 BAD LINES · BINDINGS FILE INVALID · RUN YARN BUILD · ANALYSIS FAILED");
+  assert.equal(broken.full, broken.text, "an error's tooltip and text are the same full wording");
 });

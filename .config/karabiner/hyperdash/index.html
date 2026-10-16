@@ -513,6 +513,8 @@
     line-height: 1.4;
   }
 
+  /* A healthy status fits on one line; warnings and errors wrap and are never cut off. */
+  .status[data-level="ok"] { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .status[data-level="warn"] { color: var(--warning); }
   .status[data-level="error"] { color: var(--down); }
 
@@ -1453,6 +1455,7 @@ var HyperdashModel = (() => {
     "missing-tool": "ANALYSIS TOOL MISSING", failed: "ANALYSIS FAILED",
   };
 
+  const CONTEXT_SHORT = { ok: "CONTEXT OK", disabled: "CONTEXT OFF", missing: "CONTEXT LOG MISSING", unreadable: "CONTEXT LOG UNREADABLE" };
   const CONTEXT_TEXT = { ok: "APP CONTEXT OK", disabled: "APP CONTEXT OFF", missing: "CONTEXT LOG MISSING", unreadable: "CONTEXT LOG UNREADABLE" };
 
   // One status line. Inactivity is described by the last press; only the host's log status can say the log failed.
@@ -1461,17 +1464,27 @@ var HyperdashModel = (() => {
     const logBad = logStatus === "missing" || logStatus === "unreadable";
     const analysis = health?.insights?.status || null;
     const bindingsStatus = health?.bindings?.status || "ok";
-    const parts = [];
-    if (logStatus) parts.push(`LOG ${logStatus.toUpperCase()}`);
-    if (!logBad) parts.push(lastEvent ? `LAST PRESS ${formatWhen(lastEvent, now).toUpperCase()}` : "NO PRESSES RECORDED");
-    if (rejected > 0) parts.push(`${rejected} BAD ${rejected === 1 ? "LINE" : "LINES"}`);
-    if (bindingsStatus !== "ok") parts.push(bindingsStatus === "invalid" ? "BINDINGS FILE INVALID · RUN YARN BUILD" : "BINDINGS FILE MISSING · RUN YARN BUILD");
-    if (analysis) parts.push(ANALYSIS_TEXT[analysis]);
     const contextStatus = health?.context?.status || null;
-    if (contextStatus) parts.push(CONTEXT_TEXT[contextStatus]);
     const level = logBad || bindingsStatus !== "ok" || analysis === "failed" || analysis === "missing-tool" ? "error"
       : analysis === "stale" || rejected > 0 || contextStatus === "missing" || contextStatus === "unreadable" ? "warn" : "ok";
-    return { text: parts.join(" · "), level };
+    // When everything is fine the labels are short so the line fits the card; a warning or an error
+    // keeps the full wording (and may wrap, never truncates).
+    const compact = level === "ok";
+    const parts = [];
+    const full = [];
+    if (logStatus) parts.push(`LOG ${logStatus.toUpperCase()}`);
+    if (!logBad) parts.push(lastEvent ? `${compact ? "LAST" : "LAST PRESS"} ${formatWhen(lastEvent, now).toUpperCase()}` : "NO PRESSES RECORDED");
+    if (rejected > 0) parts.push(`${rejected} BAD ${rejected === 1 ? "LINE" : "LINES"}`);
+    if (bindingsStatus !== "ok") parts.push(bindingsStatus === "invalid" ? "BINDINGS FILE INVALID · RUN YARN BUILD" : "BINDINGS FILE MISSING · RUN YARN BUILD");
+    if (analysis) parts.push(compact && analysis === "running" ? "ANALYZING" : ANALYSIS_TEXT[analysis]);
+    if (contextStatus) parts.push(compact ? CONTEXT_SHORT[contextStatus] : CONTEXT_TEXT[contextStatus]);
+    // The tooltip always carries the full wording.
+    if (logStatus) full.push(`LOG ${logStatus.toUpperCase()}`);
+    if (!logBad) full.push(lastEvent ? `LAST PRESS ${formatWhen(lastEvent, now).toUpperCase()}` : "NO PRESSES RECORDED");
+    if (rejected > 0) full.push(`${rejected} BAD ${rejected === 1 ? "LINE" : "LINES"}`);
+    if (analysis) full.push(ANALYSIS_TEXT[analysis]);
+    if (contextStatus) full.push(CONTEXT_TEXT[contextStatus]);
+    return { text: parts.join(" · "), full: level === "ok" ? full.join(" · ") : parts.join(" · "), level, compact };
   }
 
   function formatBytes(bytes) {
@@ -1873,7 +1886,7 @@ function renderStatus(broken) {
   status.hidden = broken;
   const line = M.describeHealth({ health, lastEvent: summary.lastEvent, rejected: summary.rejected, now });
   status.textContent = line.text;
-  status.title = line.text;
+  status.title = line.full;
   status.dataset.level = line.level;
 
   $("about").hidden = !state.aboutOpen || broken;
@@ -2441,7 +2454,7 @@ function renderActivity(m) {
 
 function renderFooter() {
   const hints = dataError !== null ? [["esc", "close"]]
-    : state.page === "insights" ? [["⇧ ← →", "month"], ["esc", "back"]]
+    : state.page === "insights" ? [["esc", "back"]]
     : state.page === "activity" ? [["W", "highlight"], ["← →", state.activityMode === "day" ? "day" : "month"], ["↵", state.activityMode === "day" ? "month" : "day"], ["esc", state.highlight || state.interval !== null ? "clear" : "back"]]
     : state.layer === null
       ? [["W", "layer"], ["I", "insights"], ["A", "activity"], ["← →", "month"]]
