@@ -5,51 +5,51 @@
 <title>hyperdash</title>
 <style>
   :root {
-    /* Surfaces and neutrals: achromatic, L from the old greys so contrast levels are unchanged */
-    --card: oklch(0.2478 0 0);
-    --raised: oklch(0.2686 0 0);
-    --hover: oklch(0.2931 0 0);
-    --line: oklch(0.3132 0 0);
-    --line-strong: oklch(0.3485 0 0);
-    --ghost: oklch(0.4091 0 0);
-    --dim: oklch(0.4855 0 0);
-    --faint: oklch(0.5243 0 0);
-    --muted: oklch(0.6334 0 0);
-    --soft: oklch(0.7731 0 0);
-    --text: oklch(0.9521 0 0);
+    /* Manila (xeind.net, [data-theme="dark"]): deep night, sodium lamps, warm concrete. Surfaces and text, hue 220, saturation 5-8%. card, line and text are Manila's own card, border and foreground; soft is its secondary */
+    --card: hsl(220 6% 11%);
+    --raised: hsl(220 6% 14%);
+    --hover: hsl(220 5% 17%);
+    --line: hsl(220 5% 20%);
+    --line-strong: hsl(220 5% 26%);
+    --ghost: hsl(220 5% 29%);
+    --dim: hsl(220 5% 35%);
+    --faint: hsl(220 5% 41%);
+    --muted: hsl(220 5% 54%);
+    --soft: hsl(220 5% 72%);
+    --text: hsl(220 6% 93%);
 
-    /* Accent: interaction and selection (focus rings, selected keys) */
-    --accent: oklch(0.64 0.19 258);
-    --accent-soft: oklch(0.77 0.1 256);
-    --accent-bg: oklch(0.33 0.095 262);
+    /* Interaction accent (focus rings, selection): Manila's near-white accent and accent-hover */
+    --accent: hsl(220 6% 98%);
+    --accent-soft: hsl(220 6% 88%);
+    --accent-bg: hsl(220 5% 22%);
 
-    /* Quantity: one hue, lightness rises with use. q0 = bound but unused; ink = text on each step */
-    --q0: oklch(0.3 0.075 258);
-    --q1: oklch(0.44 0.13 258);
-    --q2: oklch(0.55 0.17 258);
-    --q3: oklch(0.69 0.15 257);
-    --q4: oklch(0.84 0.08 256);
-    --ink-q0: oklch(0.72 0.09 258);
-    --ink-light: oklch(0.98 0.008 258);
-    --ink-dark: oklch(0.18 0.03 258);
+    /* Quantity: warm concrete rising to sodium amber (Manila's keyword colour). q0 = bound but unused; ink = text on each step */
+    --q0: hsl(25 6% 19%);
+    --q1: hsl(28 11% 30%);
+    --q2: hsl(33 40% 38%);
+    --q3: hsl(36 66% 54%);
+    --q4: hsl(38 85% 65%);
+    --ink-q0: hsl(30 14% 66%);
+    --ink-light: hsl(40 12% 95%);
+    --ink-dark: hsl(30 20% 6%);
 
-    /* Colour groups for the twelve activity categories: L 0.54-0.67, chroma 0.11-0.15; system is a light neutral */
-    --g-launch: oklch(0.669 0.113 186.3);
-    --g-windows: oklch(0.655 0.154 299);
-    --g-navigate: oklch(0.665 0.118 68);
-    --g-capture: oklch(0.56 0.12 355);
-    --g-system: oklch(0.82 0.02 245);
-    --g-pointer: oklch(0.54 0.11 113);
+    /* Colour groups for the twelve activity categories, from Manila's code accents: steel blue, sage, sodium amber (deeper), tan, coral, grey. Lightness is nudged where two groups were too close */
+    --g-navigate: hsl(200 47% 69%);
+    --g-pointer: hsl(95 33% 61%);
+    --g-launch: hsl(38 85% 50%);
+    --g-windows: hsl(30 45% 79%);
+    --g-capture: hsl(10 72% 58%);
+    --g-system: hsl(220 5% 58%);
 
-    /* Semantic: up, down, warning, info, each with a tinted background */
-    --up: oklch(0.85 0.16 155);
-    --down: oklch(0.66 0.185 21);
-    --warning: oklch(0.8 0.155 86);
-    --info: oklch(0.765 0.103 242);
-    --up-bg: oklch(0.27 0.06 155);
-    --down-bg: oklch(0.27 0.075 21);
-    --warning-bg: oklch(0.27 0.05 86);
-    --info-bg: oklch(0.27 0.06 242);
+    /* Semantic: Manila's success, destructive, warning and info, each with a tinted background */
+    --up: hsl(160 20% 55%);
+    --down: hsl(0 30% 55%);
+    --warning: hsl(30 20% 65%);
+    --info: hsl(210 10% 72%);
+    --up-bg: hsl(160 20% 13%);
+    --down-bg: hsl(0 22% 13%);
+    --warning-bg: hsl(30 16% 14%);
+    --info-bg: hsl(210 10% 15%);
 
     /* Text on each quantity step */
     --q0t: var(--ink-q0);
@@ -64,11 +64,11 @@
     --hatch: var(--line-strong);
 
     /* Overlays */
-    --edge: oklch(1 0 0 / 0.07);
-    --edge-soft: oklch(1 0 0 / 0.04);
-    --accent-edge: oklch(0.77 0.1 256 / 0.15);
-    --shadow: oklch(0 0 0 / 0.65);
-    --shadow-key: oklch(0 0 0 / 0.35);
+    --edge: hsl(0 0% 100% / 0.07);
+    --edge-soft: hsl(0 0% 100% / 0.04);
+    --accent-edge: hsl(220 6% 88% / 0.2);
+    --shadow: hsl(220 20% 2% / 0.65);
+    --shadow-key: hsl(220 20% 2% / 0.35);
 
     /* Type, layout */
     --sans: "Geist", -apple-system, sans-serif;
@@ -358,7 +358,7 @@
   .item .chip { min-width: 18px; height: 18px; font-size: 10px; border-radius: 5px; }
 
   .bar { display: block; height: 3px; border-radius: 999px; background: var(--line-strong); overflow: hidden; }
-  .bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+  .bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--q3); }
   .item.unused .bar { background: transparent; }
 
   .item-count {
