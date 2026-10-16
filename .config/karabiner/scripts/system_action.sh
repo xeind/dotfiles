@@ -35,7 +35,8 @@ case $mode in
     elif [ "$now" = 1 ]; then
       echo "Awake on"
     else
-      echo "Awake off"
+      # Tinycast shows a line led by "~ " in its neutral gray instead of success green.
+      echo "~ Awake off"
     fi
     ;;
   *)
