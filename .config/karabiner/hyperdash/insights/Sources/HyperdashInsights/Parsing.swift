@@ -47,11 +47,14 @@ public struct Binding: Decodable, Equatable, Sendable {
     public let layer: String
     public let key: String
     public let label: String
+    /// Activity category such as "tab-navigation"; nil when bindings.json has none.
+    public let category: String?
 
-    public init(layer: String, key: String, label: String) {
+    public init(layer: String, key: String, label: String, category: String? = nil) {
         self.layer = layer
         self.key = key
         self.label = label
+        self.category = category
     }
 
     public var combo: Combo { Combo(layer: layer, key: key) }

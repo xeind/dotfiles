@@ -9,6 +9,7 @@ struct Options {
     var log = ""
     var bindings = ""
     var output = ""
+    var context: String?
     var now: Date?
 }
 
@@ -26,6 +27,7 @@ func parseArguments(_ arguments: [String], calendar: Calendar) throws -> Options
         case "--log": options.log = try value(for: flag)
         case "--bindings": options.bindings = try value(for: flag)
         case "--output": options.output = try value(for: flag)
+        case "--context": options.context = try value(for: flag)
         case "--now":
             let text = try value(for: flag)
             guard let date = parseTimestamp(text, calendar: calendar) else {
@@ -39,7 +41,7 @@ func parseArguments(_ arguments: [String], calendar: Calendar) throws -> Options
     guard !options.log.isEmpty, !options.bindings.isEmpty, !options.output.isEmpty else {
         throw UsageError(
             description:
-                "usage: hyperdash-insights --log <path> --bindings <path> --output <path> [--now YYYY-MM-DDTHH:MM:SS]"
+                "usage: hyperdash-insights --log <path> --bindings <path> --output <path> [--context <path>] [--now YYYY-MM-DDTHH:MM:SS]"
         )
     }
     return options
@@ -72,10 +74,25 @@ do {
     fail("cannot read bindings \(options.bindings): \(error)")
 }
 
+var contextEvents: [ContextEvent]?
+if let path = options.context {
+    do {
+        let parsedContext = parseContextLog(
+            try String(contentsOfFile: path, encoding: .utf8), calendar: calendar)
+        if parsedContext.rejectedLines > 0 {
+            FileHandle.standardError.write(
+                Data("hyperdash-insights: \(parsedContext.rejectedLines) context lines rejected\n".utf8))
+        }
+        contextEvents = parsedContext.events
+    } catch {
+        fail("cannot read context \(path): \(error.localizedDescription)")
+    }
+}
+
 let parsedLog = parseLog(logText, calendar: calendar)
 let report = computeReport(
     events: parsedLog.events, bindings: bindings, now: options.now ?? Date(),
-    rejectedLines: parsedLog.rejectedLines, calendar: calendar)
+    rejectedLines: parsedLog.rejectedLines, context: contextEvents, calendar: calendar)
 
 do {
     try writeAtomically(InsightsFile(report: report).jsonData(), to: options.output)

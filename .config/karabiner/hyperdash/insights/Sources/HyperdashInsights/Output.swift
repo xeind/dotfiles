@@ -1,8 +1,17 @@
 import Foundation
 
-/// The version 2 file read by the hyperdash panel.
+/// The version 3 file read by the hyperdash panel.
+///
+/// Changes from version 2:
+///   - Every insight has `dates` and `app` (null when no single app applies).
+///   - New kind `focus`. Rising and falling `value` is an absolute change in presses.
+///   - Fewer cards while history is short. Rising and falling need 14 fully recorded days
+///     (the 14 days before today), and unused needs 3 fully recorded days. Today never
+///     counts. A day is fully recorded when it is after the first logged day, and, with a
+///     context log, when every Hyper press that day lies inside a recording session.
+///     The live log is new, so these cards stay absent until enough days exist.
 public struct InsightsFile: Encodable, Sendable {
-    public let version = 2
+    public let version = 3
     public let generated: String
     public let month: String
     public let recordingSince: String?
