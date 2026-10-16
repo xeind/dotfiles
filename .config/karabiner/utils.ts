@@ -80,10 +80,7 @@ export function createHyperSubLayer(
                 ...commands[command_key],
                 // Log first: Karabiner repeats only the last event while a
                 // key is held, and that must stay the real command.
-                to: [
-                    logUsage(sublayer_key, command_key),
-                    ...commands[command_key]!.to,
-                ],
+                to: withUsageLog(sublayer_key, command_key, commands[command_key]!.to),
                 type: "basic" as const,
                 from: {
                     key_code: command_key,
@@ -173,6 +170,29 @@ function logUsage(layer: KeyCode, key: KeyCode): To {
 }
 
 /**
+ * Put the usage log in front of a command's events. Karabiner kills a running
+ * shell_command when the next one starts (it keeps one process slot), so a
+ * separate log step followed by a shell action loses the log line. When the
+ * command is made of shell_commands, join the log and the actions into ONE
+ * shell_command. Other commands keep the log as a separate first event.
+ */
+function withUsageLog(layer: KeyCode, key: KeyCode, to: To[]): To[] {
+    const log = logUsage(layer, key);
+    const shells = to.filter((event) => event.shell_command !== undefined);
+    if (shells.length === 0) return [log, ...to];
+    if (shells.length !== to.length) {
+        throw new Error(
+            `Hyper ${layer} ${key} mixes shell_command with other events; decide their order before merging the usage log`
+        );
+    }
+    return [
+        {
+            shell_command: [log.shell_command, ...shells.map((event) => event.shell_command)].join("; "),
+        },
+    ];
+}
+
+/**
  * List every sublayer command with a readable label, for the dashboard.
  * Reads the generated rules, so the list always matches karabiner.json.
  */
@@ -192,8 +212,9 @@ export function listSubLayerBindings(
             bindings.push({
                 layer: layerCondition.name.replace("hyper_sublayer_", ""),
                 key: manipulator.from!.key_code!,
-                // to[0] is the usage log; to[1] is the real command.
-                label: describeCommand(manipulator.description, manipulator.to![1]),
+                // A key_code command has the usage log in to[0] and the real event in to[1].
+                // A shell command is one merged event, and always has a description.
+                label: describeCommand(manipulator.description, manipulator.to![1] ?? manipulator.to![0]),
                 ...commandTarget(manipulator.description),
             });
         }

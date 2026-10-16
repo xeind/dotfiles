@@ -121,10 +121,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tx\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open https://x.com"
+                    "shell_command": "printf '%s\\tb\\tx\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://x.com"
                   }
                 ],
                 "description": "Open https://x.com",
@@ -148,10 +145,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\ty\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open https://youtube.com"
+                    "shell_command": "printf '%s\\tb\\ty\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://youtube.com"
                   }
                 ],
                 "description": "Open https://youtube.com",
@@ -175,10 +169,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open https://facebook.com"
+                    "shell_command": "printf '%s\\tb\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://facebook.com"
                   }
                 ],
                 "description": "Open https://facebook.com",
@@ -202,10 +193,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tg\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open https://github.com"
+                    "shell_command": "printf '%s\\tb\\tg\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://github.com"
                   }
                 ],
                 "description": "Open https://github.com",
@@ -229,10 +217,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open https://reddit.com"
+                    "shell_command": "printf '%s\\tb\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://reddit.com"
                   }
                 ],
                 "description": "Open https://reddit.com",
@@ -256,10 +241,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open https://chatgpt.com"
+                    "shell_command": "printf '%s\\tb\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://chatgpt.com"
                   }
                 ],
                 "description": "Open https://chatgpt.com",
@@ -283,10 +265,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open https://mail.google.com/mail/u/0/#inbox"
+                    "shell_command": "printf '%s\\tb\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://mail.google.com/mail/u/0/#inbox"
                   }
                 ],
                 "description": "Open https://mail.google.com/mail/u/0/#inbox",
@@ -310,10 +289,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open https://photos.google.com/u/3/"
+                    "shell_command": "printf '%s\\tb\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://photos.google.com/u/3/"
                   }
                 ],
                 "description": "Open https://photos.google.com/u/3/",
@@ -337,10 +313,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open https://linkedin.com"
+                    "shell_command": "printf '%s\\tb\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://linkedin.com"
                   }
                 ],
                 "description": "Open https://linkedin.com",
@@ -439,10 +412,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\t1\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -a 'Bitwarden.app'"
+                    "shell_command": "printf '%s\\to\\t1\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Bitwarden.app'"
                   }
                 ],
                 "description": "Open -a 'Bitwarden.app'",
@@ -466,10 +436,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tb\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -a 'Firefox.app'"
+                    "shell_command": "printf '%s\\to\\tb\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Firefox.app'"
                   }
                 ],
                 "description": "Open -a 'Firefox.app'",
@@ -493,10 +460,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -a 'Zen Browser.app'"
+                    "shell_command": "printf '%s\\to\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Zen Browser.app'"
                   }
                 ],
                 "description": "Open -a 'Zen Browser.app'",
@@ -520,10 +484,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -a 'Discord.app'"
+                    "shell_command": "printf '%s\\to\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Discord.app'"
                   }
                 ],
                 "description": "Open -a 'Discord.app'",
@@ -547,10 +508,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tt\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -a 'Ghostty.app'"
+                    "shell_command": "printf '%s\\to\\tt\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Ghostty.app'"
                   }
                 ],
                 "description": "Open -a 'Ghostty.app'",
@@ -574,10 +532,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -a 'Obsidian.app'"
+                    "shell_command": "printf '%s\\to\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Obsidian.app'"
                   }
                 ],
                 "description": "Open -a 'Obsidian.app'",
@@ -601,10 +556,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -a 'Finder.app'"
+                    "shell_command": "printf '%s\\to\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Finder.app'"
                   }
                 ],
                 "description": "Open -a 'Finder.app'",
@@ -628,10 +580,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -a 'Things3.app'"
+                    "shell_command": "printf '%s\\to\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Things3.app'"
                   }
                 ],
                 "description": "Open -a 'Things3.app'",
@@ -655,10 +604,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -a 'Skim.app'"
+                    "shell_command": "printf '%s\\to\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Skim.app'"
                   }
                 ],
                 "description": "Open -a 'Skim.app'",
@@ -682,10 +628,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -a 'Helium.app'"
+                    "shell_command": "printf '%s\\to\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Helium.app'"
                   }
                 ],
                 "description": "Open -a 'Helium.app'",
@@ -709,10 +652,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -a 'Zed.app'"
+                    "shell_command": "printf '%s\\to\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Zed.app'"
                   }
                 ],
                 "description": "Open -a 'Zed.app'",
@@ -811,10 +751,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\t1\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=top-left-sixth"
+                    "shell_command": "printf '%s\\tw\\t1\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=top-left-sixth"
                   }
                 ],
                 "description": "Window: top-left-sixth",
@@ -838,10 +775,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\t3\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=top-right-sixth"
+                    "shell_command": "printf '%s\\tw\\t3\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=top-right-sixth"
                   }
                 ],
                 "description": "Window: top-right-sixth",
@@ -865,10 +799,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tspacebar\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -b com.apple.exposelauncher"
+                    "shell_command": "printf '%s\\tw\\tspacebar\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -b com.apple.exposelauncher"
                   }
                 ],
                 "description": "Mission Control",
@@ -892,10 +823,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\ty\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=previous-display"
+                    "shell_command": "printf '%s\\tw\\ty\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=previous-display"
                   }
                 ],
                 "description": "Window: previous-display",
@@ -919,10 +847,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\to\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=next-display"
+                    "shell_command": "printf '%s\\tw\\to\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=next-display"
                   }
                 ],
                 "description": "Window: next-display",
@@ -946,10 +871,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tk\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=top-half"
+                    "shell_command": "printf '%s\\tw\\tk\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=top-half"
                   }
                 ],
                 "description": "Window: top-half",
@@ -973,10 +895,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tj\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=bottom-half"
+                    "shell_command": "printf '%s\\tw\\tj\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=bottom-half"
                   }
                 ],
                 "description": "Window: bottom-half",
@@ -1000,10 +919,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=left-half"
+                    "shell_command": "printf '%s\\tw\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=left-half"
                   }
                 ],
                 "description": "Window: left-half",
@@ -1027,10 +943,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=right-half"
+                    "shell_command": "printf '%s\\tw\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=right-half"
                   }
                 ],
                 "description": "Window: right-half",
@@ -1054,10 +967,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=maximize"
+                    "shell_command": "printf '%s\\tw\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=maximize"
                   }
                 ],
                 "description": "Window: maximize",
@@ -1081,10 +991,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\te\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=top-right"
+                    "shell_command": "printf '%s\\tw\\te\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=top-right"
                   }
                 ],
                 "description": "Window: top-right",
@@ -1108,10 +1015,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=top-left"
+                    "shell_command": "printf '%s\\tw\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=top-left"
                   }
                 ],
                 "description": "Window: top-left",
@@ -1135,10 +1039,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\ta\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=bottom-left"
+                    "shell_command": "printf '%s\\tw\\ta\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=bottom-left"
                   }
                 ],
                 "description": "Window: bottom-left",
@@ -1162,10 +1063,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=bottom-right"
+                    "shell_command": "printf '%s\\tw\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=bottom-right"
                   }
                 ],
                 "description": "Window: bottom-right",
@@ -1189,10 +1087,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\ts\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=center"
+                    "shell_command": "printf '%s\\tw\\ts\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=center"
                   }
                 ],
                 "description": "Window: center",
@@ -1216,10 +1111,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tx\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=specified"
+                    "shell_command": "printf '%s\\tw\\tx\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=specified"
                   }
                 ],
                 "description": "Window: specified",
@@ -1243,10 +1135,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tup_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=move-up"
+                    "shell_command": "printf '%s\\tw\\tup_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=move-up"
                   }
                 ],
                 "description": "Window: move-up",
@@ -1270,10 +1159,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tdown_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=move-down"
+                    "shell_command": "printf '%s\\tw\\tdown_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=move-down"
                   }
                 ],
                 "description": "Window: move-down",
@@ -1297,10 +1183,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tright_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=move-right"
+                    "shell_command": "printf '%s\\tw\\tright_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=move-right"
                   }
                 ],
                 "description": "Window: move-right",
@@ -1324,10 +1207,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tleft_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=move-left"
+                    "shell_command": "printf '%s\\tw\\tleft_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=move-left"
                   }
                 ],
                 "description": "Window: move-left",
@@ -1351,10 +1231,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=bottom-left-sixth"
+                    "shell_command": "printf '%s\\tw\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=bottom-left-sixth"
                   }
                 ],
                 "description": "Window: bottom-left-sixth",
@@ -1378,10 +1255,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=bottom-right-sixth"
+                    "shell_command": "printf '%s\\tw\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=bottom-right-sixth"
                   }
                 ],
                 "description": "Window: bottom-right-sixth",
@@ -1405,10 +1279,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\treturn_or_enter\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=almost-maximize"
+                    "shell_command": "printf '%s\\tw\\treturn_or_enter\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=almost-maximize"
                   }
                 ],
                 "description": "Window: almost-maximize",
@@ -1432,10 +1303,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tdelete_or_backspace\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=restore"
+                    "shell_command": "printf '%s\\tw\\tdelete_or_backspace\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=restore"
                   }
                 ],
                 "description": "Window: restore",
@@ -1459,10 +1327,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tequal_sign\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=larger"
+                    "shell_command": "printf '%s\\tw\\tequal_sign\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=larger"
                   }
                 ],
                 "description": "Window: larger",
@@ -1486,10 +1351,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\thyphen\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open -g rectangle://execute-action?name=smaller"
+                    "shell_command": "printf '%s\\tw\\thyphen\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -g rectangle://execute-action?name=smaller"
                   }
                 ],
                 "description": "Window: smaller",
@@ -2429,10 +2291,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "osascript -e 'tell application \"System Events\" to tell process \"MenuBarAgent\"' -e 'repeat with g in every group of menu bar 1' -e 'set mi to menu bar item 1 of g' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'"
+                    "shell_command": "printf '%s\\ts\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; osascript -e 'tell application \"System Events\" to tell process \"MenuBarAgent\"' -e 'repeat with g in every group of menu bar 1' -e 'set mi to menu bar item 1 of g' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'"
                   }
                 ],
                 "description": "Open Notification Center",
@@ -2456,10 +2315,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "osascript ~/.config/raycast/scripts/dismiss-notifications.applescript"
+                    "shell_command": "printf '%s\\ts\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; osascript ~/.config/raycast/scripts/dismiss-notifications.applescript"
                   }
                 ],
                 "description": "Dismiss Notifications",
@@ -2483,10 +2339,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "open x-apple.systempreferences:com.apple.preference"
+                    "shell_command": "printf '%s\\ts\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open x-apple.systempreferences:com.apple.preference"
                   }
                 ],
                 "description": "System Settings",
@@ -2633,10 +2486,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "osascript ~/.config/raycast/scripts/recording-mode.applescript"
+                    "shell_command": "printf '%s\\ts\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; osascript ~/.config/raycast/scripts/recording-mode.applescript"
                   }
                 ],
                 "description": "Recording Mode (hide menu bar)",
@@ -2660,10 +2510,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tt\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "osascript ~/.config/raycast/scripts/undo-recording-mode.applescript"
+                    "shell_command": "printf '%s\\ts\\tt\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; osascript ~/.config/raycast/scripts/undo-recording-mode.applescript"
                   }
                 ],
                 "description": "Undo Recording Mode (show menu bar)",
@@ -2687,10 +2534,7 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "shell_command": "/opt/homebrew/bin/hs -c 'hyperdash.toggle()'"
+                    "shell_command": "printf '%s\\ts\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; /opt/homebrew/bin/hs -c 'hyperdash.toggle()'"
                   }
                 ],
                 "description": "hyperdash",

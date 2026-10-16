@@ -53,14 +53,16 @@ fi
 IS_LAYER='((.name // "") | startswith("hyper_sublayer_")) and .value == 1'
 SUBLAYER=".profiles[0].complex_modifications.rules[].manipulators[] | select(any(.conditions[]?; $IS_LAYER))"
 
-# 3. to[0] of every sublayer manipulator is the usage-log command.
+# 3. to[0] of every sublayer manipulator starts with the usage-log command. A shell-command action is
+# merged into that same shell_command after "; " (see withUsageLog in utils.ts).
 template="printf '%s\\t@L\\t@K\\n' \"\$(date +%FT%T)\" >> $LOG_DIR/usage.log"
 total="$(jq "[$SUBLAYER] | length" "$CONFIG")"
 bad="$(jq -r --arg tmpl "$template" "
   $SUBLAYER
   | (first(.conditions[] | select($IS_LAYER)).name | ltrimstr(\"hyper_sublayer_\")) as \$l
   | .from.key_code as \$k
-  | select(.to[0].shell_command != (\$tmpl | sub(\"@L\"; \$l) | sub(\"@K\"; \$k)))
+  | (\$tmpl | sub(\"@L\"; \$l) | sub(\"@K\"; \$k)) as \$expected
+  | select((.to[0].shell_command // \"\") | (. == \$expected or startswith(\$expected + \"; \")) | not)
   | \"\(\$l)/\(\$k)\"" "$CONFIG")"
 if [ "$total" -eq 0 ]; then
   fail "no sublayer manipulators found in karabiner.json"
@@ -68,6 +70,19 @@ elif [ -n "$bad" ]; then
   fail "to[0] is not the usage-log command for: $(echo "$bad" | head -5 | tr '\n' ' ')($(echo "$bad" | wc -l | tr -d ' ') of $total)"
 else
   pass "all $total sublayer manipulators log usage in to[0]"
+fi
+
+# 3b. Karabiner keeps one process slot for shell commands and kills the running one when the next
+# starts, so a log shell_command followed by another shell_command in the same "to" loses the log line.
+split="$(jq -r "
+  $SUBLAYER
+  | select((.to | map(select((.shell_command // \"\") | contains(\"usage.log\"))) | length) > 0
+      and (.to | map(select(.shell_command != null)) | length) > 1)
+  | \"\(first(.conditions[] | select($IS_LAYER)).name | ltrimstr(\"hyper_sublayer_\"))/\(.from.key_code)\"" "$CONFIG")"
+if [ -n "$split" ]; then
+  fail "usage log and another shell_command share one to array (the log line is lost): $(echo "$split" | head -5 | tr '\n' ' ')($(echo "$split" | wc -l | tr -d ' ') of $total)"
+else
+  pass "no sublayer manipulator has the usage log plus another shell_command in one to array"
 fi
 
 # 4. One binding per sublayer manipulator.
