@@ -1039,3 +1039,58 @@ test("describeHealth: the healthy line is short enough for one line; warnings an
   assert.equal(broken.text, "LOG UNREADABLE · 2 BAD LINES · BINDINGS FILE INVALID · RUN YARN BUILD · ANALYSIS FAILED");
   assert.equal(broken.full, broken.text, "an error's tooltip and text are the same full wording");
 });
+
+// ---------------------------------------------------------------------------------------------
+// Themes
+
+test("themes: the order T cycles through, the fallback, and the wrap-around", () => {
+  assert.deepEqual(plain(M.THEMES), ["manila", "kozo", "nightingale", "blueprint"]);
+  assert.equal(M.nextTheme("manila"), "kozo");
+  assert.equal(M.nextTheme("kozo"), "nightingale");
+  assert.equal(M.nextTheme("nightingale"), "blueprint");
+  assert.equal(M.nextTheme("blueprint"), "manila", "wraps back to the default");
+  assert.equal(M.nextTheme("nonsense"), "kozo", "an unknown name counts as manila");
+  assert.equal(M.nextTheme(undefined), "kozo");
+  for (const name of M.THEMES) assert.equal(M.normalizeTheme(name), name);
+  for (const bad of ["", "Manila", "dark", "light", null, undefined, 3, {}, "kozo "]) assert.equal(M.normalizeTheme(bad), "manila", String(bad));
+  // Four steps from any theme return to it.
+  for (const start of M.THEMES) { let name = start; for (let i = 0; i < 4; i++) name = M.nextTheme(name); assert.equal(name, start); }
+});
+
+test("routeKey: T cycles the theme on the overview only", () => {
+  const overview = { page: null, layer: null, highlight: null, selected: null, aboutOpen: false, layers: ["w", "o"], heatHas: (k) => k === "w" || k === "o" };
+  assert.deepEqual(plain(M.routeKey(overview, { key: "t" })), { type: "cycleTheme" });
+  assert.deepEqual(plain(M.routeKey(overview, { key: "T", shiftKey: true })), { type: "cycleTheme" });
+  // Not on a layer page (T selects the T binding), the Activity page or the Insights page.
+  assert.deepEqual(plain(M.routeKey({ ...overview, layer: "w" }, { key: "t" })), { type: "select", key: "t" });
+  assert.deepEqual(plain(M.routeKey({ ...overview, page: "activity" }, { key: "t" })), { type: "ignore" });
+  assert.equal(M.routeKey({ ...overview, page: "insights" }, { key: "t" }), null);
+  // A layer called t would win, as with every other letter.
+  assert.deepEqual(plain(M.routeKey({ ...overview, heatHas: (k) => k === "t" }, { key: "t" })), { type: "openLayer", layer: "t" });
+  // Not with a modifier.
+  assert.equal(M.routeKey(overview, { key: "t", metaKey: true }), null);
+});
+
+test("every theme defines every colour token, and every colour the page uses exists in all of them", () => {
+  const css = /<style>([\s\S]*?)<\/style>/.exec(html)[1];
+  const themeBlocks = {};
+  for (const m of css.matchAll(/(?::root,\s*)?:root\[data-theme="(\w+)"\]\s*\{([\s\S]*?)\n  \}/g)) themeBlocks[m[1]] = m[2];
+  assert.deepEqual(Object.keys(themeBlocks).sort(), [...M.THEMES].sort());
+  const defined = (block) => new Set([...block.matchAll(/--([a-z0-9-]+):/g)].map((x) => x[1]));
+  const manila = defined(themeBlocks.manila);
+  assert.ok(manila.size > 40, `manila defines ${manila.size} tokens`);
+  for (const name of M.THEMES) {
+    const own = defined(themeBlocks[name]);
+    assert.deepEqual([...manila].filter((t) => !own.has(t)), [], `${name} is missing tokens`);
+    assert.deepEqual([...own].filter((t) => !manila.has(t)), [], `${name} has extra tokens`);
+  }
+  // Every var(--x) in the page resolves, either from a theme, the shared layout block, or a local variable.
+  const shared = new Set(["sans", "mono", "key", "gap"]);
+  const local = new Set(["grp", "grp-bg", "tone", "tone-bg"]);
+  const used = new Set([...html.matchAll(/var\(--([a-z0-9-]+)/g)].map((x) => x[1]));
+  for (const token of used) assert.ok(manila.has(token) || shared.has(token) || local.has(token) || /^g-/.test(token), `--${token} is undefined`);
+  // No raw colours outside the theme blocks.
+  const rest = css.replace(/:root[^{]*\{[\s\S]*?\n  \}/g, "");
+  assert.deepEqual(rest.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(/g), null, "raw colours outside the theme blocks");
+  assert.deepEqual([...html.slice(html.indexOf("<script>")).matchAll(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(|oklch\(/g)].map((x) => x[0]), [], "raw colours in the page script");
+});

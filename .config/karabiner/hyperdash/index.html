@@ -4,8 +4,10 @@
 <meta charset="utf-8">
 <title>hyperdash</title>
 <style>
-  :root {
-    /* Manila (xeind.net, [data-theme="dark"]): deep night, sodium lamps, warm concrete. Surfaces and text, hue 220, saturation 5-8%. card, line and text are Manila's own card, border and foreground; soft is its secondary */
+  /* Manila: deep night, sodium lamps, warm concrete (the default) */
+  :root,
+  :root[data-theme="manila"] {
+    /* Surfaces and text: card, line, soft and text come from the theme's own card, border, secondary and foreground */
     --card: hsl(220 6% 11%);
     --raised: hsl(220 6% 14%);
     --hover: hsl(220 5% 17%);
@@ -18,12 +20,12 @@
     --soft: hsl(220 5% 72%);
     --text: hsl(220 6% 93%);
 
-    /* Interaction accent (focus rings, selection): Manila's near-white accent and accent-hover */
+    /* Interaction accent: focus rings and selection */
     --accent: hsl(220 6% 98%);
     --accent-soft: hsl(220 6% 88%);
     --accent-bg: hsl(220 5% 22%);
 
-    /* Quantity: warm concrete rising to sodium amber (Manila's keyword colour). q0 = bound but unused; ink = text on each step */
+    /* Quantity: more is brighter; q0 is bound but unused; ink is the text on each step */
     --q0: hsl(25 6% 19%);
     --q1: hsl(28 11% 30%);
     --q2: hsl(33 40% 38%);
@@ -33,7 +35,7 @@
     --ink-light: hsl(40 12% 95%);
     --ink-dark: hsl(30 20% 6%);
 
-    /* Colour groups for the twelve activity categories, from Manila's code accents: steel blue, sage, sodium amber (deeper), tan, coral, grey. Lightness is nudged where two groups were too close */
+    /* Colour groups for the twelve activity categories */
     --g-navigate: hsl(200 47% 69%);
     --g-pointer: hsl(95 33% 61%);
     --g-launch: hsl(38 85% 50%);
@@ -41,7 +43,7 @@
     --g-capture: hsl(10 72% 58%);
     --g-system: hsl(220 5% 58%);
 
-    /* Semantic: Manila's success, destructive, warning and info, each with a tinted background */
+    /* Semantic: success, destructive, warning and info, each with a tinted background */
     --up: hsl(160 20% 55%);
     --down: hsl(0 30% 55%);
     --warning: hsl(30 20% 65%);
@@ -63,14 +65,220 @@
     --shade-asleep: var(--hover);
     --hatch: var(--line-strong);
 
-    /* Overlays */
+    /* Overlays: edges, shadows */
     --edge: hsl(0 0% 100% / 0.07);
     --edge-soft: hsl(0 0% 100% / 0.04);
     --accent-edge: hsl(220 6% 88% / 0.2);
     --shadow: hsl(220 20% 2% / 0.65);
     --shadow-key: hsl(220 20% 2% / 0.35);
+  }
 
-    /* Type, layout */
+  /* Kozo: warm paper, ink on mulberry fibre (light). Ink gets darker for more */
+  :root[data-theme="kozo"] {
+    /* Surfaces and text: card, line, soft and text come from the theme's own card, border, secondary and foreground */
+    --card: hsl(42 29% 96%);
+    --raised: hsl(42 24% 93%);
+    --hover: hsl(42 20% 88%);
+    --line: hsl(38 20% 78%);
+    --line-strong: hsl(38 15% 68%);
+    --ghost: hsl(36 10% 72%);
+    --dim: hsl(34 9% 64%);
+    --faint: hsl(32 7% 53%);
+    --muted: hsl(30 8% 38%);
+    --soft: hsl(30 10% 28%);
+    --text: hsl(30 10% 18%);
+
+    /* Interaction accent: focus rings and selection */
+    --accent: hsl(30 10% 18%);
+    --accent-soft: hsl(30 10% 28%);
+    --accent-bg: hsl(42 22% 85%);
+
+    /* Quantity: more is darker; q0 is bound but unused; ink is the text on each step */
+    --q0: hsl(40 20% 86%);
+    --q1: hsl(38 16% 76%);
+    --q2: hsl(34 13% 60%);
+    --q3: hsl(30 11% 40%);
+    --q4: hsl(30 10% 18%);
+    --ink-q0: hsl(30 10% 34%);
+    --ink-light: hsl(42 29% 96%);
+    --ink-dark: hsl(30 10% 14%);
+
+    /* Colour groups for the twelve activity categories */
+    --g-navigate: hsl(207 42% 29%);
+    --g-pointer: hsl(130 23% 23%);
+    --g-launch: hsl(34 26% 35%);
+    --g-windows: hsl(278 29% 51%);
+    --g-capture: hsl(19 60% 50%);
+    --g-system: hsl(26 9% 52%);
+
+    /* Semantic: success, destructive, warning and info, each with a tinted background */
+    --up: hsl(30 10% 30%);
+    --down: hsl(0 15% 45%);
+    --warning: hsl(20 15% 45%);
+    --info: hsl(30 5% 50%);
+    --up-bg: hsl(30 12% 91%);
+    --down-bg: hsl(0 20% 92%);
+    --warning-bg: hsl(20 24% 93%);
+    --info-bg: hsl(30 8% 94%);
+
+    /* Text on each quantity step */
+    --q0t: var(--ink-dark);
+    --q1t: var(--ink-dark);
+    --q2t: var(--ink-dark);
+    --q3t: var(--ink-light);
+    --q4t: var(--ink-light);
+
+    /* Day view: shaded time (locked, asleep) and hatched unknown time */
+    --shade-locked: var(--line-strong);
+    --shade-asleep: var(--hover);
+    --hatch: var(--line-strong);
+
+    /* Overlays: edges, shadows */
+    --edge: hsl(30 20% 20% / 0.1);
+    --edge-soft: hsl(30 20% 20% / 0.05);
+    --accent-edge: hsl(30 10% 18% / 0.28);
+    --shadow: hsl(30 25% 20% / 0.22);
+    --shadow-key: hsl(30 25% 20% / 0.12);
+  }
+
+  /* Nightingale: the author's Neovim colourscheme, warm and green */
+  :root[data-theme="nightingale"] {
+    /* Surfaces and text: card, line, soft and text come from the theme's own card, border, secondary and foreground */
+    --card: #282828;
+    --raised: hsl(0 0% 19%);
+    --hover: hsl(0 0% 22%);
+    --line: hsl(0 0% 25%);
+    --line-strong: hsl(0 0% 31%);
+    --ghost: hsl(0 0% 33%);
+    --dim: hsl(0 0% 39%);
+    --faint: hsl(0 0% 45%);
+    --muted: hsl(42 8% 59%);
+    --soft: hsl(42 20% 72%);
+    --text: #dcd7ba;
+
+    /* Interaction accent: focus rings and selection */
+    --accent: hsl(86 36% 67%);
+    --accent-soft: #98bb6c;
+    --accent-bg: hsl(86 18% 21%);
+
+    /* Quantity: more is brighter; q0 is bound but unused; ink is the text on each step */
+    --q0: hsl(90 12% 19%);
+    --q1: hsl(88 16% 27%);
+    --q2: hsl(86 22% 34%);
+    --q3: hsl(86 30% 47%);
+    --q4: #98bb6c;
+    --ink-q0: hsl(86 18% 62%);
+    --ink-light: hsl(42 27% 90%);
+    --ink-dark: hsl(90 20% 8%);
+
+    /* Colour groups for the twelve activity categories */
+    --g-navigate: hsl(166 27% 75%);
+    --g-pointer: hsl(74 28% 46%);
+    --g-launch: hsl(28 66% 69%);
+    --g-windows: hsl(215 53% 67%);
+    --g-capture: hsl(351 49% 70%);
+    --g-system: hsl(0 0% 49%);
+
+    /* Semantic: success, destructive, warning and info, each with a tinted background */
+    --up: #98bb6c;
+    --down: hsl(0 80% 61%);
+    --warning: #ff9e3b;
+    --info: #85a8da;
+    --up-bg: hsl(86 22% 17%);
+    --down-bg: hsl(0 45% 17%);
+    --warning-bg: hsl(30 40% 17%);
+    --info-bg: hsl(215 25% 19%);
+
+    /* Text on each quantity step */
+    --q0t: var(--ink-q0);
+    --q1t: var(--ink-light);
+    --q2t: var(--ink-light);
+    --q3t: var(--ink-dark);
+    --q4t: var(--ink-dark);
+
+    /* Day view: shaded time (locked, asleep) and hatched unknown time */
+    --shade-locked: var(--line-strong);
+    --shade-asleep: var(--hover);
+    --hatch: var(--line-strong);
+
+    /* Overlays: edges, shadows */
+    --edge: hsl(0 0% 100% / 0.07);
+    --edge-soft: hsl(0 0% 100% / 0.04);
+    --accent-edge: hsl(86 36% 67% / 0.28);
+    --shadow: hsl(0 0% 0% / 0.55);
+    --shadow-key: hsl(0 0% 0% / 0.35);
+  }
+
+  /* Blueprint: cyanotype sheet, white drafting lines on cobalt */
+  :root[data-theme="blueprint"] {
+    /* Surfaces and text: card, line, soft and text come from the theme's own card, border, secondary and foreground */
+    --card: #12498f;
+    --raised: #0d3b78;
+    --hover: hsl(213 72% 37%);
+    --line: hsl(213 55% 38%);
+    --line-strong: #3667a2;
+    --ghost: hsl(212 45% 46%);
+    --dim: hsl(211 40% 56%);
+    --faint: hsl(210 38% 66%);
+    --muted: hsl(207 40% 76%);
+    --soft: #b8d4e3;
+    --text: #f6fbff;
+
+    /* Interaction accent: focus rings and selection */
+    --accent: #ffffff;
+    --accent-soft: #e8f4ff;
+    --accent-bg: hsl(213 72% 40%);
+
+    /* Quantity: more is brighter; q0 is bound but unused; ink is the text on each step */
+    --q0: hsl(213 80% 25%);
+    --q1: hsl(208 62% 42%);
+    --q2: hsl(200 66% 52%);
+    --q3: hsl(200 72% 70%);
+    --q4: hsl(205 100% 95%);
+    --ink-q0: hsl(205 60% 78%);
+    --ink-light: #ffffff;
+    --ink-dark: hsl(215 80% 14%);
+
+    /* Colour groups for the twelve activity categories */
+    --g-navigate: hsl(205 76% 76%);
+    --g-pointer: hsl(153 52% 68%);
+    --g-launch: hsl(36 100% 59%);
+    --g-windows: hsl(232 45% 71%);
+    --g-capture: hsl(0 100% 73%);
+    --g-system: hsl(201 43% 89%);
+
+    /* Semantic: success, destructive, warning and info, each with a tinted background */
+    --up: #7fd7b0;
+    --down: #ff9b9b;
+    --warning: #ffc46b;
+    --info: hsl(199 68% 62%);
+    --up-bg: hsl(160 45% 22%);
+    --down-bg: hsl(0 40% 28%);
+    --warning-bg: hsl(38 50% 26%);
+    --info-bg: hsl(205 72% 23%);
+
+    /* Text on each quantity step */
+    --q0t: var(--ink-q0);
+    --q1t: var(--ink-light);
+    --q2t: var(--ink-dark);
+    --q3t: var(--ink-dark);
+    --q4t: var(--ink-dark);
+
+    /* Day view: shaded time (locked, asleep) and hatched unknown time */
+    --shade-locked: var(--line-strong);
+    --shade-asleep: var(--hover);
+    --hatch: var(--line-strong);
+
+    /* Overlays: edges, shadows */
+    --edge: hsl(0 0% 100% / 0.14);
+    --edge-soft: hsl(0 0% 100% / 0.07);
+    --accent-edge: hsl(209 100% 95% / 0.32);
+    --shadow: hsl(215 80% 6% / 0.6);
+    --shadow-key: hsl(215 80% 6% / 0.35);
+  }
+
+  /* Type and layout, shared by every theme */
+  :root {
     --sans: "Geist", -apple-system, sans-serif;
     --mono: "Geist Mono", ui-monospace, monospace;
     --key: 25px;
@@ -371,7 +579,7 @@
 
   /* Icons: 18 px slot shared by app icons, site marks, monograms and layer glyphs. */
 
-  .icon { width: 18px; height: 18px; display: grid; place-items: center; color: var(--fam, var(--muted)); }
+  .icon { width: 18px; height: 18px; display: grid; place-items: center; color: var(--grp, var(--muted)); }
   .icon img { width: 18px; height: 18px; border-radius: 4.5px; display: block; }
   .icon svg { width: 16px; height: 16px; }
   .icon.site svg { fill: currentColor; }
@@ -503,6 +711,20 @@
   }
 
   .about p:first-child { color: var(--soft); }
+
+  .themebtn {
+    margin-top: 6px;
+    height: 20px;
+    padding: 0 8px;
+    border-radius: 6px;
+    background: var(--hover);
+    border: 1px solid var(--line);
+    font: 500 10px var(--mono);
+    letter-spacing: 0.06em;
+    color: var(--accent-soft);
+  }
+
+  .themebtn:hover { background: var(--line); }
 
   .status {
     margin-top: 8px;
@@ -736,6 +958,11 @@
 <script id="hyperdash-model">
 // Pure logic: no DOM access, so tests/model.test.mjs can run this block in node:vm.
 var HyperdashModel = (() => {
+  // Themes from xeind.net, in the order T cycles through them. Manila is the default.
+  const THEMES = ["manila", "kozo", "nightingale", "blueprint"];
+  const normalizeTheme = (name) => (THEMES.includes(name) ? name : "manila");
+  const nextTheme = (name) => THEMES[(THEMES.indexOf(normalizeTheme(name)) + 1) % THEMES.length];
+
   const PAGE_KEYS = { i: "insights", a: "activity" };
   const NAMED_KEYS = {
     ArrowUp: "up_arrow", ArrowDown: "down_arrow", ArrowLeft: "left_arrow", ArrowRight: "right_arrow",
@@ -1557,10 +1784,13 @@ var HyperdashModel = (() => {
     if (ctx.layer !== null) return { type: "select", key };
     if (!/^[a-z0-9]$/.test(key)) return null;
     if (ctx.heatHas(key)) return { type: "openLayer", layer: key };
-    return PAGE_KEYS[key] ? { type: "openPage", page: PAGE_KEYS[key] } : { type: "ignore" };
+    if (PAGE_KEYS[key]) return { type: "openPage", page: PAGE_KEYS[key] };
+    // T cycles the theme, on the overview only.
+    return key === "t" ? { type: "cycleTheme" } : { type: "ignore" };
   }
 
   return {
+    THEMES, normalizeTheme, nextTheme,
     GROUPS, GROUP_LABELS, CATEGORIES, CATEGORY_LABELS, CATEGORY_GROUP, groupOf, groupOfLayer, classifier,
     isValidDate, dateOf, addDays, dayLabel, clampDay, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
     localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
@@ -1681,6 +1911,7 @@ let headerMode = null;
 let bindings = [];
 let months = [];
 let tabStops = false; // sequential focus is off after each open until Tab is pressed
+let theme = "manila";
 let renderNow = null; // the "now" a protocol call supplied; interactions use the real clock
 let view = null;
 const keyNodes = new Map();
@@ -1892,7 +2123,10 @@ function renderStatus(broken) {
   $("about").hidden = !state.aboutOpen || broken;
   $("about-toggle").setAttribute("aria-expanded", String(state.aboutOpen));
   if (state.aboutOpen) {
-    $("about").replaceChildren(...M.aboutLines({ health, insights: insightsData, summary, now }).map((text) => element("p", "", text)));
+    const themeButton = element("button", "themebtn", `THEME · ${theme.toUpperCase()}`);
+    themeButton.id = "theme-button";
+    themeButton.title = "Switch theme (T on the overview)";
+    $("about").replaceChildren(...M.aboutLines({ health, insights: insightsData, summary, now }).map((text) => element("p", "", text)), themeButton);
   }
 }
 
@@ -2554,6 +2788,21 @@ function changeMonth(step) {
   render();
 }
 
+// Themes only change colour: the data-theme attribute switches the token set. Nothing re-renders.
+function applyTheme(name) {
+  theme = HyperdashModel.normalizeTheme(name);
+  document.documentElement.dataset.theme = theme;
+  const button = $("theme-button");
+  if (button) button.textContent = `THEME · ${theme.toUpperCase()}`;
+  return theme;
+}
+
+// The user switched: apply the next theme and tell the host so it can save the choice.
+function cycleTheme() {
+  applyTheme(HyperdashModel.nextTheme(theme));
+  post({ action: "theme", theme });
+}
+
 function toggleAbout(open) {
   state.aboutOpen = open ?? !state.aboutOpen;
   render();
@@ -2634,6 +2883,12 @@ const hyperdash = {
     return finish({ ok: true });
   },
 
+  // The host restores the saved theme. Unlike a user switch this does not post back.
+  setTheme(name) {
+    begin();
+    return { ok: true, theme: applyTheme(name) };
+  },
+
   // Display names for bundle IDs, e.g. { "com.mitchellh.ghostty": "Ghostty" }.
   setApps(map) {
     begin();
@@ -2706,6 +2961,7 @@ function run(action) {
     case "close": post({ action: "close" }); break;
     case "closeAbout": toggleAbout(false); break;
     case "toggleAbout": toggleAbout(); break;
+    case "cycleTheme": cycleTheme(); break;
     case "back": closeLayer(); break;
     case "month": changeMonth(action.step); break;
     case "select": select(action.key); break;
@@ -2792,6 +3048,7 @@ $("close").addEventListener("click", () => post({ action: "close" }));
 $("previous-month").addEventListener("click", () => changeMonth(-1));
 $("next-month").addEventListener("click", () => changeMonth(1));
 $("about-toggle").addEventListener("click", () => toggleAbout());
+$("about").addEventListener("click", (event) => { if (event.target.closest(".themebtn")) cycleTheme(); });
 
 // When the window becomes key, WebKit may focus its first control. Drop that focus unless the user is tabbing.
 window.addEventListener("focus", () => {
@@ -2809,7 +3066,7 @@ document.addEventListener("keydown", (event) => {
   }
   // A button focused from the keyboard (header, "i" or a list row) keeps its normal Enter and Space
   // activation. A button focused by a mouse click does not, so Space still selects the Space binding.
-  const controlFocused = Boolean(event.target.closest?.(".header, .info, .item") && event.target.matches?.(":focus-visible"));
+  const controlFocused = Boolean(event.target.closest?.(".header, .info, .item, .themebtn") && event.target.matches?.(":focus-visible"));
   const action = HyperdashModel.routeKey({
     controlFocused,
     page: state.page,
@@ -2830,6 +3087,7 @@ document.addEventListener("keydown", (event) => {
 buildKeyboard();
 hyperdash.reset({ generation: 0, bindings: [], text: "", offset: 0 });
 applyTabStops();
+applyTheme("manila");
 </script>
 </body>
 </html>
