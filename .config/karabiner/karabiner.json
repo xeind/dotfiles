@@ -2929,6 +2929,7 @@
                 ]
               },
               {
+                "description": "Doffy: Click",
                 "to": [
                   {
                     "shell_command": "printf '%s\\tv\\tspacebar\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
@@ -2959,6 +2960,7 @@
                 ]
               },
               {
+                "description": "Doffy: Scroll",
                 "to": [
                   {
                     "shell_command": "printf '%s\\tv\\ts\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
@@ -2989,6 +2991,7 @@
                 ]
               },
               {
+                "description": "Doffy: Search",
                 "to": [
                   {
                     "shell_command": "printf '%s\\tv\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"

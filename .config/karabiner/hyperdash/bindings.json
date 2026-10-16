@@ -3,490 +3,584 @@
     "layer": "b",
     "key": "x",
     "label": "x.com",
+    "category": "site-open",
     "site": "x.com"
   },
   {
     "layer": "b",
     "key": "y",
     "label": "youtube.com",
+    "category": "site-open",
     "site": "youtube.com"
   },
   {
     "layer": "b",
     "key": "f",
     "label": "facebook.com",
+    "category": "site-open",
     "site": "facebook.com"
   },
   {
     "layer": "b",
     "key": "g",
     "label": "github.com",
+    "category": "site-open",
     "site": "github.com"
   },
   {
     "layer": "b",
     "key": "r",
     "label": "reddit.com",
+    "category": "site-open",
     "site": "reddit.com"
   },
   {
     "layer": "b",
     "key": "c",
     "label": "chatgpt.com",
+    "category": "site-open",
     "site": "chatgpt.com"
   },
   {
     "layer": "b",
     "key": "m",
     "label": "mail.google.com",
+    "category": "site-open",
     "site": "mail.google.com"
   },
   {
     "layer": "b",
     "key": "p",
     "label": "photos.google.com",
+    "category": "site-open",
     "site": "photos.google.com"
   },
   {
     "layer": "b",
     "key": "l",
     "label": "linkedin.com",
+    "category": "site-open",
     "site": "linkedin.com"
   },
   {
     "layer": "o",
     "key": "1",
     "label": "Bitwarden",
+    "category": "app-launch",
     "app": "Bitwarden"
   },
   {
     "layer": "o",
     "key": "b",
     "label": "Firefox",
+    "category": "app-launch",
     "app": "Firefox"
   },
   {
     "layer": "o",
     "key": "z",
     "label": "Zen Browser",
+    "category": "app-launch",
     "app": "Zen Browser"
   },
   {
     "layer": "o",
     "key": "d",
     "label": "Discord",
+    "category": "app-launch",
     "app": "Discord"
   },
   {
     "layer": "o",
     "key": "t",
     "label": "Ghostty",
+    "category": "app-launch",
     "app": "Ghostty"
   },
   {
     "layer": "o",
     "key": "m",
     "label": "Obsidian",
+    "category": "app-launch",
     "app": "Obsidian"
   },
   {
     "layer": "o",
     "key": "f",
     "label": "Finder",
+    "category": "app-launch",
     "app": "Finder"
   },
   {
     "layer": "o",
     "key": "n",
     "label": "Things3",
+    "category": "app-launch",
     "app": "Things3"
   },
   {
     "layer": "o",
     "key": "p",
     "label": "Skim",
+    "category": "app-launch",
     "app": "Skim"
   },
   {
     "layer": "o",
     "key": "h",
     "label": "Helium",
+    "category": "app-launch",
     "app": "Helium"
   },
   {
     "layer": "o",
     "key": "c",
     "label": "Zed",
+    "category": "app-launch",
     "app": "Zed"
   },
   {
     "layer": "w",
     "key": "1",
-    "label": "Top left sixth"
+    "label": "Top left sixth",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "3",
-    "label": "Top right sixth"
+    "label": "Top right sixth",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "spacebar",
-    "label": "Mission Control"
+    "label": "Mission Control",
+    "category": "window-switching"
   },
   {
     "layer": "w",
     "key": "y",
-    "label": "Previous display"
+    "label": "Previous display",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "o",
-    "label": "Next display"
+    "label": "Next display",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "k",
-    "label": "Top half"
+    "label": "Top half",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "j",
-    "label": "Bottom half"
+    "label": "Bottom half",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "h",
-    "label": "Left half"
+    "label": "Left half",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "l",
-    "label": "Right half"
+    "label": "Right half",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "f",
-    "label": "Maximize"
+    "label": "Maximize",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "e",
-    "label": "Top right"
+    "label": "Top right",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "q",
-    "label": "Top left"
+    "label": "Top left",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "a",
-    "label": "Bottom left"
+    "label": "Bottom left",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "d",
-    "label": "Bottom right"
+    "label": "Bottom right",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "s",
-    "label": "Center"
+    "label": "Center",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "x",
-    "label": "Specified"
+    "label": "Specified",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "up_arrow",
-    "label": "Move up"
+    "label": "Move up",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "down_arrow",
-    "label": "Move down"
+    "label": "Move down",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "right_arrow",
-    "label": "Move right"
+    "label": "Move right",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "left_arrow",
-    "label": "Move left"
+    "label": "Move left",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "z",
-    "label": "Bottom left sixth"
+    "label": "Bottom left sixth",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "c",
-    "label": "Bottom right sixth"
+    "label": "Bottom right sixth",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "return_or_enter",
-    "label": "Almost maximize"
+    "label": "Almost maximize",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "delete_or_backspace",
-    "label": "Restore"
+    "label": "Restore",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "equal_sign",
-    "label": "Larger"
+    "label": "Larger",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "hyphen",
-    "label": "Smaller"
+    "label": "Smaller",
+    "category": "window-arrangement"
   },
   {
     "layer": "w",
     "key": "semicolon",
-    "label": "Hide"
+    "label": "Hide",
+    "category": "window-switching"
   },
   {
     "layer": "w",
     "key": "u",
-    "label": "Previous Tab"
+    "label": "Previous Tab",
+    "category": "tab-navigation"
   },
   {
     "layer": "w",
     "key": "i",
-    "label": "Next Tab"
+    "label": "Next Tab",
+    "category": "tab-navigation"
   },
   {
     "layer": "w",
     "key": "n",
-    "label": "Next Window"
+    "label": "Next Window",
+    "category": "window-switching"
   },
   {
     "layer": "w",
     "key": "b",
-    "label": "Back"
+    "label": "Back",
+    "category": "page-navigation"
   },
   {
     "layer": "w",
     "key": "m",
-    "label": "Forward"
+    "label": "Forward",
+    "category": "page-navigation"
   },
   {
     "layer": "c",
     "key": "a",
-    "label": "Screenshot all purpose"
+    "label": "Screenshot all purpose",
+    "category": "capture"
   },
   {
     "layer": "c",
     "key": "w",
-    "label": "Screenshot area"
+    "label": "Screenshot area",
+    "category": "capture"
   },
   {
     "layer": "c",
     "key": "e",
-    "label": "Screenshot window"
+    "label": "Screenshot window",
+    "category": "capture"
   },
   {
     "layer": "c",
     "key": "q",
-    "label": "Screenshot screen"
+    "label": "Screenshot screen",
+    "category": "capture"
   },
   {
     "layer": "c",
     "key": "d",
-    "label": "Scrollshot"
+    "label": "Scrollshot",
+    "category": "capture"
   },
   {
     "layer": "c",
     "key": "s",
-    "label": "OCR Text"
+    "label": "OCR Text",
+    "category": "capture"
   },
   {
     "layer": "c",
     "key": "k",
-    "label": "Open Clipboard"
+    "label": "Open Clipboard",
+    "category": "capture"
   },
   {
     "layer": "c",
     "key": "z",
-    "label": "Close all Overlays"
+    "label": "Close all Overlays",
+    "category": "capture"
   },
   {
     "layer": "c",
     "key": "delete_or_backspace",
-    "label": "Open Clipboard History"
+    "label": "Open Clipboard History",
+    "category": "capture"
   },
   {
     "layer": "f",
     "key": "p",
-    "label": "Copy Path"
+    "label": "Copy Path",
+    "category": "file"
   },
   {
     "layer": "f",
     "key": "o",
-    "label": "Open in Finder"
+    "label": "Open in Finder",
+    "category": "file"
   },
   {
     "layer": "f",
     "key": "r",
-    "label": "Reveal Copied Path"
+    "label": "Reveal Copied Path",
+    "category": "file"
   },
   {
     "layer": "s",
     "key": "u",
-    "label": "Volume increment"
+    "label": "Volume increment",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "j",
-    "label": "Volume decrement"
+    "label": "Volume decrement",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "i",
-    "label": "Display brightness increment"
+    "label": "Display brightness increment",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "k",
-    "label": "Display brightness decrement"
+    "label": "Display brightness decrement",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "l",
-    "label": "Lock Screen"
+    "label": "Lock Screen",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "n",
-    "label": "Open Notification Center"
+    "label": "Open Notification Center",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "m",
-    "label": "Dismiss Notifications"
+    "label": "Dismiss Notifications",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "p",
-    "label": "System Settings"
+    "label": "System Settings",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "d",
-    "label": "Toggle Do Not Disturb"
+    "label": "Toggle Do Not Disturb",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "c",
-    "label": "Open Camera"
+    "label": "Open Camera",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "v",
-    "label": "Dictation"
+    "label": "Dictation",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "a",
-    "label": "Toggle Awake"
+    "label": "Toggle Awake",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "r",
-    "label": "Recording Mode (hide menu bar)"
+    "label": "Recording Mode (hide menu bar)",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "t",
-    "label": "Undo Recording Mode (show menu bar)"
+    "label": "Undo Recording Mode (show menu bar)",
+    "category": "system"
   },
   {
     "layer": "s",
     "key": "q",
-    "label": "Hyperdash"
+    "label": "Hyperdash",
+    "category": "system"
   },
   {
     "layer": "v",
     "key": "h",
-    "label": "Left arrow"
+    "label": "Left arrow",
+    "category": "text-navigation"
   },
   {
     "layer": "v",
     "key": "j",
-    "label": "Down arrow"
+    "label": "Down arrow",
+    "category": "text-navigation"
   },
   {
     "layer": "v",
     "key": "k",
-    "label": "Up arrow"
+    "label": "Up arrow",
+    "category": "text-navigation"
   },
   {
     "layer": "v",
     "key": "l",
-    "label": "Right arrow"
+    "label": "Right arrow",
+    "category": "text-navigation"
   },
   {
     "layer": "v",
     "key": "u",
-    "label": "Page down"
+    "label": "Page down",
+    "category": "page-navigation"
   },
   {
     "layer": "v",
     "key": "i",
-    "label": "Page up"
+    "label": "Page up",
+    "category": "page-navigation"
   },
   {
     "layer": "v",
     "key": "q",
-    "label": "Left click"
+    "label": "Left click",
+    "category": "pointer"
   },
   {
     "layer": "v",
     "key": "e",
-    "label": "Right click"
+    "label": "Right click",
+    "category": "pointer"
   },
   {
     "layer": "v",
     "key": "b",
-    "label": "Move Word Left"
+    "label": "Move Word Left",
+    "category": "text-navigation"
   },
   {
     "layer": "v",
     "key": "m",
-    "label": "Move Word Right"
+    "label": "Move Word Right",
+    "category": "text-navigation"
   },
   {
     "layer": "v",
     "key": "n",
-    "label": "Delete Word"
+    "label": "Delete Word",
+    "category": "text-navigation"
   },
   {
     "layer": "v",
     "key": "spacebar",
-    "label": "⌃⌘F1"
+    "label": "Click",
+    "category": "pointer"
   },
   {
     "layer": "v",
     "key": "s",
-    "label": "⌃⌘F2"
+    "label": "Scroll",
+    "category": "page-navigation"
   },
   {
     "layer": "v",
     "key": "f",
-    "label": "⌃⌘F3"
+    "label": "Search",
+    "category": "pointer"
   },
   {
     "layer": "r",
     "key": "e",
-    "label": "Search Emoji"
+    "label": "Search Emoji",
+    "category": "launcher"
   }
 ]

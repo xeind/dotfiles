@@ -215,6 +215,12 @@ export function listSubLayerBindings(
                 // A key_code command has the usage log in to[0] and the real event in to[1].
                 // A shell command is one merged event, and always has a description.
                 label: describeCommand(manipulator.description, manipulator.to![1] ?? manipulator.to![0]),
+                category: categoryOf(
+                    layerCondition.name.replace("hyper_sublayer_", ""),
+                    manipulator.from!.key_code!,
+                    manipulator.description,
+                    manipulator.to![1] ?? manipulator.to![0]
+                ),
                 ...commandTarget(manipulator.description),
             });
         }
@@ -222,10 +228,88 @@ export function listSubLayerBindings(
     return bindings;
 }
 
+export const CATEGORIES = [
+    "pointer",
+    "text-navigation",
+    "page-navigation",
+    "tab-navigation",
+    "window-switching",
+    "window-arrangement",
+    "app-launch",
+    "site-open",
+    "capture",
+    "system",
+    "file",
+    "launcher",
+] as const;
+export type Category = (typeof CATEGORIES)[number];
+
+/**
+ * Exceptions to the derivation in categoryOf, keyed "layer key". Add an entry
+ * when a binding is classified wrongly. Reviewed with the user: see the table
+ * printed by the build report.
+ */
+const CATEGORY_OVERRIDES: Record<string, Category> = {
+    "w spacebar": "window-switching", // Mission Control
+    "w n": "window-switching", // next window (cmd + `)
+    "w semicolon": "window-switching", // hide the app (cmd + h)
+    "v spacebar": "pointer", // Doffy: Click
+    "v s": "page-navigation", // Doffy: Scroll
+    "v f": "pointer", // Doffy: Search, finds an element to click
+};
+
+// Layers whose commands all share one meaning, used when nothing more specific matches.
+const LAYER_CATEGORY: Record<string, Category> = {
+    b: "site-open",
+    o: "app-launch",
+    c: "capture",
+    f: "file",
+    r: "launcher",
+    s: "system",
+};
+
+/**
+ * The activity category of a binding: an override, else its action
+ * (pointer button, Rectangle URL, arrow or page key, tab chord, app or site
+ * description), else its layer. A binding with none of these fails the build.
+ */
+function categoryOf(
+    layer: string,
+    key: string,
+    description: string | undefined,
+    event: To
+): Category {
+    const override = CATEGORY_OVERRIDES[`${layer} ${key}`];
+    if (override) return override;
+    if (event.pointing_button) return "pointer";
+    if (description?.startsWith("Open -a ")) return "app-launch";
+    if (description?.match(/^Open https?:\/\//)) return "site-open";
+    if (event.shell_command?.includes("rectangle://")) return "window-arrangement";
+    const code = event.key_code;
+    const modifiers = event.modifiers ?? [];
+    const only = (...allowed: string[]) => modifiers.every((m) => allowed.includes(m));
+    if (code === "page_up" || code === "page_down") return "page-navigation";
+    if (code && /^(left|right|up|down)_arrow$/.test(code) && only("left_option")) return "text-navigation";
+    if (code === "delete_or_backspace" && modifiers.length > 0 && only("left_option")) return "text-navigation";
+    if (code === "tab" && modifiers.some((m) => m.endsWith("_control"))) return "tab-navigation";
+    if ((code === "open_bracket" || code === "close_bracket") && modifiers.some((m) => m.endsWith("_command"))) {
+        return "page-navigation"; // Back and Forward
+    }
+    if (code?.startsWith("volume_") || code?.startsWith("display_brightness_")) return "system";
+    if (LAYER_CATEGORY[layer]) {
+        // Tinycast's emoji search is the one launcher in layer r; layer f is path actions.
+        return LAYER_CATEGORY[layer];
+    }
+    throw new Error(
+        `Binding ${layer} ${key} (${description ?? "no description"}) has no category; add it to CATEGORY_OVERRIDES in utils.ts`
+    );
+}
+
 type SubLayerBinding = {
     layer: string;
     key: string;
     label: string;
+    category: Category;
     app?: string; // application name, for the dashboard's app icon
     site?: string; // host name, for the dashboard's site icon
 };
@@ -244,7 +328,7 @@ function describeCommand(description: string | undefined, first: To): string {
         if (appName) return appName[1];
         const url = description.match(/^Open https?:\/\/([^/]+)/);
         if (url) return url[1];
-        return humanize(description.replace(/^(Window Management|Window|Tinycast): /, ""));
+        return humanize(description.replace(/^(Window Management|Window|Tinycast|Doffy): /, ""));
     }
     if (first.pointing_button === "button1") return "Left click";
     if (first.pointing_button === "button2") return "Right click";

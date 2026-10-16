@@ -388,14 +388,18 @@ const rules: KarabinerRules[] = [
         ],
       },
 
-      // Magicmove via homerow.app
+      // Doffy (mouseless control): click, scroll and search. Assumed to follow the key
+      // letters; the user named the three functions but not which key does which.
       spacebar: {
+        description: "Doffy: Click",
         to: [{ key_code: "f1", modifiers: ["left_control", "left_command"] }],
       },
       s: {
+        description: "Doffy: Scroll",
         to: [{ key_code: "f2", modifiers: ["left_control", "left_command"] }],
       },
       f: {
+        description: "Doffy: Search",
         to: [{ key_code: "f3", modifiers: ["left_control", "left_command"] }],
       },
     },
