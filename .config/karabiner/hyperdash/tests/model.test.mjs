@@ -1129,8 +1129,9 @@ test("every theme defines every colour token, and every colour the page uses exi
     assert.deepEqual([...manila].filter((t) => !own.has(t)), [], `${name} is missing tokens`);
     assert.deepEqual([...own].filter((t) => !manila.has(t)), [], `${name} has extra tokens`);
   }
-  // Every var(--x) in the page resolves, either from a theme, the shared layout block, or a local variable.
-  const shared = new Set(["sans", "mono", "key", "gap"]);
+  // Every var(--x) in the page resolves, either from a theme, the shared :root block (type and layout), or a local variable.
+  const shared = defined(/\n  :root \{([\s\S]*?)\n  \}/.exec(css)[1]);
+  assert.ok(["sans", "mono", "key", "gap"].every((t) => shared.has(t)), "the shared :root block was not found");
   const local = new Set(["grp", "grp-bg", "tone", "tone-bg"]);
   const used = new Set([...html.matchAll(/var\(--([a-z0-9-]+)/g)].map((x) => x[1]));
   for (const token of used) assert.ok(manila.has(token) || shared.has(token) || local.has(token) || /^g-/.test(token), `--${token} is undefined`);
