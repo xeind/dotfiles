@@ -1072,6 +1072,28 @@ test("insights: version 3 dates and app ride along; version 2 still loads", () =
   assert.equal(M.normalizeInsights({ version: 1, insights: [] }), null);
 });
 
+test("insight icons: every kind the engine emits has its own icon; an unknown kind gets the neutral one", () => {
+  const swift = readFileSync(new URL("../insights/Sources/HyperdashInsights/Insights.swift", import.meta.url), "utf8");
+  const kinds = /enum InsightKind[^{]*\{\s*case ([^\n]+)/.exec(swift)[1].split(",").map((k) => k.trim());
+  assert.ok(kinds.includes("focus") && kinds.length >= 8, `parsed ${kinds}`);
+  for (const kind of kinds) assert.ok(Object.hasOwn(M.INSIGHT_ICONS, kind), `no icon for ${kind}`);
+  // One family: a 24-unit box, a 2-unit stroke in the text colour, drawn at 16 px. No two kinds share a drawing.
+  const icons = Object.values(M.INSIGHT_ICONS);
+  for (const icon of [...icons, M.insightIcon("unknown")]) {
+    assert.match(icon, /^<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">/);
+  }
+  assert.equal(new Set(icons).size, icons.length);
+  assert.equal(M.insightIcon("focus"), M.INSIGHT_ICONS.focus);
+  assert.equal(M.insightIcon("sequence"), M.insightIcon("unknown"));
+  assert.ok(!icons.includes(M.insightIcon("unknown")), "the fallback must not borrow a kind's icon");
+});
+
+test("moreShortcuts: a counted noun, never a bare +N", () => {
+  assert.equal(M.moreShortcuts(1), "1 more shortcut");
+  assert.equal(M.moreShortcuts(2), "2 more shortcuts");
+  assert.equal(M.moreShortcuts(1234), "1,234 more shortcuts");
+});
+
 test("describeHealth: the healthy line is short enough for one line; warnings and errors keep every word", () => {
   // The card fits about 55 characters of the status font.
   const worst = M.describeHealth({

@@ -82,6 +82,8 @@ The date box in the header (`.pill`) is the one dashed edge: square, with a
 It sits at the same place on every page: the title takes the free space, so
 the box and Close share one right edge, and the label has a fixed minimum width
 (10ch) so the box is the same size for every month and day label.
+On Insights the box gives way to the report's age (`.updated`), plain mono
+text in `--faint`: it is not a control, so it has no edge.
 
 Steps are about 3 OKLab points apart in Manila and Nightingale. Two are
 short: Kozo's `--card` to `--raised` is 2.1, and Blueprint's `--raised` is
@@ -96,6 +98,10 @@ darker than its card (L 36.1 against 41.3), so a row hover there darkens.
   group bar, row glyphs and the tint behind layer chips. Never for text.
 - Semantic: `--up`, `--down`, `--warning`, `--info`, each with a `-bg`.
 - Coverage: `--cov-recorded`, `--cov-locked`, `--cov-asleep`, `--hatch`.
+- Insight icons: none of these. One outline family (24-unit box, 2-unit
+  stroke, round ends, drawn at 16 px) in `--muted`, one drawing per kind.
+  A rise is not good news and an unused binding is not a warning, so the
+  shape carries the kind and the title carries the meaning.
 
 ### Floors
 
@@ -263,7 +269,7 @@ buttons, segments and pop-ups. All of them are tokens.
 |---|---|---|---|
 | `--control-xs` | 16 | 50 % | The "i" button |
 | `--control-sm` | 20 | `--radius-sm` 5 | Chips, delta, time chips, theme button, footer keys; pill arrows (round) |
-| `--control-md` | 24 | `--radius-md` 6 | Seg, app chips, header icon, insight marker, keys (`--key`) |
+| `--control-md` | 24 | `--radius-md` 6 | Seg, app chips, header icon, keys (`--key`) |
 | `--control-lg` | 28 | `--radius-lg` 7 | Header row, close (round), detail chip; the date box is square (0) |
 | `--row-compact` | 24 | `--radius-md` 6 | Command row |
 | `--row` | 32 | `--radius-row` 10 | List row; sequences use the same radius |

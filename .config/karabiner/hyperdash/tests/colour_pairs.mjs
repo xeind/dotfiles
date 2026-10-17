@@ -14,6 +14,7 @@ const RAW = [
   // Header
   [".title", "content", "--text", [["rest", "--card"]], "sans", 16, 500, "html, body"],
   [".pill", "value", "--soft", [["rest", "--card"]], "sans", 11, 500],
+  [".updated", "caption", "--faint", [["rest", "--card"]], "mono", 10, 500],
   [".pill button", "icon", "--muted", [["rest", "--card"]], "svg", 8, 500],
   [".pill button:hover:not(:disabled)", "icon", "--text", [["hover", "--hover"]], "svg", 8, 500],
   [".header-icon", "icon", "--soft", [["rest", "--card"], ["hover", "--hover"]], "svg", 16, 500],
@@ -61,11 +62,9 @@ const RAW = [
   [".insight-meta", "caption", "--faint", [["rest", "--raised"], ["hover", "--hover"]], "mono", 10, 400],
   [".chip.combo i", "caption", "--faint", [["rest", "--hover"]], "mono", 10, 400],
   [".chip.combo b", "value", "--soft", [["rest", "--hover"]], "mono", 10, 400],
-  ["js: INSIGHT_KINDS rising", "icon", "--up", [["rest", ["--raised", "--up-bg"]]], "svg", 16, 500, ".marker"],
-  ["js: INSIGHT_KINDS falling", "icon", "--down", [["rest", ["--raised", "--down-bg"]]], "svg", 16, 500, ".marker"],
-  ["js: INSIGHT_KINDS unused", "icon", "--warning", [["rest", ["--raised", "--warning-bg"]]], "svg", 16, 500, ".marker"],
-  ["js: INSIGHT_KINDS dormant", "icon", "--muted", [["rest", ["--raised", "--hover"]]], "svg", 16, 500, ".marker"],
-  ["js: INSIGHT_KINDS peak", "icon", "--info", [["rest", ["--raised", "--info-bg"]]], "svg", 16, 500, ".marker"],
+  // Icons are neutral: a rise is not good news and an unused binding is not a warning. Shape carries the kind.
+  [".insight-icon, .insight-open", "icon", "--muted", [["rest", "--raised"], ["hover", "--hover"]], "svg", 16, 400],
+  [".insight-more", "label", "--muted", [["rest", "--raised"], ["hover", "--hover"]], "sans", 12, 400],
 
   // Activity
   [".chart text", "label", "--muted", [["rest", "--card"]], "mono", 10, 500],
@@ -145,8 +144,6 @@ export const NOT_TEXT = {
 // Every place a script writes a colour: the assigned expression, and the pair (or reason) that covers it.
 export const JS_SETTERS = {
   'template.style.color = site.color || "var(--soft)"': "site marks: the host supplies brand colours; the fallback is .icon --soft",
-  'marker.style.setProperty("--tone", tone.color)': "js: INSIGHT_KINDS *",
-  'marker.style.setProperty("--tone-bg", tone.background)': "js: INSIGHT_KINDS *",
   "if (color) dot.style.background = color": "js: legend swatch *",
   "dot.style.background = `var(--g-${group})`": "js: readout dot *",
   'node.style.background = "var(--hover)"': "js: app monogram",

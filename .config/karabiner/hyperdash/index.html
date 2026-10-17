@@ -675,7 +675,8 @@
 
   /* Insights page */
 
-  .pill.updated { padding: 0 var(--space-md); white-space: nowrap; }
+  /* The report's age: quiet text, not a box. The dashed box is the month picker's alone. */
+  .updated { font: var(--mono-label) var(--mono); letter-spacing: 0.04em; color: var(--faint); white-space: nowrap; }
 
   .delta.peak { color: var(--info); background: var(--info-bg); font-size: var(--mono-key); letter-spacing: 0.04em; }
 
@@ -683,11 +684,11 @@
   .insight-list { display: flex; flex-direction: column; gap: var(--space-xs); margin-top: var(--space-lg); }
 
   .insight {
-    display: flex;
-    align-items: center;
-    gap: var(--space-lg);
+    display: grid;
+    grid-template-columns: var(--control-xs) minmax(0, 1fr) var(--control-xs);
+    column-gap: var(--space-md);
+    align-items: start;
     width: 100%;
-    min-height: 56px;
     padding: var(--space-md) var(--space-lg);
     border-radius: var(--radius-inset);
     background: var(--raised);
@@ -697,18 +698,10 @@
 
   button.insight:hover { background: var(--hover); }
 
-  .marker {
-    flex: none;
-    width: var(--control-md);
-    height: var(--control-md);
-    border-radius: var(--radius-md);
-    display: grid;
-    place-items: center;
-    color: var(--tone);
-    background: var(--tone-bg);
-  }
-
-  .insight-text { flex: 1; min-width: 0; }
+  /* Icon and open mark sit in the title's first 16 px line. */
+  .insight-icon, .insight-open { height: var(--leading-content); display: grid; place-items: center; color: var(--muted); }
+  .insight-title { grid-column: 2; }
+  .insight-detail, .insight-meta, .insight-refs { grid-column: 2 / -1; }
 
   .insight-title, .insight-detail {
     display: -webkit-box;
@@ -720,7 +713,8 @@
   .insight-title { font-size: var(--text-content); line-height: var(--leading-content); letter-spacing: -0.01em; }
   .insight-detail { margin-top: var(--space-2xs); font-size: var(--text-secondary); line-height: var(--leading-secondary); color: var(--muted); }
 
-  .insight .chips { flex: none; }
+  .insight-refs { display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-xs); }
+  .insight-more { font-size: var(--text-secondary); color: var(--muted); }
 
   .chip.combo { display: flex; gap: var(--space-xs); }
   .chip.combo i { font-style: normal; color: var(--faint); }
@@ -1028,7 +1022,7 @@
   <header class="header">
     <span class="header-icon" id="header-icon"></span>
     <h1 class="title" id="title">hyperdash</h1>
-    <div class="pill updated" id="updated" hidden><span class="pill-label" id="updated-label"></span></div>
+    <div class="updated" id="updated" hidden><span id="updated-label"></span></div>
     <div class="pill" id="month-pill">
       <button class="tabstop" id="previous-month" aria-label="Previous month">
         <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>
@@ -1625,6 +1619,30 @@ var HyperdashModel = (() => {
     const d = new Date(dayNumber(date) * 86400000);
     return `${WEEKDAYS[d.getUTCDay()]} ${SHORT_MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
   }
+  // Insight icons: one outline family, a 24-unit box with a 2-unit stroke, drawn at 16 px in the text colour.
+  // Every kind the engine emits (InsightKind in Insights.swift) has its own drawing; shape carries the meaning.
+  const insightGlyph = (paths) => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+  const INSIGHT_ICONS = {
+    // Ranked bars: the leading category is the longest.
+    focus: insightGlyph('<path d="M4 6h16M4 12h10M4 18h6"/>'),
+    rising: insightGlyph('<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>'),
+    falling: insightGlyph('<path d="M3 7l6 6 4-4 8 8"/><path d="M15 17h6v-6"/>'),
+    // A key with a minus: bound, never pressed.
+    unused: insightGlyph('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 12h6"/>'),
+    // A clock turned back: used before, not this month.
+    dormant: insightGlyph('<path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>'),
+    // A link in two halves.
+    unbound: insightGlyph('<path d="M11 6.5 12.5 5a3.5 3.5 0 0 1 5 5L16 11.5M13 17.5 11.5 19a3.5 3.5 0 0 1-5-5L8 12.5"/><path d="M5 9H3M9 5V3M19 15h2M15 19v2"/>'),
+    // Repeat arrows: the same shortcut again and again.
+    burst: insightGlyph('<path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M17 3l3 3-3 3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/><path d="M7 21l-3-3 3-3"/>'),
+    // A clock face with one hour filled.
+    peak: insightGlyph('<circle cx="12" cy="12" r="9"/><path d="M12 12V3a9 9 0 0 1 7.8 4.5z" fill="currentColor"/>'),
+  };
+  // A kind this page does not know yet: a plain ring with a dot, never another kind's icon.
+  const INSIGHT_ICON_UNKNOWN = insightGlyph('<circle cx="12" cy="12" r="8"/><path d="M12 12h.01"/>');
+  const insightIcon = (kind) => (Object.hasOwn(INSIGHT_ICONS, kind) ? INSIGHT_ICONS[kind] : INSIGHT_ICON_UNKNOWN);
+  const moreShortcuts = (count) => `${count.toLocaleString("en-US")} more ${count === 1 ? "shortcut" : "shortcuts"}`;
+
   // Stepping stays between the first recorded day and today.
   function clampDay(date, firstDate, today) {
     const first = firstDate && firstDate < today ? firstDate : today;
@@ -1955,7 +1973,7 @@ var HyperdashModel = (() => {
   return {
     THEMES, normalizeTheme, nextTheme, fadeState,
     GROUPS, GROUP_LABELS, CATEGORIES, CATEGORY_LABELS, CATEGORY_GROUP, groupOf, groupOfLayer, classifier,
-    isValidDate, dateOf, addDays, dayLabel, clampDay, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
+    isValidDate, dateOf, addDays, dayLabel, clampDay, INSIGHT_ICONS, insightIcon, moreShortcuts, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
     localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
     monthOf, previousMonth, isMonthComplete, compareMonths,
     sumCounts, buildRows, buildActivityFromCombos, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, compactCount, coverageNote, describeBin,
@@ -2024,20 +2042,10 @@ const CATEGORY_GLYPHS = {
 };
 
 const ICON_KEYBOARD = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><rect x="2.5" y="5.5" width="19" height="13" rx="3"/><path d="M6.5 9.5h.01M10 9.5h.01M13.5 9.5h.01M17 9.5h.01M8 14.5h8"/></svg>';
+const ICON_OPEN = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
 const ICON_BACK = '<svg width="12" height="12" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>';
 
 const PAGE_TITLES = { insights: "Insights", activity: "Activity" };
-
-const glyph = (paths) => `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
-const INSIGHT_KINDS = {
-  rising: { color: "var(--up)", background: "var(--up-bg)", icon: glyph('<path d="M4 17l6-6 4 4 6-7M14 8h6v6"/>') },
-  falling: { color: "var(--down)", background: "var(--down-bg)", icon: glyph('<path d="M4 7l6 6 4-4 6 7M14 16h6v-6"/>') },
-  unused: { color: "var(--warning)", background: "var(--warning-bg)", icon: glyph('<circle cx="12" cy="12" r="8" stroke-dasharray="3 3.2"/>') },
-  dormant: { color: "var(--muted)", background: "var(--hover)", icon: glyph('<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>') },
-  peak: { color: "var(--info)", background: "var(--info-bg)", icon: glyph('<path d="M5 19v-6M12 19V5M19 19v-9"/>') },
-  burst: { color: "var(--info)", background: "var(--info-bg)", icon: glyph('<path d="M13 3 5 14h6l-1 7 8-11h-6z"/>') },
-  unbound: { color: "var(--muted)", background: "var(--hover)", icon: glyph('<path d="M9 15l6-6M11 6.5 12.5 5a3.5 3.5 0 0 1 5 5L16 11.5M13 17.5 11.5 19a3.5 3.5 0 0 1-5-5L8 12.5"/>') },
-};
 
 // Activity chart geometry, in SVG user units (the viewBox is 1:1 with the card content).
 const CHART = { width: 326, top: 18, plot: 120, step: 4, strip: 7, height: 172 };
@@ -2537,34 +2545,33 @@ function renderInsights() {
     return;
   }
 
+  // A card: icon and title on one row, then the explanation, its days and its shortcuts at full width.
+  // The icon is decoration; the title says what the card is about.
   const list = element("div", "insight-list");
   for (const item of insightsData.insights) {
-    const tone = INSIGHT_KINDS[item.kind] || INSIGHT_KINDS.peak;
     const keys = item.keys;
-
-    const marker = element("span", "marker");
-    marker.style.setProperty("--tone", tone.color);
-    marker.style.setProperty("--tone-bg", tone.background);
-    marker.innerHTML = tone.icon;
-    marker.setAttribute("role", "img");
-    marker.setAttribute("aria-label", item.kind);
-
-    const text = element("div", "insight-text");
-    text.append(element("div", "insight-title", item.title), element("div", "insight-detail", item.detail));
-    // Version 3 findings name the days they rest on and, when one applies, the app.
-    const meta = [...item.dates.map((date) => HyperdashModel.dayLabel(date, today())), ...(item.app ? [appName(item.app)] : [])];
-    if (meta.length) text.append(element("div", "insight-meta", meta.join(" · ").toUpperCase()));
-
     const clickable = keys.length > 0 || item.dates.length > 0;
     const card = element(clickable ? "button" : "div", "insight");
-    card.append(marker, text);
+
+    const icon = element("span", "insight-icon");
+    icon.innerHTML = HyperdashModel.insightIcon(item.kind);
+    card.append(icon, element("div", "insight-title", item.title));
+    if (clickable) {
+      const open = element("span", "insight-open");
+      open.innerHTML = ICON_OPEN;
+      card.append(open);
+    }
+    card.append(element("div", "insight-detail", item.detail));
+    // Version 3 findings name the days they rest on and, when one applies, the app.
+    const meta = [...item.dates.map((date) => HyperdashModel.dayLabel(date, today())), ...(item.app ? [appName(item.app)] : [])];
+    if (meta.length) card.append(element("div", "insight-meta", meta.join(" · ").toUpperCase()));
+
     if (keys.length) {
-      const chips = element("div", "chips");
-      // Two combos fit beside the text; more collapse to the first plus a count.
-      const shown = keys.length > 2 ? 1 : keys.length;
-      chips.append(...keys.slice(0, shown).map(comboChip));
-      if (keys.length > shown) chips.append(element("span", "chip", `+${keys.length - shown}`));
-      card.append(chips);
+      // Two keycaps, then the rest as a count. Inside a button they are labels, not controls.
+      const refs = element("div", "insight-refs");
+      refs.append(...keys.slice(0, 2).map(comboChip));
+      if (keys.length > 2) refs.append(element("span", "insight-more", HyperdashModel.moreShortcuts(keys.length - 2)));
+      card.append(refs);
       // The card describes the report's month, so open the combo in that month.
       card.addEventListener("click", () => openCombo(keys[0][0], keys[0][1], insightsData.month));
     } else if (item.dates.length) {
