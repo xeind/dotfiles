@@ -48,11 +48,11 @@ const RAW = [
 
   // Binding list
   [".item-label", "content", "--text", ROW, "sans", 13, 400, "html, body"],
-  [".item .chip.layer", "value", "--g-{g}", [["rest", GRP_BG]], "mono", 10, 400],
+  [".item .chip.layer", "value", "--soft", [["rest", GRP_BG]], "mono", 10, 400],
   [".item.unused .item-label, .item.unused .item-count", "absent", "--dim", ROW.slice(0, 2), "sans", 13, 400],
   [".item-count", "value", "--soft", ROW, "mono", 11, 400],
   [".icon", "mark", "--g-{g}", ROW, "svg", 16, 500],
-  [".icon.mono", "value", "--g-{g}", [["rest", GRP_BG]], "mono", 10, 500],
+  [".icon.mono", "value", "--soft", [["rest", GRP_BG]], "mono", 10, 500],
   [".item-label .note", "caption", "--faint", ROW, "sans", 13, 400],
 
   // Insights
@@ -162,10 +162,6 @@ export const FLOORS = { content: 75, value: 60, label: 45, status: 45, heat: 45,
 // Colours that may sit below every floor, by design.
 export const EXEMPT = {
   ".key": "--ghost: the letter on a key with no binding is decoration; the key face carries the state",
-  // Group colour as chip text reaches Lc 29.3 (Nightingale System) against a floor of 60. Moving the text to --soft
-  // fixes it but changes the look, so that is the user's call; until then these two pairs are known misses.
-  ".item .chip.layer": "group colour as text: Lc 29.3 to 58.8 (18 of 24 theme and group pairs), under the value floor of 60",
-  ".icon.mono": "group colour as text: Lc 29.3 to 58.8 (18 of 24 theme and group pairs), under the value floor of 60",
 };
 
 // OKLab x100 between any two group colours, in normal vision and in each Machado 2009 simulation (severity 1).
