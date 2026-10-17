@@ -2615,7 +2615,9 @@ function renderChart(m) {
   }
 
   const base = top + plot + 6;
-  const peakX = (a.peakHour + 0.5) * (width / 24);
+  // A 1 px SVG line is not snapped like a CSS border: centre it so both edges fall on whole device pixels.
+  const crisp = (v) => (Math.round(v * devicePixelRatio - devicePixelRatio / 2) + devicePixelRatio / 2) / devicePixelRatio;
+  const peakX = crisp((a.peakHour + 0.5) * (width / 24));
   const peakAnchor = peakX < 36 ? "start" : peakX > width - 36 ? "end" : "middle";
   const axis = [0, 6, 12, 18, 24].map((hour) => {
     const anchor = hour === 0 ? "start" : hour === 24 ? "end" : "middle";
@@ -2623,7 +2625,7 @@ function renderChart(m) {
   }).join("");
 
   const grid = [0, 6, 12, 18, 24].map((hour) => {
-    const x = hour * (width / 24);
+    const x = crisp(hour * (width / 24));
     return `<line class="grid-line" x1="${x}" x2="${x}" y1="${top}" y2="${base}"/>`;
   }).join("");
   const stripTop = base + 3;
@@ -2639,7 +2641,7 @@ function renderChart(m) {
       strip += `<rect class="cov-${kind}" x="${x}" y="${stripTop}" width="${w}" height="${CHART.strip}"/>`;
     }
     if (state.day === today()) {
-      nowX = (HyperdashModel.absSeconds(currentNow()) - HyperdashModel.absSeconds(`${state.day}T00:00:00`)) / 86400 * width;
+      nowX = crisp((HyperdashModel.absSeconds(currentNow()) - HyperdashModel.absSeconds(`${state.day}T00:00:00`)) / 86400 * width);
     }
   }
 
@@ -2662,7 +2664,7 @@ function renderChart(m) {
     + `<text class="peak-label" x="${peakX}" y="${peakRow}" text-anchor="${peakAnchor}">PEAK ${a.peakHour}H</text>`;
   root.innerHTML = `<svg class="chart" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="group" aria-label="Presses by half hour of day">`
     + `<defs><pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="hatch-line" x1="0" y1="0" x2="0" y2="4"/></pattern></defs>`
-    + `${grid}<line class="baseline" x1="0" x2="${width}" y1="${base}" y2="${base}"/>${strip}${now}${peak}`
+    + `${grid}<line class="baseline" x1="0" x2="${width}" y1="${crisp(base)}" y2="${crisp(base)}"/>${strip}${now}${peak}`
     + Object.entries(paths).map(([name, d]) => `<path class="dots ${name}" d="${d}"/>`).join("")
     + `${bins}${axis}</svg>`;
   const readout = element("div", "bin-readout");
