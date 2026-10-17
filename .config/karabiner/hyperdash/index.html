@@ -484,9 +484,9 @@
   }
 
   .row { display: flex; gap: var(--gap); }
-  .row-1 { padding-left: calc(var(--key) * 0.5); }
-  .row-2 { padding-left: calc(var(--key) * 1.5 + var(--gap)); }
-  .row-3 { justify-content: center; }
+  .row-home { padding-left: calc(var(--key) * 0.5); }
+  .row-bottom { padding-left: calc(var(--key) * 1.5 + var(--gap)); }
+  .row-space { justify-content: center; }
 
   .key {
     width: var(--key);
@@ -1971,11 +1971,13 @@ const LAYER_NAMES = {
   f: "Finder", s: "System", v: "Move", r: "Launcher",
 };
 
+// US layout. Rows are named, so a row's offset never depends on its position in this list.
 const KEY_ROWS = [
-  ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
-  ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
-  ["z", "x", "c", "v", "b", "n", "m"],
-  ["spacebar"],
+  ["number", ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]],
+  ["top", ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"]],
+  ["home", ["a", "s", "d", "f", "g", "h", "j", "k", "l"]],
+  ["bottom", ["z", "x", "c", "v", "b", "n", "m"]],
+  ["space", ["spacebar"]],
 ];
 
 const KEY_SYMBOLS = {
@@ -2125,8 +2127,8 @@ function timeAgo(timestamp) {
 
 // The keyboard is built once; render() only changes classes.
 function buildKeyboard() {
-  for (const [index, row] of KEY_ROWS.entries()) {
-    const rowNode = element("div", `row row-${index}`);
+  for (const [name, row] of KEY_ROWS) {
+    const rowNode = element("div", `row row-${name}`);
     for (const key of row) {
       const node = element("button", key === "spacebar" ? "key space" : "key", key === "spacebar" ? "space" : symbol(key));
       node.tabIndex = -1; // typing selects keys; Tab stays short

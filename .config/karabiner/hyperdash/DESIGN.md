@@ -280,8 +280,10 @@ keys), 22 → 24 (seg, app chip, header icon), 26 → 24 (marker), 26 → 28
 (24 px controls), 8 → 7 (detail chip), 8 → 10 (rows).
 
 Keys are 24 with a 4 px gap: a 28 px pitch, so the keyboard rows sit on the
-rhythm. No control a user clicks is under 16 px, with two old exceptions
-still open: the group bar segments (8 px tall) and the chart bins (6.8 px
+rhythm. The keyboard is the US layout's number, top, home and bottom rows
+plus Space; rows are named (`.row-home`), never numbered, so adding one
+cannot shift another's offset. No control a user clicks is under 16 px,
+with two old exceptions still open: the group bar segments (8 px tall) and the chart bins (6.8 px
 wide). Both are also reachable from the keyboard.
 
 ### Depth
@@ -349,12 +351,15 @@ strokes.
 
 Page heights in WebKit, the same in all four themes:
 
-| Page | v0 | v1 | Now |
-|---|---|---|---|
-| Overview | 627 | 634 | 632 |
-| Layer | 683 | 692 | 688 |
-| Activity | 774 | 718 | 720 |
-| Insights | 499 | 500 | 500 |
+| Page | v0 | v1 | v2 | Now |
+|---|---|---|---|---|
+| Overview | 627 | 634 | 632 | 660 |
+| Layer | 683 | 692 | 688 | 716 |
+| Activity | 774 | 718 | 720 | 720 |
+| Insights | 499 | 500 | 500 | 500 |
+
+The number row (1–0, above Q) added one 28 px key row to Overview and
+Layer.
 
 ## 7. Layout
 
