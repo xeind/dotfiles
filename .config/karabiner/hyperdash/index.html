@@ -2877,7 +2877,7 @@ function renderPanel(m) {
     head.append(element("span", "", `${M.binTime(bin)}–${M.binTime(bin + 1)} · ${rows.length} ${rows.length === 1 ? "command" : "commands"}`), element("span", "", "esc · sequences"));
     const list = element("div", "cmds panel-body fade");
     list.append(...rows.map((event) => commandRow(event, state.focusSec)));
-    root.replaceChildren(head, list, element("p", "panel-note", withApp ? "App = last app before that second (the usage log has 1 s resolution)" : ""));
+    root.replaceChildren(head, list, element("p", "panel-note", withApp ? "App = app in front before that second (1 s resolution)" : ""));
     list.scrollTop = scrollTop;
     list.querySelector(".focus")?.scrollIntoView({ block: "nearest" });
     return;
