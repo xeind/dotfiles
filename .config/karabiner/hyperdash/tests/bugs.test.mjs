@@ -262,9 +262,81 @@ test("bug 3: an insight card keeps keyboard focus and scroll through a log appen
     assert.equal(await page.eval(`$("insights").scrollTop`), scroll, "the append reset the insight list's scroll");
     await page.eval(`hyperdash.tick({})`);
     assert.equal(await focused(page), card, "the tick dropped focus from the card");
-    // Enter still opens the card's combo: S D, in the System layer.
+    // Enter opens the card's evidence; its shortcut button opens the combo: S D, in the System layer.
+    await page.press("Enter");
+    assert.equal(await page.eval(`document.querySelector(".evidence-title")?.textContent`), card);
+    await page.tabTo('.evidence-link[data-evidence="key s d"]');
     await page.press("Enter");
     assert.equal(await page.eval(`$("title").textContent`), "System");
+  } finally {
+    await page.close();
+  }
+});
+
+test("insight evidence: Back from a shortcut or a day it opened returns to Insights, the same card and the month in view", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  // The report month is October; the overview is showing September when Insights opens.
+  const insights = { ...INSIGHTS, insights: INSIGHTS.insights.map((item) => ({ ...item, dates: ["2026-10-05"] })) };
+  try {
+    await load(page, { now: "2026-10-17T12:00:00", bindings: BINDINGS, insights, presses: [["2026-09-10T09:00:00", "v", "j"], ["2026-10-17T09:00:00", "v", "j"]] });
+    await page.press("ArrowLeft");
+    assert.equal(await page.eval(`state.monthId`), "2026-09");
+    await page.press("i");
+    // Keyboard: card, evidence, shortcut, then Escape until Insights shows again.
+    await page.tabTo(".insight:nth-child(3)");
+    const card = await focused(page);
+    await page.press("Enter");
+    await page.tabTo(".evidence-link[data-evidence^='key ']");
+    await page.press("Enter");
+    assert.equal(await page.eval(`state.layer !== null && state.monthId`), "2026-10", "the shortcut did not open in the report month");
+    for (let i = 0; i < 3 && (await page.eval(`state.page`)) !== "insights"; i++) await page.press("Escape");
+    assert.equal(await page.eval(`state.page`), "insights", "Back left Insights for the overview");
+    assert.equal(await page.eval(`document.activeElement.dataset.evidence`), (await page.eval(`document.querySelector(".evidence-link[data-evidence^='key ']").dataset.evidence`)), "focus did not return to the shortcut button");
+    await page.press("Escape");
+    assert.equal(await focused(page), card, "focus did not return to the card");
+    assert.equal(await page.eval(`state.monthId`), "2026-09", "the month in view changed");
+    // Pointer: card, then a supporting day in Activity, then the header Back button.
+    await page.eval(`document.querySelector(".insight:nth-child(2)").click()`);
+    await page.eval(`document.querySelector(".evidence-link[data-evidence^='day ']").click()`);
+    assert.equal(await page.eval(`state.page`), "activity");
+    await page.eval(`$("header-icon").click()`);
+    assert.equal(await page.eval(`state.page`), "insights", "the Back button left Insights for the overview");
+    assert.equal(await page.eval(`document.querySelector(".evidence-title")?.textContent`), INSIGHTS.insights[1].title, "Back did not return to the finding");
+    await page.eval(`document.querySelector(".evidence-back").click()`);
+    assert.equal(await page.eval(`document.querySelectorAll(".insight").length`), 5);
+    assert.equal(await page.eval(`state.monthId`), "2026-09", "the month in view changed");
+    // Leaving Insights itself still goes to the overview.
+    await page.eval(`$("header-icon").click()`);
+    assert.equal(await page.eval(`state.page`), null);
+  } finally {
+    await page.close();
+  }
+});
+
+test("insight evidence: Escape returns to the same card and scroll; a live update keeps it open; a refresh that drops it shows the list", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    await load(page, { now: "2026-10-17T12:00:00", bindings: BINDINGS, insights: INSIGHTS, presses: [["2026-10-17T09:00:00", "v", "j"]] });
+    await page.press("i");
+    await page.tabTo(".insight:nth-child(4)");
+    const card = await focused(page);
+    const scroll = await page.eval(`$("insights").scrollTop`);
+    const height = await page.height();
+    await page.press("Enter");
+    assert.equal(await page.eval(`document.activeElement.className`), "evidence-back", "focus did not move into the evidence");
+    assert.equal(await page.height(), height, "the evidence changed the page height");
+    assert.equal(await appendPress(page, "2026-10-17T11:59:00"), true);
+    assert.equal(await page.eval(`document.querySelector(".evidence-title")?.textContent`), card, "the append closed the evidence");
+    assert.equal(await page.eval(`document.activeElement.className`), "evidence-back", "the append dropped focus");
+    await page.press("Escape");
+    assert.equal(await page.eval(`$("title").textContent`), "Insights", "Escape left the page instead of the evidence");
+    assert.equal(await focused(page), card, "focus did not return to the card");
+    assert.equal(await page.eval(`$("insights").scrollTop`), scroll, "the list did not return to its scroll");
+    // A refresh without the open finding brings the list back.
+    await page.press("Enter");
+    await page.eval(`hyperdash.setInsights({ ...${JSON.stringify(INSIGHTS)}, insights: ${JSON.stringify(INSIGHTS.insights.slice(0, 2))} }, fixture.health)`);
+    assert.equal(await page.eval(`document.querySelectorAll(".evidence").length`), 0);
+    assert.equal(await page.eval(`document.querySelectorAll(".insight").length`), 2);
   } finally {
     await page.close();
   }
@@ -500,6 +572,9 @@ test("review data: a logged combo with no binding and no presses this month show
     });
     await page.press("i");
     await page.tabTo(".insight");
+    // The card opens its evidence; the shortcut button there opens the combo.
+    await page.press("Enter");
+    await page.tabTo('.evidence-link[data-evidence="key z z"]');
     await page.press("Enter");
     const detail = await page.eval(`$("detail").textContent`);
     assert.doesNotMatch(detail, /Nothing on/, "the card says the combo was logged; its page says it never was");

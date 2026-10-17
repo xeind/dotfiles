@@ -131,6 +131,9 @@
   hyperdash.setInsights(insights(3), healths.ok);
   healthSteps("insights");
   document.getElementById("about-toggle")?.click(); note("insights about");
+  document.getElementById("about-toggle")?.click();
+  document.querySelector(".insight")?.click(); note("insights evidence");
+  k("Escape"); note("insights evidence closed");
   hyperdash.open({});
 
   // Edge fades: top of the scroll, middle, bottom, and content that fits.

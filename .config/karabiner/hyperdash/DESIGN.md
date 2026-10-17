@@ -268,7 +268,7 @@ buttons, segments and pop-ups. All of them are tokens.
 | Token | Height | Radius | Who |
 |---|---|---|---|
 | `--control-xs` | 16 | 50 % | The "i" button |
-| `--control-sm` | 20 | `--radius-sm` 5 | Chips, delta, time chips, theme button, footer keys; pill arrows (round) |
+| `--control-sm` | 20 | `--radius-sm` 5 | Chips, delta, time chips, theme button, evidence buttons, footer keys; pill arrows (round) |
 | `--control-md` | 24 | `--radius-md` 6 | Seg, app chips, header icon, keys (`--key`) |
 | `--control-lg` | 28 | `--radius-lg` 7 | Header row, close (round), detail chip; the date box is square (0) |
 | `--row-compact` | 24 | `--radius-md` 6 | Command row |

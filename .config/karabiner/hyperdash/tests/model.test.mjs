@@ -1128,6 +1128,37 @@ test("windowLabel: one day, one month, two months, and a comparison", () => {
   assert.equal(M.windowLabel({ windowStart: null, windowEnd: "2026-10-14" }), null);
 });
 
+test("insights: measure and held findings ride along; a bad measure is dropped", () => {
+  const item = { kind: "rising", title: "t", detail: "d", keys: [], value: 1 };
+  const report = plain(M.normalizeInsights({ version: 3, insights: [
+    { ...item, measure: { count: 3861, total: 14301, baseline: null, unit: "presses" } },
+    { ...item, measure: { count: "x", unit: "presses" } },
+  ], held: [{ ...item, kind: "unused", title: "4 of 4 System shortcuts unused" }, { title: 3 }] }));
+  assert.deepEqual(report.insights[0].measure, { count: 3861, total: 14301, baseline: null, unit: "presses" });
+  assert.equal(report.insights[1].measure, null);
+  assert.deepEqual(report.held.map((h) => h.title), ["4 of 4 System shortcuts unused"]);
+  assert.deepEqual(plain(M.normalizeInsights({ version: 3, insights: [] }).held), []);
+});
+
+test("evidenceFacts: period, comparison, count with its whole, baseline, all from report fields", () => {
+  const facts = plain(M.evidenceFacts({ windowStart: "2026-10-08", windowEnd: "2026-10-14", comparisonStart: "2026-10-01", comparisonEnd: "2026-10-07",
+    measure: { count: 2100, total: null, baseline: 1050, unit: "presses" } }));
+  assert.deepEqual(facts, [["Period", "Oct 8–14"], ["Compared with", "Oct 1–7"], ["Count", "2,100 presses"], ["Before", "1,050 presses"]]);
+  assert.deepEqual(plain(M.evidenceFacts({ windowStart: "2026-10-12", windowEnd: "2026-10-18", measure: { count: 3861, total: 14301, baseline: null, unit: "presses" } })),
+    [["Period", "Oct 12–18"], ["Count", "3,861 of 14,301 presses"]]);
+  assert.deepEqual(plain(M.evidenceFacts({ windowStart: "2026-10-01", windowEnd: "2026-10-18", measure: { count: 1, total: null, baseline: null, unit: "bursts" } })),
+    [["Period", "Oct 1–18"], ["Count", "1 burst"]]);
+  // An older report has neither: no facts, and nothing made up.
+  assert.deepEqual(plain(M.evidenceFacts({ windowStart: null, windowEnd: null, measure: null })), []);
+});
+
+test("routeKey: Escape leaves an open finding before it leaves Insights", () => {
+  const ctx = { page: "insights", layer: null, highlight: null, selected: null, aboutOpen: false, layers: [], heatHas: () => false, evidence: "rising t" };
+  assert.deepEqual(plain(M.routeKey(ctx, { key: "Escape" })), { type: "closeEvidence" });
+  assert.deepEqual(plain(M.routeKey({ ...ctx, evidence: null }, { key: "Escape" })), { type: "back" });
+  assert.deepEqual(plain(M.routeKey({ ...ctx, aboutOpen: true }, { key: "Escape" })), { type: "closeAbout" });
+});
+
 test("describeHealth: the healthy line is short enough for one line; warnings and errors keep every word", () => {
   // The card fits about 55 characters of the status font.
   const worst = M.describeHealth({

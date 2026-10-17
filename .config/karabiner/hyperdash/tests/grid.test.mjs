@@ -104,7 +104,7 @@ test("rows and pages sit on the 4 px rhythm, and boxes, text and lines on the 2x
     }
 
     // The fixture the probe leaves loaded, opened on every page and state in every theme.
-    const scenes = { overview: [], layer: ["v"], layer_selected: ["v", "j"], activity: ["a"], activity_bin: ["a", "bin"], activity_month: ["a", "Enter"], insights: ["i"] };
+    const scenes = { overview: [], layer: ["v"], layer_selected: ["v", "j"], activity: ["a"], activity_bin: ["a", "bin"], activity_month: ["a", "Enter"], insights: ["i"], insights_evidence: ["i", "evidence"] };
     for (const theme of ["manila", "kozo", "nightingale", "blueprint"]) {
       for (const [scene, steps] of Object.entries(scenes)) {
         await page.evaluate(({ theme, steps }) => {
@@ -113,7 +113,8 @@ test("rows and pages sit on the 4 px rhythm, and boxes, text and lines on the 2x
             if (step === "bin") {
               const n = (b) => Number((b.getAttribute("aria-label") || "").split(" · ")[1]?.split(" ")[0]) || 0;
               [...document.querySelectorAll(".bin")].sort((x, y) => n(y) - n(x))[0]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-            } else document.dispatchEvent(new KeyboardEvent("keydown", { key: step, bubbles: true }));
+            } else if (step === "evidence") document.querySelector(".insight")?.click();
+            else document.dispatchEvent(new KeyboardEvent("keydown", { key: step, bubbles: true }));
           }
         }, { theme, steps });
         const m = await page.evaluate(measure);

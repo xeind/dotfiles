@@ -722,6 +722,35 @@
   .insight-note { margin-top: var(--space-xs); font-size: var(--text-secondary); line-height: var(--leading-secondary); color: var(--muted); }
   .insight-disclosure { margin-top: var(--space-lg); }
 
+  /* One finding, opened from its card, in the same scroll area: its whole text, the numbers behind it,
+     and a button for each day and shortcut it rests on. */
+  .evidence { padding-top: var(--space-lg); }
+  .evidence-back, .evidence-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    height: var(--control-sm);
+    padding: 0 var(--space-sm);
+    border-radius: var(--radius-sm);
+    background: var(--hover);
+    font: var(--mono-label) var(--mono);
+    color: var(--soft);
+  }
+  .evidence-back { font-weight: 500; letter-spacing: 0.04em; }
+  .evidence-back:hover, .evidence-link:hover { background: var(--line); }
+  .evidence-back:active, .evidence-link:active { color: var(--text); }
+  .evidence-back:focus-visible, .evidence-link:focus-visible { outline-offset: -2px; }
+  /* A binding's name is the name of a thing: Geist, beside its mono keycap. */
+  .evidence-name { font-family: var(--sans); font-size: var(--text-secondary); }
+  .evidence-head { display: grid; grid-template-columns: var(--control-xs) minmax(0, 1fr); column-gap: var(--space-md); margin-top: var(--space-lg); }
+  .evidence-title { font-size: var(--text-content); line-height: var(--leading-content); letter-spacing: -0.01em; }
+  .evidence-detail { grid-column: 2; margin-top: var(--space-2xs); font-size: var(--text-secondary); line-height: var(--leading-secondary); color: var(--muted); }
+  .evidence-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-xs) var(--space-md); margin-top: var(--space-lg); }
+  .evidence-facts dt { font: var(--mono-caption) var(--mono); line-height: var(--leading-secondary); letter-spacing: 0.04em; color: var(--faint); }
+  .evidence-facts dd { font-size: var(--text-secondary); line-height: var(--leading-secondary); color: var(--soft); }
+  .evidence .insight-heading { margin-top: var(--space-lg); }
+  .evidence-links { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-xs); }
+
   .chip.combo { display: flex; gap: var(--space-xs); }
   .chip.combo i { font-style: normal; color: var(--faint); }
   .chip.combo b { font-weight: 400; color: var(--soft); }
@@ -1145,9 +1174,15 @@ var HyperdashModel = (() => {
       });
   }
 
+  const isCount = (n) => Number.isInteger(n) && n >= 0;
+  function normalizeMeasure(m) {
+    if (!m || typeof m !== "object" || !isCount(m.count) || !isText(m.unit)) return null;
+    return { count: m.count, total: isCount(m.total) ? m.total : null, baseline: isCount(m.baseline) ? m.baseline : null, unit: m.unit };
+  }
+
   function normalizeInsights(raw) {
     if (!raw || typeof raw !== "object" || (raw.version !== 2 && raw.version !== 3) || !Array.isArray(raw.insights)) return null;
-    const insights = raw.insights
+    const findings = (list) => (Array.isArray(list) ? list : [])
       .filter((item) => item && typeof item === "object" && isText(item.title) && isText(item.detail))
       .map((item) => ({
         kind: isText(item.kind) ? item.kind : "peak",
@@ -1164,7 +1199,9 @@ var HyperdashModel = (() => {
         windowEnd: isValidDate(item.windowEnd) ? item.windowEnd : null,
         comparisonStart: isValidDate(item.comparisonStart) ? item.comparisonStart : null,
         comparisonEnd: isValidDate(item.comparisonEnd) ? item.comparisonEnd : null,
+        measure: normalizeMeasure(item.measure),
       }));
+    const insights = findings(raw.insights);
     // The engine picks and orders the cards (Insights.swift, cardPriority) and says why each other rule has none.
     const rules = Array.isArray(raw.rules)
       ? raw.rules
@@ -1177,6 +1214,8 @@ var HyperdashModel = (() => {
       recordingSince: isValidTimestamp(raw.recordingSince) ? raw.recordingSince : null,
       rejectedLines: Number.isInteger(raw.rejectedLines) && raw.rejectedLines >= 0 ? raw.rejectedLines : 0,
       insights,
+      // Findings past the five cards, kept whole.
+      held: findings(raw.held),
       rules,
     };
   }
@@ -1648,6 +1687,23 @@ var HyperdashModel = (() => {
     const label = span(windowStart, windowEnd);
     return comparisonStart && comparisonEnd ? `${label} vs ${span(comparisonStart, comparisonEnd)}` : label;
   }
+  // The numbers behind one finding, as [label, value] rows, only from fields the report carries.
+  const SINGULAR = { presses: "press", bindings: "binding", bursts: "burst" };
+  function evidenceFacts(item) {
+    const facts = [];
+    const period = windowLabel({ windowStart: item.windowStart, windowEnd: item.windowEnd });
+    if (period) facts.push(["Period", period]);
+    const before = windowLabel({ windowStart: item.comparisonStart, windowEnd: item.comparisonEnd });
+    if (before) facts.push(["Compared with", before]);
+    const m = item.measure;
+    if (m) {
+      const amount = (n) => `${n.toLocaleString("en-US")} ${n === 1 ? SINGULAR[m.unit] || m.unit : m.unit}`;
+      facts.push(["Count", m.total === null ? amount(m.count) : `${m.count.toLocaleString("en-US")} of ${amount(m.total)}`]);
+      if (m.baseline !== null) facts.push(["Before", amount(m.baseline)]);
+    }
+    return facts;
+  }
+
   // Insight icons: one outline family, a 24-unit box with a 2-unit stroke, drawn at 16 px in the text colour.
   // Every kind the engine emits (InsightKind in Insights.swift) has its own drawing; shape carries the meaning.
   const insightGlyph = (paths) => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
@@ -1966,6 +2022,7 @@ var HyperdashModel = (() => {
       if (ctx.aboutOpen) return { type: "closeAbout" };
       if (ctx.highlight !== null) return { type: "highlight", layer: ctx.highlight };
       if (ctx.page === "activity" && ctx.interval != null) return { type: "clearInterval" };
+      if (ctx.page === "insights" && ctx.evidence) return { type: "closeEvidence" };
       if (ctx.page !== null) return { type: "back" };
       if (ctx.selected !== null) return { type: "select", key: null };
       if (ctx.group != null) return { type: "clearGroup" };
@@ -2002,7 +2059,7 @@ var HyperdashModel = (() => {
   return {
     THEMES, normalizeTheme, nextTheme, fadeState,
     GROUPS, GROUP_LABELS, CATEGORIES, CATEGORY_LABELS, CATEGORY_GROUP, groupOf, groupOfLayer, classifier,
-    isValidDate, dateOf, addDays, dayLabel, windowLabel, clampDay, INSIGHT_ICONS, insightIcon, moreShortcuts, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
+    isValidDate, dateOf, addDays, dayLabel, windowLabel, evidenceFacts, clampDay, INSIGHT_ICONS, insightIcon, moreShortcuts, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
     localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
     monthOf, previousMonth, isMonthComplete, compareMonths,
     sumCounts, buildRows, buildActivityFromCombos, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, compactCount, coverageNote, describeBin,
@@ -2085,6 +2142,7 @@ const BIN_HINT = "TAB · INSPECT 30-MINUTE BINS";
 const state = {
   monthId: null, layer: null, selected: null, page: null, highlight: null, aboutOpen: false,
   activityMode: "day", day: null, interval: null, focusSec: null, appFilter: null, group: null,
+  evidence: null, // the open Insights finding, by its card key
 };
 let classify = HyperdashModel.classifier([]);
 let labelByCombo = {};
@@ -2561,6 +2619,108 @@ function insightsEmptyMessage() {
   return "No insights yet — they appear after the first analysis runs.";
 }
 
+const insightKey = (item) => `${item.kind} ${item.title}`;
+
+// Where the list was when a finding opened: its card, the scroll offset, and whether the keyboard opened it.
+let evidenceReturn = null;
+// Set when a finding's day or shortcut button leaves Insights: Back comes back to that finding, its button,
+// and the month the overview showed before. open() and the return clear it.
+let insightsReturn = null;
+
+// Runs `go` (openDay or openCombo) from a button in the evidence, remembering the way back.
+function leaveEvidence(button, go) {
+  insightsReturn = { evidence: state.evidence, monthId: state.monthId, list: evidenceReturn, link: button.dataset.evidence, keyboard: keyboardFocused(button) };
+  go();
+}
+
+function returnToInsights() {
+  const back = insightsReturn;
+  insightsReturn = null;
+  Object.assign(state, {
+    layer: null, selected: null, page: "insights", highlight: null, interval: null, focusSec: null, appFilter: null, group: null,
+    evidence: back.evidence, monthId: months.includes(back.monthId) ? back.monthId : state.monthId,
+  });
+  evidenceReturn = back.list;
+  render();
+  // The finding may be gone after a refresh; then the list shows and nothing is focused.
+  if (back.keyboard) $("insights").querySelector(`[data-evidence="${CSS.escape(back.link)}"]`)?.focus();
+}
+
+function openEvidence(card) {
+  evidenceReturn = { key: card.dataset.key, scroll: $("insights").scrollTop, keyboard: keyboardFocused(card) };
+  state.evidence = card.dataset.key;
+  render();
+  $("insights").scrollTop = 0;
+  refreshFades();
+  if (evidenceReturn.keyboard) $("insights").querySelector(".evidence-back")?.focus();
+}
+
+// Back to the list at the same scroll offset, with focus on the card that opened the finding.
+function closeEvidence() {
+  const back = evidenceReturn;
+  const keyboard = back?.keyboard || keyboardFocused(document.activeElement);
+  state.evidence = null;
+  evidenceReturn = null;
+  render();
+  if (!back) return;
+  $("insights").scrollTop = back.scroll;
+  refreshFades();
+  if (keyboard) $("insights").querySelector(`.insight[data-key="${CSS.escape(back.key)}"]`)?.focus({ preventScroll: true });
+}
+
+// One finding: the whole title and explanation, the numbers the report gives for it, then a button for each
+// day it rests on (to Activity) and each shortcut it names (to its layer). Nothing here is computed by the page.
+function renderEvidence(root, item) {
+  const box = element("div", "evidence");
+  const back = element("button", "evidence-back");
+  back.innerHTML = ICON_BACK;
+  back.append("ALL INSIGHTS");
+  back.addEventListener("click", closeEvidence);
+
+  const head = element("div", "evidence-head");
+  const icon = element("span", "insight-icon");
+  icon.innerHTML = HyperdashModel.insightIcon(item.kind);
+  head.append(icon, element("p", "evidence-title", item.title), element("p", "evidence-detail", item.detail));
+  box.append(back, head);
+
+  const facts = HyperdashModel.evidenceFacts(item);
+  if (item.app) facts.push(["App", appName(item.app)]);
+  if (facts.length) {
+    const list = element("dl", "evidence-facts");
+    for (const [label, value] of facts) list.append(element("dt", "", label.toUpperCase()), element("dd", "", value));
+    box.append(list);
+  }
+
+  const links = (heading, entries) => {
+    box.append(element("p", "insight-heading", `${heading} · ${entries.length.toLocaleString("en-US")}`));
+    const row = element("div", "evidence-links");
+    for (const { text, label, id, action } of entries) {
+      const button = element("button", "evidence-link");
+      button.append(...text);
+      button.setAttribute("aria-label", label);
+      button.dataset.evidence = id;
+      button.addEventListener("click", () => leaveEvidence(button, action));
+      row.append(button);
+    }
+    box.append(row);
+  };
+  if (item.dates.length) {
+    links("SUPPORTING DAYS", item.dates.map((date) => {
+      const text = HyperdashModel.dayLabel(date, today());
+      return { text: [text], label: `Activity on ${text}`, id: `day ${date}`, action: () => openDay(date, item.app) };
+    }));
+  }
+  if (item.keys.length) {
+    links("SHORTCUTS", item.keys.map(([layer, key]) => {
+      const name = labelByCombo[`${layer} ${key}`] || `Hyper ${layer.toUpperCase()} ${symbol(key)}`;
+      // The card describes the report's month, so open the combo in that month.
+      return { text: [`${layer.toUpperCase()} ${symbol(key)}`, element("span", "evidence-name", name)], label: `Shortcut ${name}`, id: `key ${layer} ${key}`,
+        action: () => openCombo(layer, key, insightsData.month) };
+    }));
+  }
+  root.append(box);
+}
+
 const INSIGHTS_DISCLOSURE = "Computed locally from recorded shortcuts with fixed rules. No AI.";
 
 function renderInsights() {
@@ -2569,7 +2729,16 @@ function renderInsights() {
   const disclosure = element("p", "insight-note insight-disclosure", INSIGHTS_DISCLOSURE);
 
   if (!insightsData) {
+    state.evidence = null;
     root.append(element("p", "empty-list", insightsEmptyMessage()), disclosure);
+    return;
+  }
+  // A refresh can drop the open finding; then the list comes back. Like reconcileNavigation for a layer
+  // that is gone, this is the one data update that changes navigation.
+  const opened = state.evidence && insightsData.insights.find((item) => insightKey(item) === state.evidence);
+  if (state.evidence && !opened) state.evidence = null;
+  if (opened) {
+    renderEvidence(root, opened);
     return;
   }
   const quiet = insightsData.rules.filter((rule) => rule.status !== "shown" && rule.reason);
@@ -2583,17 +2752,14 @@ function renderInsights() {
   const list = element("div", "insight-list");
   for (const item of insightsData.insights) {
     const keys = item.keys;
-    const clickable = keys.length > 0 || item.dates.length > 0;
-    const card = element(clickable ? "button" : "div", "insight");
+    // Every card opens its evidence.
+    const card = element("button", "insight");
 
     const icon = element("span", "insight-icon");
     icon.innerHTML = HyperdashModel.insightIcon(item.kind);
-    card.append(icon, element("div", "insight-title", item.title));
-    if (clickable) {
-      const open = element("span", "insight-open");
-      open.innerHTML = ICON_OPEN;
-      card.append(open);
-    }
+    const open = element("span", "insight-open");
+    open.innerHTML = ICON_OPEN;
+    card.append(icon, element("div", "insight-title", item.title), open);
     card.append(element("div", "insight-detail", item.detail));
     // A finding names the period it counts and, when one applies, the app. A report without
     // windows names up to seven of the days it rests on instead.
@@ -2608,13 +2774,9 @@ function renderInsights() {
       refs.append(...keys.slice(0, 2).map(comboChip));
       if (keys.length > 2) refs.append(element("span", "insight-more", HyperdashModel.moreShortcuts(keys.length - 2)));
       card.append(refs);
-      // The card describes the report's month, so open the combo in that month.
-      card.addEventListener("click", () => openCombo(keys[0][0], keys[0][1], insightsData.month));
-    } else if (item.dates.length) {
-      // No command to open: show the first supporting day in Activity.
-      card.addEventListener("click", () => openDay(item.dates[0], item.app));
     }
-    card.dataset.key = `${item.kind} ${item.title}`; // its identity when a render rebuilds it
+    card.addEventListener("click", () => openEvidence(card));
+    card.dataset.key = insightKey(item); // its identity when a render rebuilds it
     list.append(card);
   }
   if (list.childElementCount) root.append(list);
@@ -3050,7 +3212,11 @@ function openLayer(layer) {
 
 // Back to the overview from a layer or a page.
 function closeLayer() {
-  Object.assign(state, { layer: null, selected: null, page: null, highlight: null, interval: null, focusSec: null, appFilter: null, group: null });
+  if (insightsReturn) {
+    returnToInsights();
+    return;
+  }
+  Object.assign(state, { layer: null, selected: null, page: null, highlight: null, interval: null, focusSec: null, appFilter: null, group: null, evidence: null });
   render();
 }
 
@@ -3273,7 +3439,9 @@ const hyperdash = {
     Object.assign(state, {
       layer: null, selected: null, page: null, highlight: null, aboutOpen: false, monthId: months[months.length - 1],
       activityMode: "day", day: HyperdashModel.dateOf(now), interval: null, focusSec: null, appFilter: null, group: null,
+      evidence: null,
     });
+    insightsReturn = null;
     listScope = null;
     listSignature = null;
     groupHover = null;
@@ -3322,6 +3490,7 @@ function run(action) {
     case "toggleMode": toggleMode(); break;
     case "clearInterval": Object.assign(state, { interval: null, focusSec: null }); render(); break;
     case "clearGroup": state.group = null; render(); break;
+    case "closeEvidence": closeEvidence(); break;
     default: break;
   }
 }
@@ -3334,6 +3503,8 @@ const keyboardFocused = (node) => Boolean(node?.matches?.("button:focus-visible"
 const rebuiltControl = (node) => node.dataset.action ? [`.seg[data-action="${node.dataset.action}"]`]
   : node.dataset.app ? [`.appchip[data-app="${node.dataset.app}"]`]
   : node.classList.contains("insight") ? [`.insight[data-key="${CSS.escape(node.dataset.key)}"]`]
+  : node.classList.contains("evidence-back") ? [".evidence-back"]
+  : node.dataset.evidence ? [`[data-evidence="${CSS.escape(node.dataset.evidence)}"]`, ".evidence-back"]
   : node.id === "theme-button" ? ["#theme-button"]
   : node.classList.contains("time-chip") ? [`.time-chip[data-sec="${node.dataset.sec}"]`, ".bin.selected"] : null;
 
@@ -3465,6 +3636,7 @@ document.addEventListener("keydown", (event) => {
     selected: state.selected,
     group: state.group,
     aboutOpen: state.aboutOpen,
+    evidence: state.evidence,
     activityMode: state.activityMode,
     interval: state.interval,
     layers,
