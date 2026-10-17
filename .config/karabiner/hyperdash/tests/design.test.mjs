@@ -24,6 +24,7 @@ const SPACE = ["gap", "row-gap", "column-gap", "margin", "margin-top", "margin-r
 
 // "selector | property | value": why the value is off the scale. Keep the arithmetic in the reason.
 const EXCEPTIONS = {
+  ".footer | padding-top | 9px": "1 px rule + 9 + 18 px keys = 28, on the 4 px rhythm",
   ".card | padding | 14px": "card top inset: the 28 px header row carries its own air; 14 + 28 + 12 puts the totals on the 8 px rhythm",
   ".pill | padding | 3px": "wraps two 18 px round buttons in a 26 px pill: (26 - 18) / 2 = 4, less the 1 px border",
   ".delta | padding | 3px": "a 21 px badge on the numeral's baseline: 3 + 15 line + 3",
@@ -36,7 +37,6 @@ const EXCEPTIONS = {
   ":root | --mono-monogram | 8px": "letter inside a 14 px icon placeholder: the 18 px slot's 10 px letter scaled by 14 / 18 = 7.8",
   ".list::-webkit-scrollbar-thumb | border-radius | 4px": "4 px scrollbar: fully round",
   ".panel-body::-webkit-scrollbar-thumb | border-radius | 4px": "4 px scrollbar: fully round",
-  ":root | --leading-readout | 13.5px": "two fixed lines in the 27 px status and readout boxes: 27 / 2",
 };
 
 // Splits the style block into [selector, declarations] pairs, ignoring @-rule wrappers.
