@@ -444,3 +444,29 @@ test("review D: the group caption returns to the summary after hover ends, and n
     await page.close();
   }
 });
+
+test("review 4: a group filter with no presses in the new month stays visible and Escape clears it", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    // October has navigation and system presses; September has system presses only.
+    await load(page, {
+      now: "2026-10-17T12:00:00", bindings: BINDINGS,
+      presses: [["2026-09-10T09:00:00", "s", "d"], ["2026-10-10T09:00:00", "v", "j"], ["2026-10-10T09:10:00", "s", "d"]],
+    });
+    const caption = () => page.eval(`$("groupcap").textContent`);
+    const height = await page.height();
+    await page.eval(`document.querySelector('#groupbar button[data-group="navigate"]').click()`);
+    assert.match(await caption(), /^NAVIGATE ONLY/);
+    await page.press("ArrowLeft");
+    assert.equal(await page.eval(`$("month-label").textContent`), "SEPTEMBER");
+    assert.match(await caption(), /NONE THIS MONTH/, "the caption hides that the filter has nothing in this month");
+    assert.match(await caption(), /ESC TO CLEAR/, "the caption names a way to clear the filter");
+    await page.press("Escape");
+    assert.match(await caption(), /^BY GROUP/, "Escape did not clear the group filter");
+    assert.equal(await page.eval(`$("title").textContent`), "hyperdash", "Escape left the overview");
+    assert.equal(await page.height(), height);
+  } finally {
+    await page.close();
+  }
+});
+

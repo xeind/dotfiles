@@ -1921,6 +1921,7 @@ var HyperdashModel = (() => {
       if (ctx.page === "activity" && ctx.interval != null) return { type: "clearInterval" };
       if (ctx.page !== null) return { type: "back" };
       if (ctx.selected !== null) return { type: "select", key: null };
+      if (ctx.group != null) return { type: "clearGroup" };
       if (ctx.layer !== null) return { type: "back" };
       return { type: "close" };
     }
@@ -2340,9 +2341,11 @@ function renderGroupCaption() {
   const sum = groupSum;
   const share = (n) => `${Math.round((n / sum) * 100)}%`;
   const top = GROUPS.filter((g) => totals[g]).sort((a, b) => totals[b] - totals[a]).slice(0, 3);
-  $("groupcap").textContent = sum === 0 ? "BY GROUP · NO PRESSES YET"
+  // A filter whose group has nothing this month has no segment to click, so its caption names Escape.
+  $("groupcap").textContent = state.group && !totals[state.group] ? `${GROUP_LABELS[state.group].toUpperCase()} ONLY · NONE THIS MONTH · ESC TO CLEAR`
+    : sum === 0 ? "BY GROUP · NO PRESSES YET"
     : groupHover && totals[groupHover] ? `${GROUP_LABELS[groupHover].toUpperCase()} · ${totals[groupHover].toLocaleString("en-US")} · ${share(totals[groupHover])}`
-    : state.group ? `${GROUP_LABELS[state.group].toUpperCase()} ONLY · CLICK AGAIN TO CLEAR`
+    : state.group ? `${GROUP_LABELS[state.group].toUpperCase()} ONLY · CLICK OR ESC TO CLEAR`
     : `BY GROUP · ${top.map((g) => `${GROUP_LABELS[g].toUpperCase()} ${share(totals[g])}`).join(" · ")}`;
 }
 
@@ -3260,6 +3263,7 @@ function run(action) {
     case "today": setDay(today()); break;
     case "toggleMode": toggleMode(); break;
     case "clearInterval": Object.assign(state, { interval: null, focusSec: null }); render(); break;
+    case "clearGroup": state.group = null; render(); break;
     default: break;
   }
 }
@@ -3392,6 +3396,7 @@ document.addEventListener("keydown", (event) => {
     layer: state.layer,
     highlight: state.highlight,
     selected: state.selected,
+    group: state.group,
     aboutOpen: state.aboutOpen,
     activityMode: state.activityMode,
     interval: state.interval,

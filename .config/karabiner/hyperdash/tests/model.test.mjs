@@ -278,6 +278,8 @@ test("routeKey: overview", () => {
   assert.deepEqual(plain(M.routeKey(ctx, { key: "ArrowLeft" })), { type: "month", step: -1 });
   assert.deepEqual(plain(M.routeKey(ctx, { key: "ArrowRight", shiftKey: true })), { type: "month", step: 1 });
   assert.deepEqual(plain(M.routeKey(ctx, { key: "Escape" })), { type: "close" });
+  // A group filter clears before Escape closes the panel: its segment may be gone in a month without that group.
+  assert.deepEqual(plain(M.routeKey({ ...ctx, group: "navigate" }, { key: "Escape" })), { type: "clearGroup" });
   assert.equal(M.routeKey(ctx, { key: "ArrowDown" }), null, "plain up/down keep scrolling the list");
   assert.equal(M.routeKey(ctx, { key: "Tab" }), null);
   assert.equal(M.routeKey(ctx, { key: "w", metaKey: true }), null);
@@ -297,6 +299,9 @@ test("routeKey: layer page selects every kind of binding key", () => {
   // Shift + arrows change the month instead.
   assert.deepEqual(plain(M.routeKey(ctx, { key: "ArrowLeft", shiftKey: true })), { type: "month", step: -1 });
   assert.deepEqual(plain(M.routeKey({ ...ctx, selected: "u" }, { key: "Escape" })), { type: "select", key: null });
+  // In a layer: the selected key first, then the group filter, then back.
+  assert.deepEqual(plain(M.routeKey({ ...ctx, selected: "u", group: "navigate" }, { key: "Escape" })), { type: "select", key: null });
+  assert.deepEqual(plain(M.routeKey({ ...ctx, group: "navigate" }, { key: "Escape" })), { type: "clearGroup" });
   assert.deepEqual(plain(M.routeKey(ctx, { key: "Escape" })), { type: "back" });
 });
 
