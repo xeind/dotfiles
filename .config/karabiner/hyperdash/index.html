@@ -684,13 +684,13 @@
   .dots.lit { stroke: var(--accent-soft); }
   .dots.grey { stroke: var(--dim); }
 
-  /* Always three rows (six group cells, then shading and scale), so the legend never changes the height. */
+  /* Always three rows (six group cells, then the coverage key), so the legend never changes the height. */
   .chart-legend {
     display: grid;
     grid-template-columns: 1.1fr 1fr 1fr;
     grid-auto-rows: 15px;
     gap: 2px 8px;
-    height: 66px;
+    height: 49px;
     align-items: center;
     margin-top: 8px;
     font-family: var(--mono);
@@ -704,7 +704,6 @@
   .chart-legend .zero { color: var(--faint); }
   .chart-legend .row { grid-column: 1 / -1; display: flex; gap: 12px; align-items: center; }
   .chart-legend .row span { white-space: nowrap; }
-  .chart-legend .row.scale-row { justify-content: space-between; color: var(--faint); }
 
   .chart-legend .row .swatch { vertical-align: 1px; }
   .swatch { display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; }
@@ -875,8 +874,8 @@
   .appchip .icon.mono { font-size: 8px; border-radius: 3.5px; }
   .appchip b { font-weight: 400; color: var(--faint); }
 
-  .panel { height: 220px; margin-top: 8px; overflow: hidden; }
-  .panel-body { height: 184px; margin-top: 4px; overflow-y: auto; overscroll-behavior: contain; }
+  .panel { height: 174px; margin-top: 8px; overflow: hidden; }
+  .panel-body { height: 138px; margin-top: 4px; overflow-y: auto; overscroll-behavior: contain; }
   .panel-body::-webkit-scrollbar { width: 4px; }
   .panel-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
   .panel-head { display: flex; justify-content: space-between; gap: 8px; font: 10px var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
@@ -2674,9 +2673,7 @@ function renderChart(m) {
       legend.append(cell);
     }
   }
-  // Third row: the strip caption and the dot scale. Fourth row: the strip key. Month view keeps both rows, empty.
-  const caption = element("div", "row scale-row");
-  caption.append(element("span", "caption", !day ? "" : segments ? "APP CONTEXT" : "APP CONTEXT OFF"), element("span", "scale", a.perDot > 1 ? `1 DOT ≈ ${a.perDot} PRESSES` : ""));
+  // Third row: the strip key. Month view keeps the row, empty. The dot scale lives in the idle readout.
   const key = element("div", "row");
   if (day) {
     const kinds = new Set((segments || []).map((s) => (s.state === "unknown" ? "none" : s.state)));
@@ -2685,9 +2682,9 @@ function renderChart(m) {
       if (kinds.has("locked")) key.append(swatch(null, "LOCKED", null, "cov-locked"));
       if (kinds.has("asleep")) key.append(swatch(null, "ASLEEP", null, "cov-asleep"));
       if (kinds.has("none")) key.append(swatch(null, "NO APP CONTEXT", null, "cov-none"));
-    }
+    } else key.append(element("span", "zero", "APP CONTEXT OFF"));
   }
-  legend.append(caption, key);
+  legend.append(key);
   root.append(legend);
 
   const refocus = focusedBin === null ? null : root.querySelector(`.bin[data-bin="${focusedBin}"]`);
@@ -2705,7 +2702,7 @@ function setReadout(readout, bin) {
   const [first, second] = readout.children;
   second.replaceChildren();
   if (bin === null || !a || !a.all[bin]) {
-    first.textContent = !a || a.total === 0 ? emptyMessage() : BIN_HINT;
+    first.textContent = !a || a.total === 0 ? emptyMessage() : a.perDot > 1 ? `${BIN_HINT} · 1 DOT ≈ ${a.perDot}` : BIN_HINT;
     return;
   }
   const n = a.all[bin];
