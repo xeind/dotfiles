@@ -480,6 +480,18 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         let lines = week("w", "u", previous: steady100, recent: steady300)
         let result = report(lines, bindings: bindings, anchored: false)
         #expect(insight(.rising, in: result) == nil)
+        #expect(
+            result.rules.first { $0.rule == "trend" }
+                == RuleStatus(
+                    rule: "trend", status: .notReady,
+                    reason: "Week comparisons need 14 recorded days; 13 qualify."))
+    }
+
+    @Test func explainsWhenNoShortcutChanged() {
+        let lines = week("w", "u", previous: steady100, recent: steady100)
+        let status = report(lines, bindings: bindings).rules.first { $0.rule == "trend" }
+        #expect(status?.status == .noPattern)
+        #expect(status?.reason == "No shortcut changed by 5+ presses on 4+ of the last 7 days.")
     }
 
     @Test func allowsTrendWhenRecordingBeganTheDayBeforeTheWindow() {
@@ -621,6 +633,13 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(found?.windowStart == "2026-09-15")
         #expect(found?.windowEnd == oct(15))
     }
+
+    @Test func explainsTooFewRecordedDays() {
+        let two = daily("w", "k0", from: 12, [1, 1, 1], hour: 8)
+        let status = report(two, bindings: layer("w", 5), anchored: false).rules.first { $0.rule == "unused" }
+        #expect(status?.status == .notReady)
+        #expect(status?.reason == "The unused check needs 3 recorded days in the last 30; 2 qualify.")
+    }
 }
 
 // MARK: - Dormant
@@ -672,7 +691,11 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
     @Test func needsPreviousMonthRecordedFromItsFirstDay() {
         // Recording began 2026-09-02, one day after September began.
         let lines = presses(3, "o", "t", day: "2026-09-02") + presses(3, "o", "t", day: "2026-09-03")
-        #expect(insight(.dormant, in: report(lines, bindings: bindings, anchored: false)) == nil)
+        let result = report(lines, bindings: bindings, anchored: false)
+        #expect(insight(.dormant, in: result) == nil)
+        #expect(
+            result.rules.first { $0.rule == "dormant" }?.reason
+                == "The not-used-yet check needs all of September recorded; recording began Sep 2.")
     }
 
     @Test func allowsRecordingThatBeganOnFirstDayOfPreviousMonth() {
@@ -763,7 +786,11 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
     }
 
     @Test func hourOnOneDayDoesNotQualify() {
-        #expect(insight(.peak, in: report(presses(30, "w", "u", day: oct(14), hour: 14))) == nil)
+        let result = report(presses(30, "w", "u", day: oct(14), hour: 14))
+        #expect(insight(.peak, in: result) == nil)
+        let status = result.rules.first { $0.rule == "peak" }
+        #expect(status?.status == .noPattern)
+        #expect(status?.reason == "The busiest hour, 14:00, had presses on 1 day; it needs 3.")
     }
 
     @Test func busiestHourOnOneDayBlocksPeak() {
@@ -778,7 +805,13 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
     @Test func needsTwentyPresses() {
         let lines = presses(6, "w", "u", day: oct(10)) + presses(6, "w", "u", day: oct(11))
             + presses(6, "w", "u", day: oct(12))
-        #expect(insight(.peak, in: report(lines)) == nil)
+        let result = report(lines)
+        #expect(insight(.peak, in: result) == nil)
+        #expect(
+            result.rules.first { $0.rule == "peak" }
+                == RuleStatus(
+                    rule: "peak", status: .notReady,
+                    reason: "The busiest hour needs 20 presses this month; 18 so far."))
     }
 
     @Test func lastHourWrapsToMidnight() {
@@ -878,7 +911,11 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
     }
 
     @Test func needsThirtyPresses() {
-        #expect(insight(.focus, in: report(lines(days: 12...14, u: 2, i: 2), bindings: bindings)) == nil)
+        let result = report(lines(days: 12...14, u: 2, i: 2), bindings: bindings)
+        #expect(insight(.focus, in: result) == nil)
+        #expect(
+            result.rules.first { $0.rule == "focus" }?.reason
+                == "The category summary needs 30 presses in the last 7 days; 27 so far.")
     }
 
     @Test func onlyCountsLastSevenDays() {
@@ -955,6 +992,12 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(result.insights.first { $0.kind == .rising }?.title == longLabel + " up 200 presses")
     }
 
+    @Test func everyRuleReportsItsStatus() {
+        let result = report([], bindings: [Binding(layer: "w", key: "u", label: "x")], anchored: false)
+        #expect(result.rules.map(\.rule) == ["focus", "trend", "unused", "dormant", "unbound", "burst", "peak"])
+        #expect(result.rules.allSatisfy { $0.status != .shown && $0.reason != nil })
+    }
+
     @Test func emptyLogYieldsNoInsights() {
         let result = report([], bindings: [Binding(layer: "w", key: "u", label: "x")], anchored: false)
         #expect(result.insights.isEmpty)
@@ -990,9 +1033,18 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
             + (0..<5).map { line("\(oct(10))T08:01:0\($0)", "v", "q") }
             + (0..<5).map { line("\(oct(11))T08:01:0\($0)", "v", "q") }
         let result = report(lines, bindings: bindings)
+        // All seven rules fire. Changes come first, then patterns, timing and absences; five are shown.
+        #expect(result.insights.map(\.kind) == [.rising, .focus, .burst, .peak, .dormant])
         #expect(
-            result.insights.map(\.kind)
-                == [.focus, .rising, .unused, .dormant, .unbound, .burst, .peak])
+            result.rules.map(\.status)
+                == [.shown, .shown, .held, .shown, .held, .shown, .shown])
+        #expect(result.rules.first { $0.rule == "unused" }?.reason
+                == "4 of 4 System shortcuts unused. Held back: 5 cards rank higher.")
+        // Held findings keep their full text and evidence.
+        #expect(result.held.map(\.kind) == [.unused, .unbound])
+        #expect(result.held[0].keys.count == 4)
+        // The same input gives the same cards in the same order.
+        #expect(report(lines, bindings: bindings).insights == result.insights)
     }
 
     @Test func everyInsightCarriesDates() {
@@ -1029,6 +1081,13 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(measure["total"] is NSNull)
         #expect(measure["unit"] as? String == "presses")
         #expect(object["recordingSince"] as? String == "2026-08-01T00:00:00")
+        let rules = object["rules"] as! [[String: Any]]
+        #expect(rules.first { $0["rule"] as? String == "trend" }?["status"] as? String == "shown")
+        #expect(rules.first { $0["rule"] as? String == "trend" }?["reason"] is NSNull)
+        let burst = rules.first { $0["rule"] as? String == "burst" }!
+        #expect(burst["status"] as? String == "no-pattern")
+        #expect(burst["reason"] as? String == "No shortcut came in bursts (5+ presses, each within 3 s) on 2+ days this month.")
+        #expect((object["held"] as? [Any])?.isEmpty == true)
         let focus = insights.first { $0["kind"] as? String == "focus" }
         #expect(focus?["comparisonStart"] is NSNull)
     }

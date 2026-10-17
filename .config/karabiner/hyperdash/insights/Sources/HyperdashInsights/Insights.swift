@@ -93,10 +93,54 @@ public struct Insight: Codable, Equatable, Sendable {
     }
 }
 
+/// What one rule did in a report, and why when it produced no card.
+public struct RuleStatus: Codable, Equatable, Sendable {
+    public enum Status: String, Codable, Sendable {
+        /// Its card is in `insights`.
+        case shown
+        /// It found something, but `maxCards` cards rank higher.
+        case held
+        /// Too little recorded history or coverage to apply the rule.
+        case notReady = "not-ready"
+        /// Enough data, but nothing met the rule.
+        case noPattern = "no-pattern"
+    }
+
+    public let rule: String
+    public let status: Status
+    /// A sentence with the counts behind the status; nil when shown.
+    public let reason: String?
+
+    public init(rule: String, status: Status, reason: String?) {
+        self.rule = rule
+        self.status = status
+        self.reason = reason
+    }
+
+    // Always write `reason`, as null when absent.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(rule, forKey: .rule)
+        try container.encode(status, forKey: .status)
+        try container.encode(reason, forKey: .reason)
+    }
+}
+
+/// Card order, highest first: changes, repeated patterns, timing, absences, then combos no
+/// longer bound. Each rule gives at most one card and rising never appears with falling, so
+/// the order is total: the same input always gives the same cards.
+let cardPriority: [InsightKind] = [.rising, .falling, .focus, .burst, .peak, .dormant, .unused, .unbound]
+public let maxCards = 5
+
 public struct InsightReport: Sendable {
     public let generated: String
     public let month: String
+    /// At most `maxCards`, in `cardPriority` order.
     public let insights: [Insight]
+    /// Findings past `maxCards`, in the same order, kept whole for inspection.
+    public let held: [Insight]
+    /// Every rule, in the order the engine runs them.
+    public let rules: [RuleStatus]
     /// Presses in the month of `now`.
     public let monthTotal: Int
     /// Earliest valid event at or before `now`, or nil when there is none.
@@ -134,6 +178,13 @@ func categoryName(_ category: String) -> String {
 func appName(_ bundleIdentifier: String) -> String {
     let last = bundleIdentifier.split(separator: ".").last.map(String.init) ?? bundleIdentifier
     return last.prefix(1).uppercased() + last.dropFirst()
+}
+
+/// What one rule found: a card, or why there is none.
+private enum Outcome {
+    case found(Insight)
+    case notReady(String)
+    case noPattern(String)
 }
 
 /// Everything the rules share. Built once by `computeReport`.
@@ -179,23 +230,53 @@ public func computeReport(
     // Claims about absence or change need recorded history to back them up.
     let recordingStart = history.map(\.date).min()
 
-    var insights: [Insight] = []
-    insights += focus(analysis, context: context)
-    insights += trend(analysis)
-    insights += unused(analysis)
+    let dormantOutcome: Outcome
     if let recordingStart,
        recordingStart < calendar.date(byAdding: .day, value: 1, to: previousMonthStart)!
     {
-        insights += dormant(analysis, monthStart: monthStart, previousMonthStart: previousMonthStart)
+        dormantOutcome = dormant(analysis, monthStart: monthStart, previousMonthStart: previousMonthStart)
+    } else {
+        let previousName = monthNames[calendar.component(.month, from: previousMonthStart) - 1]
+        let began = recordingStart.map {
+            "recording began \(shortMonthNames[calendar.component(.month, from: $0) - 1]) "
+                + "\(calendar.component(.day, from: $0))"
+        }
+        dormantOutcome = .notReady(
+            "The not-used-yet check needs all of \(previousName) recorded; \(began ?? "nothing is recorded yet").")
     }
-    insights += unbound(analysis)
-    insights += burst(thisMonth, analysis)
-    insights += peak(thisMonth, analysis)
+    let outcomes: [(rule: String, outcome: Outcome)] = [
+        ("focus", focus(analysis, context: context)),
+        ("trend", trend(analysis)),
+        ("unused", unused(analysis)),
+        ("dormant", dormantOutcome),
+        ("unbound", unbound(analysis)),
+        ("burst", burst(thisMonth, analysis)),
+        ("peak", peak(thisMonth, analysis)),
+    ]
+
+    var found: [Insight] = []
+    for (_, outcome) in outcomes { if case .found(let insight) = outcome { found.append(insight) } }
+    let ranked = found.sorted { cardPriority.firstIndex(of: $0.kind)! < cardPriority.firstIndex(of: $1.kind)! }
+    let insights = Array(ranked.prefix(maxCards))
+    let rules = outcomes.map { rule, outcome in
+        switch outcome {
+        case .found(let insight):
+            insights.contains(insight)
+                ? RuleStatus(rule: rule, status: .shown, reason: nil)
+                : RuleStatus(
+                    rule: rule, status: .held,
+                    reason: "\(insight.title). Held back: \(maxCards) cards rank higher.")
+        case .notReady(let reason): RuleStatus(rule: rule, status: .notReady, reason: reason)
+        case .noPattern(let reason): RuleStatus(rule: rule, status: .noPattern, reason: reason)
+        }
+    }
 
     return InsightReport(
         generated: formatTimestamp(now, calendar: calendar),
         month: String(formatTimestamp(now, calendar: calendar).prefix(7)),
         insights: insights,
+        held: Array(ranked.dropFirst(maxCards)),
+        rules: rules,
         monthTotal: thisMonth.count,
         recordingSince: recordingStart.map { formatTimestamp($0, calendar: calendar) },
         rejectedLines: rejectedLines)
@@ -204,10 +285,10 @@ public func computeReport(
 // MARK: - focus
 
 /// The category with the most presses over the last 7 days, and the app it mostly happens in.
-private func focus(_ a: Analysis, context: [ContextEvent]?) -> [Insight] {
+private func focus(_ a: Analysis, context: [ContextEvent]?) -> Outcome {
     var categoryOf: [Combo: String] = [:]
     for binding in a.bindings { if let category = binding.category { categoryOf[binding.combo] = category } }
-    guard !categoryOf.isEmpty else { return [] }
+    guard !categoryOf.isEmpty else { return .notReady("The category summary needs bindings with categories.") }
 
     let windowDays = Set((0...6).map { a.keyDaysAgo($0) })
     let apps: [String?]? = context.map {
@@ -218,7 +299,9 @@ private func focus(_ a: Analysis, context: [ContextEvent]?) -> [Insight] {
     for (index, press) in a.history.enumerated() where windowDays.contains(a.key(press.date)) {
         window.append((a.key(press.date), press.combo, apps?[index] ?? nil))
     }
-    guard window.count >= 30 else { return [] }
+    guard window.count >= 30 else {
+        return .notReady("The category summary needs 30 presses in the last 7 days; \(window.count) so far.")
+    }
 
     func top(_ counts: [String: Int]) -> String? {
         counts.sorted { ($1.value, $0.key) < ($0.value, $1.key) }.first?.key
@@ -233,11 +316,17 @@ private func focus(_ a: Analysis, context: [ContextEvent]?) -> [Insight] {
             dayCategoryCounts[press.day, default: [:]][category, default: 0] += 1
         }
     }
-    guard let category = top(categoryCounts) else { return [] }
+    guard let category = top(categoryCounts) else {
+        return .noPattern("No press in the last 7 days has a category.")
+    }
     let repeatDays = dayTotals.keys.filter {
         dayTotals[$0]! >= 5 && top(dayCategoryCounts[$0] ?? [:]) == category
     }
-    guard repeatDays.count >= 3 else { return [] }
+    guard repeatDays.count >= 3 else {
+        return .noPattern(
+            "\(categoryName(category)) led on \(repeatDays.count) \(repeatDays.count == 1 ? "day" : "days") "
+                + "of 5+ presses; the summary needs 3.")
+    }
 
     let share = Int((Double(categoryCounts[category]!) / Double(window.count) * 100).rounded())
     let span = (a.keyDaysAgo(6), a.key(a.today))
@@ -261,22 +350,20 @@ private func focus(_ a: Analysis, context: [ContextEvent]?) -> [Insight] {
         }.keys
         if appDays.count >= 3 {
             let appShare = Int((Double(appCounts[app]!) / Double(attributed) * 100).rounded())
-            return [
+            return .found(
                 Insight(
                     kind: .focus, title: "\(display) mostly in \(appName(app))",
                     detail: "\(appShare)% of \(grouped(attributed)) attributed presses · \(appDays.count) days",
                     keys: keys, value: share, dates: Array(appDays), app: app, window: span,
-                    measure: Measure(count: appCounts[app]!, total: attributed, unit: "presses"))
-            ]
+                    measure: Measure(count: appCounts[app]!, total: attributed, unit: "presses")))
         }
     }
-    return [
+    return .found(
         Insight(
             kind: .focus, title: "\(display) leads shortcut use",
             detail: "\(share)% of \(grouped(window.count)) presses · top on \(repeatDays.count) days",
             keys: keys, value: share, dates: repeatDays, window: span,
-            measure: Measure(count: categoryCounts[category]!, total: window.count, unit: "presses"))
-    ]
+            measure: Measure(count: categoryCounts[category]!, total: window.count, unit: "presses")))
 }
 
 // MARK: - rising and falling
@@ -285,10 +372,13 @@ private func focus(_ a: Analysis, context: [ContextEvent]?) -> [Insight] {
 /// recorded, at least 10 presses in the larger week, a change of at least 5 presses, the
 /// change repeated on at least 4 of the 7 recent days, and a change of at least 5 still
 /// left without the busiest day of the larger week. Ranks by absolute change.
-private func trend(_ a: Analysis) -> [Insight] {
+private func trend(_ a: Analysis) -> Outcome {
     let recentDays = (1...7).map { a.keyDaysAgo($0) }
     let previousDays = (8...14).map { a.keyDaysAgo($0) }
-    guard Set(recentDays + previousDays).isSubset(of: a.recorded) else { return [] }
+    let qualifying = Set(recentDays + previousDays).intersection(a.recorded).count
+    guard qualifying == 14 else {
+        return .notReady("Week comparisons need 14 recorded days; \(qualifying) qualify.")
+    }
     let recentSet = Set(recentDays)
     let previousSet = Set(previousDays)
 
@@ -325,10 +415,10 @@ private func trend(_ a: Analysis) -> [Insight] {
         }
         best = (combo, now, was, repeats)
     }
-    guard let best else { return [] }
+    guard let best else { return .noPattern("No shortcut changed by 5+ presses on 4+ of the last 7 days.") }
     let change = best.now - best.was
     let rising = change > 0
-    return [
+    return .found(
         Insight(
             kind: rising ? .rising : .falling,
             title: "\(a.name(best.combo)) \(rising ? "up" : "down") \(grouped(abs(change))) presses",
@@ -336,8 +426,7 @@ private func trend(_ a: Analysis) -> [Insight] {
                 + "\(rising ? "up" : "down") on \(best.repeats.count) days",
             keys: [best.combo], value: abs(change), dates: best.repeats,
             window: (a.keyDaysAgo(7), a.keyDaysAgo(1)), comparison: (a.keyDaysAgo(14), a.keyDaysAgo(8)),
-            measure: Measure(count: best.now, baseline: best.was, unit: "presses"))
-    ]
+            measure: Measure(count: best.now, baseline: best.was, unit: "presses")))
 }
 
 // MARK: - unused
@@ -345,9 +434,11 @@ private func trend(_ a: Analysis) -> [Insight] {
 /// The layer with the highest share of unused bindings over the last 30 days. Needs at
 /// least 3 fully recorded days in that window, a layer of 4 or more bindings, and 3 or
 /// more unused.
-private func unused(_ a: Analysis) -> [Insight] {
+private func unused(_ a: Analysis) -> Outcome {
     let windowDays = (1...30).map { a.keyDaysAgo($0) }.filter { a.recorded.contains($0) }
-    guard windowDays.count >= 3 else { return [] }
+    guard windowDays.count >= 3 else {
+        return .notReady("The unused check needs 3 recorded days in the last 30; \(windowDays.count) qualify.")
+    }
     let windowStart = a.day(30)
     let pressed = Set(a.history.filter { $0.date >= windowStart }.map(\.combo))
 
@@ -371,23 +462,22 @@ private func unused(_ a: Analysis) -> [Insight] {
         }
         best = (layer, list, total)
     }
-    guard let best else { return [] }
+    guard let best else { return .noPattern("No layer of 4+ bindings has 3+ unused in the last 30 days.") }
     let layerName = layerNames[best.layer] ?? "Hyper \(best.layer.uppercased())"
-    return [
+    return .found(
         Insight(
             kind: .unused,
             title: "\(best.unused.count) of \(best.total) \(layerName) shortcuts unused",
             detail: "No presses on \(windowDays.count) recorded days",
             keys: best.unused, value: best.unused.count, dates: windowDays,
             window: (a.key(windowStart), a.key(a.today)),
-            measure: Measure(count: best.unused.count, total: best.total, unit: "bindings"))
-    ]
+            measure: Measure(count: best.unused.count, total: best.total, unit: "bindings")))
 }
 
 // MARK: - dormant
 
 /// A combo with 3 or more presses on 2 or more days last month and none this month.
-private func dormant(_ a: Analysis, monthStart: Date, previousMonthStart: Date) -> [Insight] {
+private func dormant(_ a: Analysis, monthStart: Date, previousMonthStart: Date) -> Outcome {
     var previous: [Combo: [String: Int]] = [:]
     var current = Set<Combo>()
     for event in a.history {
@@ -401,25 +491,26 @@ private func dormant(_ a: Analysis, monthStart: Date, previousMonthStart: Date) 
         let total = days.values.reduce(0, +)
         return total >= 3 && days.count >= 2 ? total : nil
     }.filter { !current.contains($0.key) }
-    guard let best = totals.min(by: { ($1.value, $0.key) < ($0.value, $1.key) }) else { return [] }
     let previousName = monthNames[a.calendar.component(.month, from: previousMonthStart) - 1]
+    guard let best = totals.min(by: { ($1.value, $0.key) < ($0.value, $1.key) }) else {
+        return .noPattern("Every shortcut pressed 3+ times on 2+ days in \(previousName) has been used this month.")
+    }
     let currentShort = shortMonthNames[a.calendar.component(.month, from: monthStart) - 1]
     // "Not used yet" is true at any point in the month; it makes no claim about stopping.
     let previousEnd = a.calendar.date(byAdding: .day, value: -1, to: monthStart)!
-    return [
+    return .found(
         Insight(
             kind: .dormant,
             title: "\(a.name(best.key)) not used yet this month",
             detail: "\(best.key.shortName) · \(grouped(best.value)) presses in \(previousName) · none since \(currentShort) 1",
             keys: [best.key], value: best.value, dates: Array(previous[best.key]!.keys),
             window: a.monthToDate, comparison: (a.key(previousMonthStart), a.key(previousEnd)),
-            measure: Measure(count: 0, baseline: best.value, unit: "presses"))
-    ]
+            measure: Measure(count: 0, baseline: best.value, unit: "presses")))
 }
 
 // MARK: - unbound
 
-private func unbound(_ a: Analysis) -> [Insight] {
+private func unbound(_ a: Analysis) -> Outcome {
     let bound = Set(a.bindings.map(\.combo))
     var counts: [Combo: Int] = [:]
     var days = Set<String>()
@@ -427,25 +518,24 @@ private func unbound(_ a: Analysis) -> [Insight] {
         counts[event.combo, default: 0] += 1
         days.insert(a.key(event.date))
     }
-    guard !counts.isEmpty else { return [] }
+    guard !counts.isEmpty else { return .noPattern("Every logged shortcut is still bound.") }
     let ranked = counts.sorted { ($1.value, $0.key) < ($0.value, $1.key) }
     let presses = counts.values.reduce(0, +)
-    return [
+    return .found(
         Insight(
             kind: .unbound,
             title: "\(counts.count) logged \(counts.count == 1 ? "combo" : "combos") no longer bound",
             detail: "\(grouped(presses)) \(presses == 1 ? "press" : "presses") logged with no current binding",
             keys: ranked.map(\.key), value: counts.count, dates: Array(days),
             window: (a.key(a.history[0].date), a.key(a.today)),
-            measure: Measure(count: presses, unit: "presses"))
-    ]
+            measure: Measure(count: presses, unit: "presses")))
 }
 
 // MARK: - burst
 
 /// A burst is 5 or more presses of one combo in a row, each within 3 s of the last.
 /// Reports the combo with the most bursts this month, if it has 2 or more on 2 or more days.
-private func burst(_ thisMonth: [PressEvent], _ a: Analysis) -> [Insight] {
+private func burst(_ thisMonth: [PressEvent], _ a: Analysis) -> Outcome {
     var counts: [Combo: Int] = [:]
     var days: [Combo: Set<String>] = [:]
     var run = 0
@@ -470,23 +560,26 @@ private func burst(_ thisMonth: [PressEvent], _ a: Analysis) -> [Insight] {
     }
     closeRun()
     let eligible = counts.filter { $0.value >= 2 && days[$0.key]!.count >= 2 }
-    guard let best = eligible.min(by: { ($1.value, $0.key) < ($0.value, $1.key) }) else { return [] }
+    guard let best = eligible.min(by: { ($1.value, $0.key) < ($0.value, $1.key) }) else {
+        return .noPattern("No shortcut came in bursts (5+ presses, each within 3 s) on 2+ days this month.")
+    }
     let dayCount = days[best.key]!.count
-    return [
+    return .found(
         Insight(
             kind: .burst,
             title: "\(a.name(best.key)) repeats in bursts",
             detail: "\(grouped(best.value)) \(best.value == 1 ? "burst" : "bursts") on \(dayCount) days · each 5+ presses in a row",
             keys: [best.key], value: best.value, dates: Array(days[best.key]!), window: a.monthToDate,
-            measure: Measure(count: best.value, unit: "bursts"))
-    ]
+            measure: Measure(count: best.value, unit: "bursts")))
 }
 
 // MARK: - peak
 
 /// The hour with the most presses this month, if it has presses on 3 or more days.
-private func peak(_ thisMonth: [PressEvent], _ a: Analysis) -> [Insight] {
-    guard thisMonth.count >= 20 else { return [] }
+private func peak(_ thisMonth: [PressEvent], _ a: Analysis) -> Outcome {
+    guard thisMonth.count >= 20 else {
+        return .notReady("The busiest hour needs 20 presses this month; \(thisMonth.count) so far.")
+    }
     var counts = [Int](repeating: 0, count: 24)
     var days = [Set<String>](repeating: [], count: 24)
     for event in thisMonth {
@@ -494,16 +587,19 @@ private func peak(_ thisMonth: [PressEvent], _ a: Analysis) -> [Insight] {
         counts[hour] += 1
         days[hour].insert(a.key(event.date))
     }
-    guard let hour = (0..<24).max(by: { counts[$0] < counts[$1] || (counts[$0] == counts[$1] && $0 > $1) }),
-          days[hour].count >= 3
-    else { return [] }
+    let hour = (0..<24).max(by: { counts[$0] < counts[$1] || (counts[$0] == counts[$1] && $0 > $1) })!
+    guard days[hour].count >= 3 else {
+        let count = days[hour].count
+        return .noPattern(
+            String(format: "The busiest hour, %02d:00, had presses on ", hour)
+                + "\(count) \(count == 1 ? "day" : "days"); it needs 3.")
+    }
     let share = Int((Double(counts[hour]) / Double(thisMonth.count) * 100).rounded())
-    return [
+    return .found(
         Insight(
             kind: .peak,
             title: String(format: "Most shortcut use: %02d:00–%02d:00", hour, (hour + 1) % 24),
             detail: "\(share)% of this month's presses · on \(days[hour].count) days",
             keys: [], value: hour, dates: Array(days[hour]), window: a.monthToDate,
-            measure: Measure(count: counts[hour], total: thisMonth.count, unit: "presses"))
-    ]
+            measure: Measure(count: counts[hour], total: thisMonth.count, unit: "presses")))
 }

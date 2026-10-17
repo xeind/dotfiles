@@ -18,6 +18,10 @@ import Foundation
 ///     `unit`, the numbers its text states.
 ///   - `title`, `detail`, `keys` and `dates` are no longer cut short. Counts in text group
 ///     thousands ("14,301").
+///   - `rules` lists every rule with its status (`shown`, `held`, `not-ready` or
+///     `no-pattern`) and, unless shown, a reason with the counts behind it.
+///   - `insights` holds at most five cards, ordered by `cardPriority`; `held` holds the
+///     findings past those five, whole.
 public struct InsightsFile: Encodable, Sendable {
     public let version = 3
     public let generated: String
@@ -25,6 +29,8 @@ public struct InsightsFile: Encodable, Sendable {
     public let recordingSince: String?
     public let rejectedLines: Int
     public let insights: [Insight]
+    public let held: [Insight]
+    public let rules: [RuleStatus]
 
     public init(report: InsightReport) {
         generated = report.generated
@@ -32,10 +38,12 @@ public struct InsightsFile: Encodable, Sendable {
         recordingSince = report.recordingSince
         rejectedLines = report.rejectedLines
         insights = report.insights
+        held = report.held
+        rules = report.rules
     }
 
     enum CodingKeys: String, CodingKey {
-        case version, generated, month, recordingSince, rejectedLines, insights
+        case version, generated, month, recordingSince, rejectedLines, insights, held, rules
     }
 
     // Always write `recordingSince`, as null when absent.
@@ -47,6 +55,8 @@ public struct InsightsFile: Encodable, Sendable {
         try container.encode(recordingSince, forKey: .recordingSince)
         try container.encode(rejectedLines, forKey: .rejectedLines)
         try container.encode(insights, forKey: .insights)
+        try container.encode(held, forKey: .held)
+        try container.encode(rules, forKey: .rules)
     }
 
     public func jsonData() throws -> Data {
