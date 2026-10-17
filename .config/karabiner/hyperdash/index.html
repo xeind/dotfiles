@@ -2615,14 +2615,15 @@ function renderChart(m) {
   const a = m.a;
   const day = m.mode === "day";
   const segments = day ? m.day.segments : null;
+  // The readout reads these on hover, so they follow every render, rebuilt or not.
+  lastActivity = a;
+  lastSegments = segments;
   const signature = [m.mode, day ? state.day : view.month, state.highlight, state.interval, a.perDot, a.all.join(","), a.hit.join(","),
+    GROUPS.map((group) => a.byGroup[group].join(",")).join(";"),
     a.total === 0 ? emptyMessage() : "", segments ? segments.map((s) => `${s.state}${s.from}-${s.to}`).join(",") : ""].join("|");
   if (signature === chartSignature) return;
   chartSignature = signature;
   const focusedBin = document.activeElement?.classList?.contains("bin") ? document.activeElement.dataset.bin : null;
-
-  lastActivity = a;
-  lastSegments = segments;
 
   const { width, top, plot, step, height } = CHART;
   const binWidth = width / 48;
