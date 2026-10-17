@@ -287,7 +287,7 @@
   :root {
     --sans: "Geist", -apple-system, sans-serif;
     --mono: "Geist Mono", ui-monospace, monospace;
-    --key: 25px;
+    --key: 24px;
     --gap: 4px;
 
     /* Type scale (DESIGN.md §4). Geist and Geist Mono share their vertical metrics: one size, one x-height */
@@ -454,7 +454,7 @@
   .key {
     width: var(--key);
     height: var(--key);
-    border-radius: 7px;
+    border-radius: 6px;
     display: grid;
     place-items: center;
     font-family: var(--mono);
@@ -467,7 +467,7 @@
     outline-offset: 1.5px;
   }
 
-  .key.space { width: 112px; }
+  .key.space { width: calc(4 * var(--key) + 3 * var(--gap)); }
   .key.h0, .key.h1, .key.h2, .key.h3, .key.h4 { cursor: pointer; border-color: var(--edge); }
   .h0 { background: var(--q0); color: var(--q0t); }
   .h1 { background: var(--q1); color: var(--q1t); }
