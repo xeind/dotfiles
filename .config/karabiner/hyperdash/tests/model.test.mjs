@@ -911,6 +911,30 @@ test("intervals and attribution agree with the second-by-second calculation on r
   }
 });
 
+test("intervals agree with the second-by-second calculation on every day of random multi-day logs", () => {
+  // A lock or sleep before midnight shades the next day until its unlock or wake: the state at 00:00
+  // comes from earlier days, which a one-day log never exercises.
+  let seed = 7; const random = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const dates = ["2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16"];
+  const stampAt = (day, sec, ms) => `${dates[day]}T${String(Math.floor(sec / 3600)).padStart(2, "0")}:${String(Math.floor(sec / 60) % 60).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
+  for (let round = 0; round < 25; round++) {
+    const rows = [[stampAt(0, 3600, 0), "start", "-"]];
+    for (let i = 0; i < 30; i++) {
+      const kind = ["start", "app", "app", "lock", "unlock", "sleep", "wake"][Math.floor(random() * 7)];
+      rows.push([stampAt(Math.floor(random() * 3), Math.floor(random() * 86400), Math.floor(random() * 1000)), kind, kind === "app" ? `com.app${Math.floor(random() * 4)}` : "-"]);
+    }
+    const now = "2026-10-16T12:00:00";
+    const context = contextFrom(linesOf(rows));
+    const events = eventsOf(rows);
+    for (const date of dates) {
+      assert.deepEqual(plain(runsOf(context.segments(date, now))), R.segmentsBrute(events, date, M.absSeconds(now)).map((r) => [r.from, r.to, r.state]), `round ${round} ${date}`);
+    }
+  }
+  // Hand-worked: locked at 23:00, unlocked at 08:00 the next day.
+  const overnight = contextFrom(linesOf([["2026-10-14T20:00:00.000", "start", "-"], ["2026-10-14T23:00:00.000", "lock", "-"], ["2026-10-15T08:00:00.000", "unlock", "-"]]));
+  assert.deepEqual(plain(runsOf(overnight.segments("2026-10-15", "2026-10-15T12:00:00"))), [[0, 28800, "locked"], [28800, 43200, "recorded"]]);
+});
+
 test("sequences: recurring adjacent pairs within 10 s, against a plain calculation", () => {
   const events = [];
   let sec = 100;

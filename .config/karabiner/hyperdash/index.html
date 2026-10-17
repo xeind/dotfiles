@@ -1839,7 +1839,20 @@ var HyperdashModel = (() => {
       const limit = Math.min(dayStart + 86400, absSeconds(now));
       if (!(limit > dayStart)) return [];
       const spans = sessions(now).map((span) => ({ from: Math.ceil(span.start), to: Math.floor(span.end) + 1 }));
-      const list = ordered().filter((event) => event.abs <= absSeconds(now));
+      // Only the day's events, and those since the last `start` before it, which set the state at 00:00.
+      const all = ordered();
+      let first = 0;
+      let high = all.length;
+      while (first < high) {
+        const mid = (first + high) >> 1;
+        if (all[mid].abs <= dayStart) first = mid + 1; else high = mid;
+      }
+      let from = first;
+      while (from > 0 && all[from - 1].kind !== "start") from -= 1;
+      if (from > 0) from -= 1;
+      let to = first;
+      while (to < all.length && all[to].abs <= limit) to += 1;
+      const list = all.slice(from, to);
       const points = new Set([dayStart, limit]);
       for (const span of spans) { points.add(span.from); points.add(span.to); }
       for (const event of list) points.add(Math.ceil(event.abs));
