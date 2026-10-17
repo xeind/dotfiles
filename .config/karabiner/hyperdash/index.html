@@ -389,7 +389,17 @@
   button.header-icon:hover { background: var(--hover); }
   button.header-icon:active { background: var(--line-strong); color: var(--text); }
 
-  .title { font-size: var(--text-title); font-weight: 500; letter-spacing: -0.01em; }
+  /* The title takes the free space, so the month pill and Close sit at the same right edge on every page, whatever the title says. */
+  .title {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--text-title);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
 
   .pill {
     display: flex;
@@ -404,7 +414,7 @@
     color: var(--soft);
   }
 
-  .pill-label { padding: 0 var(--space-2xs); }
+  .pill-label { min-width: 10ch; padding: 0 var(--space-2xs); text-align: center; }
 
   .pill button {
     width: var(--control-sm);

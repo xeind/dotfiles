@@ -79,6 +79,9 @@ APCA's Lc 30, the minimum for any text.
 `1px solid var(--line)`. `--edge` and `--edge-soft` are the card's own rim.
 The date box in the header (`.pill`) is the one dashed edge: square, with a
 1.5 px dashed `--line-strong` border, the site's own border style.
+It sits at the same place on every page: the title takes the free space, so
+the box and Close share one right edge, and the label has a fixed minimum width
+(10ch) so the box is the same size for every month and day label.
 
 Steps are about 3 OKLab points apart in Manila and Nightingale. Two are
 short: Kozo's `--card` to `--raised` is 2.1, and Blueprint's `--raised` is
