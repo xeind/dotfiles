@@ -83,6 +83,7 @@ const RAW = [
   [".chart-legend .zero", "caption", "--faint", [["rest", "--card"]], "mono", 10, 400],
   [".bin-readout", "value", "--soft", [["rest", "--card"]], "mono", 10, 400],
   [".bin-readout .r2", "label", "--muted", [["rest", "--card"]], "mono", 10, 400],
+  [".bin-readout.idle", "label", "--muted", [["rest", "--card"]], "mono", 10, 400],
   [".seg", "value", "--soft", [["rest", "--raised"], ["hover", "--hover"]], "mono", 10, 500],
   [".seg:active", "value", "--text", [["active", "--line"]], "mono", 10, 500],
   ['.seg[aria-pressed="true"]', "value", "--accent-soft", [["pressed", "--accent-bg"]], "mono", 10, 500],

@@ -867,6 +867,7 @@
 
   .bin-readout > span { display: block; height: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bin-readout .r2 { display: flex; gap: var(--space-lg); color: var(--muted); }
+  .bin-readout.idle { color: var(--muted); } /* the hint and dot scale are a legend; a bin's counts are data */
   .bin-readout .r2 span { display: inline-flex; align-items: center; gap: var(--space-xs); }
   .bin-readout .r2 i { width: 7px; height: 7px; border-radius: 50%; }
 
@@ -2765,7 +2766,9 @@ function setReadout(readout, bin) {
   const a = lastActivity;
   const [first, second] = readout.children;
   second.replaceChildren();
-  if (bin === null || !a || !a.all[bin]) {
+  const idle = bin === null || !a || !a.all[bin];
+  readout.classList.toggle("idle", idle);
+  if (idle) {
     first.textContent = !a || a.total === 0 ? emptyMessage() : a.perDot > 1 ? `${BIN_HINT} · 1 DOT ≈ ${a.perDot}` : BIN_HINT;
     return;
   }
