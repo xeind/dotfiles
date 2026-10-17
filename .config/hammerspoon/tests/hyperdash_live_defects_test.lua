@@ -242,6 +242,25 @@ do
   check("start failure x2: nothing before 30 minutes", #env2.tasks == 0, #env2.tasks)
   env2.advance(900); openClose(env2)
   check("start failure x2: runs after 30 minutes", #env2.tasks == 1, #env2.tasks)
+
+  -- A run that never exits used to report "running" forever and block every
+  -- later run. It is stopped after 120 s and counts as one failure.
+  local env3 = setup("hang")
+  openClose(env3)
+  check("hang: the open started the tool", #env3.tasks == 1, #env3.tasks)
+  env3.advance(121)
+  check("hang: the tool was stopped", env3.tasks[1].terminated == true)
+  toggle(env3) -- reopen to receive health
+  local h3 = env3.page.health.insights
+  check("hang: health says failed, not running", h3.status == "failed", h3.status)
+  check("hang: the message names the timeout", h3.message and h3.message:find("timed out after 120 s", 1, true) ~= nil, h3.message)
+  check("hang: one failure, so the next try is in 5 minutes", h3.retryAt == os.date("%Y-%m-%dT%H:%M:%S", math.floor(env3.clock) - 1 + 300), h3.retryAt)
+  toggle(env3)
+  env3.advance(300); openClose(env3)
+  check("hang: a new run starts after the wait", #env3.tasks == 2, #env3.tasks)
+  if env3.tasks[2] then env3.tasks[2]:finish(0, "", "") end
+  env3.flush(); openClose(env3)
+  check("hang: a later success clears the failure", env3.page.health.insights.status ~= "failed", env3.page.health.insights.status)
 end
 
 os.execute("rm -rf " .. SCRATCH)

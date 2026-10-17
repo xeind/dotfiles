@@ -24,6 +24,7 @@ local INSIGHTS = HOME .. "/.local/state/karabiner/insights.json"
 local INSIGHTS_TOOL = HOME .. "/.local/bin/hyperdash-insights" -- `yarn build:insights`
 local INSIGHTS_MAX_AGE = 3600 -- seconds; older insights are recomputed on open
 local INSIGHTS_CONTEXT_MIN_AGE = 300 -- seconds; a newer context log reruns a report older than this
+local INSIGHTS_TIMEOUT = 120 -- seconds; a run still going after this is stopped and counts as failed
 -- Context recording is OFF until the user approves it. When true, this module
 -- appends the frontmost app (bundle ID only) and lock, unlock, sleep and wake
 -- events to CONTEXT_LOG. No window titles, URLs or keys are recorded.
@@ -88,6 +89,7 @@ local lastRunFailure = nil
 local insightsFailures = 0 -- consecutive failed runs, start failures included
 local insightsRetryAt = nil -- epoch seconds: no new run before this
 local insightsAttempt = nil -- identifies the run whose callback may act
+local insightsTimer = nil -- stops a run that outlives INSIGHTS_TIMEOUT
 
 local insightsCache = { key = false, raw = nil, message = nil } -- raw: valid version 2 report
 local bindingsCache = { key = false, list = {}, json = "[]", status = "missing", invalid = 0 }
@@ -667,7 +669,10 @@ local function refreshInsights()
   insightsAttempt = attempt
   insightsTask = hs.task.new(INSIGHTS_TOOL, function(exitCode, _, stderr)
     if insightsAttempt ~= attempt then return end -- a start failure already counted
-    if exitCode ~= 0 then
+    if insightsTimer then insightsTimer:stop(); insightsTimer = nil end
+    if attempt.timedOut then
+      recordInsightsFailure("timed out after " .. INSIGHTS_TIMEOUT .. " s")
+    elseif exitCode ~= 0 then
       local detail = (stderr or ""):gsub("^%s+", ""):gsub("%s+$", ""):sub(1, 200)
       recordInsightsFailure(detail ~= "" and detail or ("exit code " .. tostring(exitCode)))
     else
@@ -682,7 +687,16 @@ local function refreshInsights()
     insightsAttempt = nil
     recordInsightsFailure("could not start " .. INSIGHTS_TOOL .. (ok and "" or (": " .. tostring(started))))
     requestSync()
+    return
   end
+  -- A run that never exits would report "running" forever and block every
+  -- later run. Stop it; its exit callback records the failure.
+  insightsTimer = hs.timer.doAfter(INSIGHTS_TIMEOUT, function()
+    insightsTimer = nil
+    if insightsAttempt ~= attempt or not insightsTask:isRunning() then return end
+    attempt.timedOut = true
+    insightsTask:terminate()
+  end)
 end
 
 ---------------------------------------------------------------------------

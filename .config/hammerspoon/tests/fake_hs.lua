@@ -316,6 +316,13 @@ function sandbox.new(options)
           return self
         end
         function task:isRunning() return self.running end
+        -- Like hs.task: the exit callback runs once the process has gone.
+        function task:terminate()
+          if not self.running then return self end
+          self.terminated = true
+          self:finish(15, "", "")
+          return self
+        end
         function task:finish(exitCode, stdout, stderr)
           self.running = false
           self.callback(exitCode, stdout or "", stderr or "")
