@@ -16,7 +16,7 @@ const TYPE_SCALE = {
 const SCALE = {
   "font-weight": ["400", "500"],
   "letter-spacing": ["-0.04em", "-0.01em", "0", "0.02em", "0.04em"],
-  "border-radius": ["5px", "7px", "8px", "10px", "30px", "50%", "999px", "inherit"],
+  "border-radius": ["5px", "6px", "7px", "8px", "10px", "30px", "50%", "999px", "inherit"],
   space: ["0", "2px", "4px", "6px", "8px", "12px", "20px", "auto"],
 };
 const SPACE = ["gap", "row-gap", "column-gap", "margin", "margin-top", "margin-right", "margin-bottom", "margin-left", "padding",
@@ -24,10 +24,9 @@ const SPACE = ["gap", "row-gap", "column-gap", "margin", "margin-top", "margin-r
 
 // "selector | property | value": why the value is off the scale. Keep the arithmetic in the reason.
 const EXCEPTIONS = {
-  ".footer | padding-top | 9px": "1 px rule + 9 + 18 px keys = 28, on the 4 px rhythm",
+  ".footer | padding-top | 7px": "1 px rule + 7 = 8 above the 20 px keys; 8 + 20 = 28, on the 4 px rhythm",
   ".card | padding | 14px": "card top inset: the 28 px header row carries its own air; 14 + 28 + 12 puts the totals on the 8 px rhythm",
-  ".pill | padding | 3px": "wraps two 18 px round buttons in a 26 px pill: (26 - 18) / 2 = 4, less the 1 px border",
-  ".delta | padding | 3px": "a 21 px badge on the numeral's baseline: 3 + 15 line + 3",
+  ".pill | padding | 2.5px": "wraps two 20 px round buttons in a 28 px pill: (28 - 20) / 2 = 4 = 1.5 px border + 2.5, the same on every side",
   ".heat-legend i | border-radius | 3px": "swatch at 10 px: a third of the size",
   ".groupbar button | border-radius | 3px": "8 px tall bar segment: a third of the height",
   ".swatch.cov-recorded, .swatch.cov-locked, .swatch.cov-asleep, .swatch.cov-none | border-radius | 1.5px": "5 px coverage bar: a third of the height",
