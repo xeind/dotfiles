@@ -261,12 +261,12 @@ end
 -- Each event opens the file, appends one line and closes it, so a log that
 -- was deleted or replaced is recreated on the next event. Readers attribute
 -- app events only after a start line, so the first write, a write after a
--- failure, and a write to a new file (missing, or another (dev, ino)) begin
--- with start and the front app.
+-- failure, and a write to a new file (missing, another (dev, ino), or shorter
+-- than after the last write) begin with start and the front app.
 function R.newRecorder(env)
   local recorder = { lastApp = nil, written = 0, failed = 0, lastError = nil }
   local directory = env.path:match("^(.*)/[^/]+$")
-  local needStart, dev, ino = true, nil, nil
+  local needStart, dev, ino, size = true, nil, nil, 0
 
   function recorder.write(kind, value)
     local now = env.now()
@@ -277,7 +277,8 @@ function R.newRecorder(env)
     end
     local stat = env.stat and env.stat(env.path)
     local seeded = nil
-    if env.stat and (not stat or stat.dev ~= dev or stat.ino ~= ino) then needStart = true end
+    -- A smaller file was truncated in place: same (dev, ino), start lost.
+    if env.stat and (not stat or stat.dev ~= dev or stat.ino ~= ino or stat.size < size) then needStart = true end
     if needStart and kind ~= "start" then
       local prefix = R.contextLine(now, "start")
       if kind ~= "app" and env.frontApp then
@@ -308,7 +309,7 @@ function R.newRecorder(env)
     needStart = false
     if seeded then recorder.lastApp = seeded end
     stat = env.stat and env.stat(env.path)
-    if stat then dev, ino = stat.dev, stat.ino end
+    if stat then dev, ino, size = stat.dev, stat.ino, stat.size end
     return true
   end
 

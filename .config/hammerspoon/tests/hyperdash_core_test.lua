@@ -501,6 +501,17 @@ do
   f = io.open(path, "rb"); text = f:read("a"); f:close()
   check("recorder: new file holds start, then the new line", text == R.contextLine(clock, "start") .. R.contextLine(clock, "wake"), text)
 
+  -- A log truncated in place keeps its (dev, ino), and it is a new session too.
+  check("recorder: one more line before the truncation", recorder.write("lock") == true)
+  f = io.open(path, "wb"); f:close()
+  clock = base + 6
+  check("recorder: writes after the truncation", recorder.write("unlock") == true)
+  f = io.open(path, "rb"); text = f:read("a"); f:close()
+  check("recorder: truncated file holds start, then the new line", text == R.contextLine(clock, "start") .. R.contextLine(clock, "unlock"), text)
+  recorder.write("lock")
+  f = io.open(path, "rb"); text = f:read("a"); f:close()
+  check("recorder: the next line adds no second start", select(2, text:gsub("\tstart\t", "")) == 1, text)
+
   -- Failures are counted, never raised.
   local failing = R.newRecorder({ path = "/nonexistent-dir/x/context.log", now = function() return base end, open = io.open })
   check("recorder: unwritable path returns false", failing.write("start") == false and failing.failed == 1 and failing.lastError ~= nil)
