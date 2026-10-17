@@ -18,6 +18,9 @@ import { pathToFileURL } from "node:url";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const probe = readFileSync(new URL("./height_probe.js", import.meta.url), "utf8");
+// As in height.test.mjs: freeze the page's clock at 15:00 today, so the probe's fixture has presses today.
+const clock = `<script>(() => { const real = new Date(); real.setHours(15, 0, 0, 0); const fixed = real.getTime(); const Real = Date;
+  globalThis.Date = class extends Real { constructor(...a) { super(...(a.length ? a : [fixed])); } static now() { return fixed; } }; })();</script>`;
 
 // "parent > selector" -> why its box may sit off the device-pixel grid. Keep the arithmetic in the reason.
 // Baseline alignment of two sizes puts the smaller box 0.355 x the size difference off the larger's grid
@@ -88,7 +91,7 @@ test("rows and pages sit on the 4 px rhythm, and boxes, text and lines on the 2x
   try {
     const dir = mkdtempSync(join(tmpdir(), "hyperdash-grid-"));
     const file = join(dir, "page.html");
-    writeFileSync(file, `${html.replace(/<\/body>\s*<\/html>\s*$/, "")}<pre id="probe-out" hidden></pre><script>${probe}</script></body></html>\n`);
+    writeFileSync(file, `${html.replace("<head>", `<head>${clock}`).replace(/<\/body>\s*<\/html>\s*$/, "")}<pre id="probe-out" hidden></pre><script>${probe}</script></body></html>\n`);
     const page = await browser.newPage({ viewport: { width: 408, height: 1000 }, deviceScaleFactor: 2 });
     await page.goto(pathToFileURL(file).href);
     await page.evaluate(() => document.fonts.ready);

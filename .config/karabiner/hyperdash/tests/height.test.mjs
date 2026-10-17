@@ -12,11 +12,15 @@ import test from "node:test";
 const chrome = process.env.HYPERDASH_TEST_CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const probe = readFileSync(new URL("./height_probe.js", import.meta.url), "utf8");
+// The probe's fixture fills today from 08:18 up to ten minutes before "now", so before about 08:30 today is
+// empty and the Activity steps have no bins. Freeze the page's clock at 15:00 today so every run sees the same day.
+const clock = `<script>(() => { const real = new Date(); real.setHours(15, 0, 0, 0); const fixed = real.getTime(); const Real = Date;
+  globalThis.Date = class extends Real { constructor(...a) { super(...(a.length ? a : [fixed])); } static now() { return fixed; } }; })();</script>`;
 
 test("the page height never changes within a page", { skip: !existsSync(chrome) && "Chrome not found (set HYPERDASH_TEST_CHROME)", timeout: 120000 }, () => {
   const dir = mkdtempSync(join(tmpdir(), "hyperdash-height-"));
   const file = join(dir, "page.html");
-  writeFileSync(file, `${html.replace(/<\/body>\s*<\/html>\s*$/, "")}<pre id="probe-out"></pre><script>${probe}</script></body></html>\n`);
+  writeFileSync(file, `${html.replace("<head>", `<head>${clock}`).replace(/<\/body>\s*<\/html>\s*$/, "")}<pre id="probe-out"></pre><script>${probe}</script></body></html>\n`);
   const run = spawnSync(chrome, ["--headless=new", "--disable-gpu", "--virtual-time-budget=20000", "--window-size=408,1000", "--dump-dom", `file://${file}`], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
   const match = /<pre id="probe-out">([\s\S]*?)<\/pre>/.exec(run.stdout || "");
   assert.ok(match, "the probe wrote no result: " + (run.stderr || "").slice(0, 400));
