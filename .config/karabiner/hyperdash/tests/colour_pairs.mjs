@@ -17,7 +17,9 @@ const RAW = [
   [".pill button", "icon", "--muted", [["rest", "--card"]], "svg", 8, 500],
   [".pill button:hover:not(:disabled)", "icon", "--text", [["hover", "--hover"]], "svg", 8, 500],
   [".header-icon", "icon", "--accent-soft", [["rest", "--card"], ["hover", "--hover"]], "svg", 16, 500],
+  ["button.header-icon:active", "icon", "--text", [["active", "--line-strong"]], "svg", 16, 500],
   [".close", "icon", "--soft", [["rest", "--hover"], ["hover", "--line-strong"]], "svg", 11, 500],
+  [".close:active", "icon", "--text", [["active", "--line-strong"]], "svg", 11, 500],
 
   // Total
   [".total-number", "content", "--text", [["rest", "--card"]], "sans", 26, 500, "html, body"],
@@ -82,10 +84,12 @@ const RAW = [
   [".bin-readout", "value", "--soft", [["rest", "--card"]], "mono", 10, 400],
   [".bin-readout .r2", "label", "--muted", [["rest", "--card"]], "mono", 10, 400],
   [".seg", "value", "--soft", [["rest", "--raised"], ["hover", "--hover"]], "mono", 10, 500],
+  [".seg:active", "value", "--text", [["active", "--line"]], "mono", 10, 500],
   ['.seg[aria-pressed="true"]', "value", "--accent-soft", [["pressed", "--accent-bg"]], "mono", 10, 500],
   [".controls .note", "caption", "--faint", [["rest", "--card"]], "mono", 10, 400],
   [".appbar", "caption", "--faint", [["rest", "--card"]], "mono", 10, 400],
   [".appchip", "value", "--soft", [["rest", "--raised"], ["hover", "--hover"]], "mono", 10, 400],
+  [".appchip:active", "value", "--text", [["active", "--line"]], "mono", 10, 400],
   ['.appchip[aria-pressed="true"]', "value", "--accent-soft", [["pressed", "--accent-bg"]], "mono", 10, 400],
   [".appchip b", "caption", "--faint", [["rest", "--raised"], ["hover", "--hover"], ["pressed", "--accent-bg"]], "mono", 10, 400],
   ["js: app monogram", "value", "--soft", [["rest", "--hover"]], "mono", 10, 500],
@@ -98,6 +102,7 @@ const RAW = [
   [".cmd-app", "caption", "--faint", [["rest", "--card"], ["focus", "--hover"]], "mono", 10, 400],
   [".seq-title span:last-child", "label", "--muted", [["rest", "--card"]], "mono", 11, 400],
   [".time-chip", "value", "--accent-soft", [["rest", "--hover"], ["hover", "--line"]], "mono", 10, 400],
+  [".time-chip:active", "value", "--text", [["active", "--line"]], "mono", 10, 400],
   [".seq-more", "caption", "--faint", [["rest", "--card"]], "mono", 10, 400],
   [".bin.selected", "focus", "--accent-soft", [["selected", "--card"]], "ring", 1, 500],
 
@@ -113,6 +118,7 @@ const RAW = [
   [".about", "label", "--muted", [["rest", "--raised"]], "mono", 10, 400],
   [".about p:first-child", "value", "--soft", [["rest", "--raised"]], "mono", 10, 400],
   [".themebtn", "value", "--accent-soft", [["rest", "--hover"], ["hover", "--line"]], "mono", 10, 500],
+  [".themebtn:active", "value", "--text", [["active", "--line"]], "mono", 10, 500],
   [".status", "caption", "--faint", [["ok", "--card"]], "mono", 9.5, 400],
   ['.status[data-level="warn"]', "status", "--warning", [["warn", "--card"]], "mono", 9.5, 400],
   ['.status[data-level="error"]', "status", "--down", [["error", "--card"]], "mono", 9.5, 400],
