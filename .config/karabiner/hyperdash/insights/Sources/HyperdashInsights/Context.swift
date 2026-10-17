@@ -90,11 +90,14 @@ struct Sessions {
     init(context: [ContextEvent], now: Date) {
         let known = context.filter { $0.date <= now }
         let starts = known.filter { $0.kind == .start }.map(\.date)
+        // `context` is sorted, so one cursor finds the last event before each next start.
+        var cursor = 0
         for (index, start) in starts.enumerated() {
             var end = now
             if index + 1 < starts.count {
                 let next = starts[index + 1]
-                end = max(start, known.last { $0.date < next }?.date ?? start)
+                while cursor < known.count, known[cursor].date < next { cursor += 1 }
+                end = max(start, cursor > 0 ? known[cursor - 1].date : start)
             }
             if let last = spans.last, start.timeIntervalSince(last.end) <= Sessions.bridgedGap {
                 spans[spans.count - 1].end = max(last.end, end)
@@ -104,8 +107,15 @@ struct Sessions {
         }
     }
 
+    /// Spans are sorted and disjoint: find the first that ends at or after `date`.
     func contains(_ date: Date) -> Bool {
-        spans.contains { $0.start <= date && date <= $0.end }
+        var low = 0
+        var high = spans.count
+        while low < high {
+            let mid = (low + high) / 2
+            if spans[mid].end < date { low = mid + 1 } else { high = mid }
+        }
+        return low < spans.count && spans[low].start <= date
     }
 }
 
