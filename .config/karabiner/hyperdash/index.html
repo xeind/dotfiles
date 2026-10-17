@@ -774,7 +774,8 @@
     color: var(--muted);
   }
 
-  .info:hover, .info[aria-expanded="true"] { background: var(--hover); color: var(--text); }
+  .info:hover { background: var(--hover); color: var(--text); }
+  .info[aria-expanded="true"] { background: var(--accent-bg); color: var(--accent-soft); border-color: var(--accent-edge); }
 
   /* An overlay over the card, so opening it never changes the height. */
   .about {
