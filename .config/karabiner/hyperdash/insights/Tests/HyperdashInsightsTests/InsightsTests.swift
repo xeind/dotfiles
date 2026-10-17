@@ -388,17 +388,22 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
     @Test func rising() {
         let found = insight(
             .rising, in: report(week("w", "u", previous: steady100, recent: steady300), bindings: bindings))
-        #expect(found?.title == "Previous Tab up 200 presses this week")
+        #expect(found?.title == "Previous Tab up 200 presses")
         #expect(found?.detail == "W U · 300 vs 100 the week before · up on 7 days")
+        #expect(found?.measure == Measure(count: 300, total: nil, baseline: 100, unit: "presses"))
         #expect(found?.keys == [["w", "u"]])
         #expect(found?.value == 200)
         #expect(found?.dates == (8...14).map(oct))
+        #expect(found?.windowStart == oct(8))
+        #expect(found?.windowEnd == oct(14))
+        #expect(found?.comparisonStart == oct(1))
+        #expect(found?.comparisonEnd == oct(7))
     }
 
     @Test func falling() {
         let found = insight(
             .falling, in: report(week("w", "u", previous: steady300, recent: steady100), bindings: bindings))
-        #expect(found?.title == "Previous Tab down 200 presses this week")
+        #expect(found?.title == "Previous Tab down 200 presses")
         #expect(found?.detail == "W U · 100 vs 300 the week before · down on 7 days")
         #expect(found?.value == 200)
     }
@@ -496,18 +501,27 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(insight(.rising, in: withoutGap) != nil)
     }
 
-    @Test func longLabelKeepsSuffix() {
-        let long = [Binding(layer: "w", key: "u", label: String(repeating: "L", count: 30))]
+    @Test func groupsThousands() {
+        let found = insight(
+            .rising,
+            in: report(week("w", "u", previous: [150, 150, 150, 150, 150, 150, 150], recent: [300, 300, 300, 300, 300, 300, 300]),
+                       bindings: bindings))
+        #expect(found?.title == "Previous Tab up 1,050 presses")
+        #expect(found?.detail == "W U · 2,100 vs 1,050 the week before · up on 7 days")
+    }
+
+    @Test func longLabelIsKeptWhole() {
+        let label = String(repeating: "L", count: 60)
+        let long = [Binding(layer: "w", key: "u", label: label)]
         let found = insight(
             .rising, in: report(week("w", "u", previous: steady100, recent: steady300), bindings: long))
-        #expect(found?.title.hasSuffix(" up 200 presses this week") == true)
-        #expect(found?.title.count == 40)
+        #expect(found?.title == label + " up 200 presses")
     }
 
     @Test func fallsBackToHyperName() {
         let found = insight(
             .rising, in: report(week("w", "x", previous: steady100, recent: steady300)))
-        #expect(found?.title == "Hyper W X up 200 presses this week")
+        #expect(found?.title == "Hyper W X up 200 presses")
     }
 }
 
@@ -537,6 +551,7 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         let found = insight(.unused, in: report(used("w", 1), bindings: bindings))
         #expect(found?.title == "4 of 5 Window shortcuts unused")
         #expect(found?.detail == "No presses on 30 recorded days")
+        #expect(found?.measure == Measure(count: 4, total: 5, baseline: nil, unit: "bindings"))
         #expect(found?.dates.count == 30)
         #expect(found?.dates.last == oct(14))
     }
@@ -599,10 +614,12 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(found?.title == "5 of 5 Window shortcuts unused")
     }
 
-    @Test func capsKeysAtThree() {
+    @Test func keepsEveryUnusedKey() {
         let found = insight(.unused, in: report([], bindings: layer("s", 7)))
         #expect(found?.title == "7 of 7 System shortcuts unused")
-        #expect(found?.keys.count == 3)
+        #expect(found?.keys.count == 7)
+        #expect(found?.windowStart == "2026-09-15")
+        #expect(found?.windowEnd == oct(15))
     }
 }
 
@@ -621,6 +638,7 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(found?.title == "Ghostty not used yet this month")
         #expect(found?.detail == detail)
         #expect(found?.value == 12)
+        #expect(found?.measure == Measure(count: 0, total: nil, baseline: 12, unit: "presses"))
         #expect(found?.dates == ["2026-09-20", "2026-09-21"])
     }
 
@@ -637,11 +655,18 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(found?.title == "Ghostty not used yet this month")
     }
 
-    @Test func longLabelKeepsSuffix() {
-        let long = [Binding(layer: "o", key: "t", label: String(repeating: "L", count: 30))]
-        let found = insight(.dormant, in: report(september, bindings: long))
-        #expect(found?.title.hasSuffix(" not used yet this month") == true)
-        #expect(found?.title.count == 40)
+    @Test func longLabelIsKeptWhole() {
+        let label = String(repeating: "L", count: 60)
+        let found = insight(.dormant, in: report(september, bindings: [Binding(layer: "o", key: "t", label: label)]))
+        #expect(found?.title == label + " not used yet this month")
+    }
+
+    @Test func comparesThisMonthWithLastMonth() {
+        let found = insight(.dormant, in: report(september, bindings: bindings))
+        #expect(found?.windowStart == oct(1))
+        #expect(found?.windowEnd == oct(15))
+        #expect(found?.comparisonStart == "2026-09-01")
+        #expect(found?.comparisonEnd == "2026-09-30")
     }
 
     @Test func needsPreviousMonthRecordedFromItsFirstDay() {
@@ -690,8 +715,9 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         let lines = run(5, "v", "q", minute: 1) + run(6, "v", "q", minute: 3, day: 11)
             + run(5, "w", "u", minute: 5)
         let found = insight(.burst, in: report(lines, bindings: [Binding(layer: "v", key: "q", label: "Left Click")]))
-        #expect(found?.title == "Left Click comes in bursts")
-        #expect(found?.detail == "V Q pressed 5+ times in a row, 2 times on 2 days")
+        #expect(found?.title == "Left Click repeats in bursts")
+        #expect(found?.detail == "2 bursts on 2 days · each 5+ presses in a row")
+        #expect(found?.measure == Measure(count: 2, total: nil, baseline: nil, unit: "bursts"))
         #expect(found?.value == 2)
         #expect(found?.dates == [oct(10), oct(11)])
     }
@@ -725,9 +751,13 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
             presses(8, "w", "u", day: oct(10), hour: 14) + presses(8, "w", "u", day: oct(11), hour: 14)
             + presses(8, "w", "u", day: oct(12), hour: 14) + presses(5, "o", "t", day: oct(12), hour: 9)
         let found = insight(.peak, in: report(lines))
-        #expect(found?.title == "Most active 14:00–15:00")
-        #expect(found?.detail == "83% of this month's presses")
+        #expect(found?.title == "Most shortcut use: 14:00–15:00")
+        #expect(found?.detail == "83% of this month's presses · on 3 days")
+        #expect(found?.measure == Measure(count: 24, total: 29, baseline: nil, unit: "presses"))
         #expect(found?.value == 14)
+        #expect(found?.windowStart == oct(1))
+        #expect(found?.windowEnd == oct(15))
+        #expect(found?.comparisonStart == nil)
         #expect(found?.keys == [])
         #expect(found?.dates == [oct(10), oct(11), oct(12)])
     }
@@ -753,7 +783,7 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
 
     @Test func lastHourWrapsToMidnight() {
         let lines = [10, 11, 12].flatMap { presses(8, "w", "u", day: oct($0), hour: 23) }
-        #expect(insight(.peak, in: report(lines))?.title == "Most active 23:00–00:00")
+        #expect(insight(.peak, in: report(lines))?.title == "Most shortcut use: 23:00–00:00")
     }
 }
 
@@ -768,6 +798,7 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         let found = insight(.unbound, in: report(lines, bindings: bindings, anchored: false))
         #expect(found?.title == "2 logged combos no longer bound")
         #expect(found?.detail == "7 presses logged with no current binding")
+        #expect(found?.measure == Measure(count: 7, total: nil, baseline: nil, unit: "presses"))
         #expect(found?.keys == [["o", "t"], ["o", "f"]])
         #expect(found?.value == 2)
         #expect(found?.dates == ["2026-09-01", oct(14)])
@@ -779,12 +810,14 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(found?.detail == "1 press logged with no current binding")
     }
 
-    @Test func capsKeysAtThreeMostPressedFirst() {
+    @Test func keepsEveryKeyMostPressedFirst() {
         let lines = presses(1, "o", "a", day: oct(14)) + presses(4, "o", "b", day: oct(14), hour: 10)
             + presses(3, "o", "c", day: oct(14), hour: 11) + presses(2, "o", "d", day: oct(14), hour: 12)
         let found = insight(.unbound, in: report(lines, bindings: bindings, anchored: false))
-        #expect(found?.keys == [["o", "b"], ["o", "c"], ["o", "d"]])
+        #expect(found?.keys == [["o", "b"], ["o", "c"], ["o", "d"], ["o", "a"]])
         #expect(found?.value == 4)
+        #expect(found?.windowStart == oct(14))
+        #expect(found?.windowEnd == oct(15))
     }
 
     @Test func absentWhenAllBound() {
@@ -824,12 +857,15 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
 
     @Test func reportsDominantCategoryWithoutContext() {
         let found = insight(.focus, in: report(lines(), bindings: bindings))
-        #expect(found?.title == "Tab navigation leads your Hyper use")
+        #expect(found?.title == "Tab navigation leads shortcut use")
         #expect(found?.detail == "86% of 210 presses · top on 6 days")
+        #expect(found?.measure == Measure(count: 180, total: 210, baseline: nil, unit: "presses"))
         #expect(found?.value == 86)
         #expect(found?.keys == [["w", "u"], ["w", "i"]])
         #expect(found?.dates == (9...14).map(oct))
         #expect(found?.app == nil)
+        #expect(found?.windowStart == oct(9))
+        #expect(found?.windowEnd == oct(15))
     }
 
     @Test func needsCategoriesInBindings() {
@@ -850,7 +886,7 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         let old = lines(days: 1...5, u: 40, i: 40)
         let recent = (9...14).flatMap { presses(30, "v", "q", day: oct($0), hour: 11) }
         let found = insight(.focus, in: report(old + recent, bindings: bindings))
-        #expect(found?.title == "Pointer leads your Hyper use")
+        #expect(found?.title == "Pointer leads shortcut use")
     }
 
     @Test func namesTheAppWhenMostPressesAreInOneApp() {
@@ -858,6 +894,7 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
             .focus, in: report(lines(), bindings: bindings, context: firefoxEveryDay()))
         #expect(found?.title == "Tab navigation mostly in Firefox")
         #expect(found?.detail == "100% of 180 attributed presses · 6 days")
+        #expect(found?.measure == Measure(count: 180, total: 180, baseline: nil, unit: "presses"))
         #expect(found?.app == firefox)
         #expect(found?.value == 86)
         #expect(found?.dates == (9...14).map(oct))
@@ -879,7 +916,7 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
             .focus,
             in: report(lines(u: 10, i: 10), bindings: bindings, context: firefoxEveryDay() + switchToChrome))
         #expect(found?.app == nil)
-        #expect(found?.title == "Tab navigation leads your Hyper use")
+        #expect(found?.title == "Tab navigation leads shortcut use")
     }
 
     @Test func noAppWhenMostPressesAreUnattributed() {
@@ -888,7 +925,7 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
             .focus,
             in: report(lines(), bindings: bindings, context: firefoxEveryDay(13...14)))
         #expect(found?.app == nil)
-        #expect(found?.title == "Tab navigation leads your Hyper use")
+        #expect(found?.title == "Tab navigation leads shortcut use")
     }
 
     @Test func noAppWhenTopAppRepeatsOnFewerThanThreeDays() {
@@ -899,7 +936,7 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
             [context("2026-08-01T00:00:00.000", "start"), context("\(oct(9))T08:00:00.000", "app", firefox)]
             + (10...14).map { context("\(oct($0))T08:00:00.000", "app", chrome) }
         let found = insight(.focus, in: report(bigDay + smallDays, bindings: bindings, context: events))
-        #expect(found?.title == "Tab navigation leads your Hyper use")
+        #expect(found?.title == "Tab navigation leads shortcut use")
         #expect(found?.app == nil)
     }
 }
@@ -907,15 +944,15 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
 // MARK: - Report
 
 @Suite struct ReportTests {
-    @Test func ordersInsightsAndTruncatesText() {
+    @Test func keepsFullText() {
         let longLabel = String(repeating: "L", count: 60)
         let bindings = [Binding(layer: "w", key: "u", label: longLabel)]
-        let lines = presses(30, "w", "u", day: oct(14), hour: 14)
+        let lines = daily("w", "u", from: 1, [14, 14, 14, 14, 14, 15, 15])
+            + daily("w", "u", from: 8, [43, 43, 43, 43, 43, 43, 42])
         let result = report(lines, bindings: bindings)
         #expect(result.generated == "2026-10-15T15:00:00")
         #expect(result.month == "2026-10")
-        #expect(result.monthTotal == 30)
-        #expect(result.insights.allSatisfy { $0.title.count <= 40 && $0.detail.count <= 52 })
+        #expect(result.insights.first { $0.kind == .rising }?.title == longLabel + " up 200 presses")
     }
 
     @Test func emptyLogYieldsNoInsights() {
@@ -984,7 +1021,16 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         let rising = insights.first { $0["kind"] as? String == "rising" }!
         #expect(rising["app"] is NSNull)
         #expect((rising["dates"] as? [String])?.count == 7)
+        #expect(rising["windowStart"] as? String == oct(8))
+        #expect(rising["comparisonEnd"] as? String == oct(7))
+        let measure = rising["measure"] as! [String: Any]
+        #expect(measure["count"] as? Int == 300)
+        #expect(measure["baseline"] as? Int == 100)
+        #expect(measure["total"] is NSNull)
+        #expect(measure["unit"] as? String == "presses")
         #expect(object["recordingSince"] as? String == "2026-08-01T00:00:00")
+        let focus = insights.first { $0["kind"] as? String == "focus" }
+        #expect(focus?["comparisonStart"] is NSNull)
     }
 
     @Test func fileWritesAppBundleIdentifier() throws {

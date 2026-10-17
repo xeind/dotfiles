@@ -4,35 +4,78 @@ public enum InsightKind: String, Codable, Sendable {
     case focus, rising, falling, unused, dormant, unbound, burst, peak
 }
 
+/// The number a card rests on, with what it is part of and what it is compared with.
+public struct Measure: Codable, Equatable, Sendable {
+    public let count: Int
+    /// The whole `count` is part of (presses in the window, bindings in the layer); nil when none.
+    public let total: Int?
+    /// The same count in the comparison period; nil without one.
+    public let baseline: Int?
+    /// "presses", "bindings" or "bursts".
+    public let unit: String
+
+    public init(count: Int, total: Int? = nil, baseline: Int? = nil, unit: String) {
+        self.count = count
+        self.total = total
+        self.baseline = baseline
+        self.unit = unit
+    }
+
+    // Always write `total` and `baseline`, as null when absent.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(count, forKey: .count)
+        try container.encode(total, forKey: .total)
+        try container.encode(baseline, forKey: .baseline)
+        try container.encode(unit, forKey: .unit)
+    }
+}
+
 public struct Insight: Codable, Equatable, Sendable {
     public let kind: InsightKind
+    /// Full text. The panel clips only what it draws.
     public let title: String
     public let detail: String
+    /// Every combo the finding concerns, most relevant first.
     public let keys: [[String]]
     public let value: Int
-    /// Days ("YYYY-MM-DD", ascending, at most 31) whose events support the finding.
+    /// Days ("YYYY-MM-DD", ascending) whose events support the finding.
     public let dates: [String]
     /// Bundle ID when the finding concerns one app.
     public let app: String?
+    /// First and last day ("YYYY-MM-DD") of the period the finding counts.
+    public let windowStart: String
+    public let windowEnd: String
+    /// The period it is compared with, or nil when it compares none.
+    public let comparisonStart: String?
+    public let comparisonEnd: String?
+    public let measure: Measure
 
     public init(
         kind: InsightKind, title: String, detail: String, keys: [Combo], value: Int,
-        dates: [String] = [], app: String? = nil
+        dates: [String] = [], app: String? = nil, window: (start: String, end: String),
+        comparison: (start: String, end: String)? = nil, measure: Measure
     ) {
         self.kind = kind
-        self.title = truncated(title, to: 40)
-        self.detail = truncated(detail, to: 52)
-        self.keys = keys.prefix(3).map { [$0.layer, $0.key] }
+        self.title = title
+        self.detail = detail
+        self.keys = keys.map { [$0.layer, $0.key] }
         self.value = value
-        self.dates = Array(Set(dates).sorted().suffix(31))
+        self.dates = Set(dates).sorted()
         self.app = app
+        windowStart = window.start
+        windowEnd = window.end
+        comparisonStart = comparison?.start
+        comparisonEnd = comparison?.end
+        self.measure = measure
     }
 
     enum CodingKeys: String, CodingKey {
         case kind, title, detail, keys, value, dates, app
+        case windowStart, windowEnd, comparisonStart, comparisonEnd, measure
     }
 
-    // Always write `app`, as null when absent.
+    // Always write `app` and the comparison, as null when absent.
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(kind, forKey: .kind)
@@ -42,6 +85,11 @@ public struct Insight: Codable, Equatable, Sendable {
         try container.encode(value, forKey: .value)
         try container.encode(dates, forKey: .dates)
         try container.encode(app, forKey: .app)
+        try container.encode(windowStart, forKey: .windowStart)
+        try container.encode(windowEnd, forKey: .windowEnd)
+        try container.encode(comparisonStart, forKey: .comparisonStart)
+        try container.encode(comparisonEnd, forKey: .comparisonEnd)
+        try container.encode(measure, forKey: .measure)
     }
 }
 
@@ -70,8 +118,9 @@ private let monthNames = [
     "August", "September", "October", "November", "December",
 ]
 
-func truncated(_ text: String, to limit: Int) -> String {
-    text.count <= limit ? text : String(text.prefix(limit - 1)) + "…"
+/// 14301 becomes "14,301", as the panel writes counts.
+func grouped(_ number: Int) -> String {
+    number.formatted(.number.grouping(.automatic).locale(Locale(identifier: "en_US")))
 }
 
 /// "tab-navigation" becomes "Tab navigation".
@@ -93,6 +142,7 @@ private struct Analysis {
     let bindings: [Binding]
     let now: Date
     let today: Date
+    let monthStart: Date
     let calendar: Calendar
     let recorded: Set<String>
     let labels: [Combo: String]
@@ -103,6 +153,8 @@ private struct Analysis {
     /// The day `offset` days before today.
     func day(_ offset: Int) -> Date { calendar.date(byAdding: .day, value: -offset, to: today)! }
     func keyDaysAgo(_ offset: Int) -> String { key(day(offset)) }
+    /// From the first day of this month through today.
+    var monthToDate: (start: String, end: String) { (key(monthStart), key(today)) }
 }
 
 /// `events` must be sorted by time, as `parseLog` returns them.
@@ -115,12 +167,12 @@ public func computeReport(
 
     // Presses after `now` are ignored so every rule sees the same history.
     let history = events.filter { $0.date <= now }
+    let monthStart = calendar.dateInterval(of: .month, for: now)!.start
     let analysis = Analysis(
         history: history, bindings: bindings, now: now, today: calendar.startOfDay(for: now),
-        calendar: calendar,
+        monthStart: monthStart, calendar: calendar,
         recorded: recordedDays(events: history, context: context, now: now, calendar: calendar),
         labels: labels)
-    let monthStart = calendar.dateInterval(of: .month, for: now)!.start
     let previousMonthStart = calendar.date(byAdding: .month, value: -1, to: monthStart)!
     let thisMonth = history.filter { $0.date >= monthStart }
 
@@ -188,6 +240,7 @@ private func focus(_ a: Analysis, context: [ContextEvent]?) -> [Insight] {
     guard repeatDays.count >= 3 else { return [] }
 
     let share = Int((Double(categoryCounts[category]!) / Double(window.count) * 100).rounded())
+    let span = (a.keyDaysAgo(6), a.key(a.today))
     var combos: [Combo: Int] = [:]
     for press in window where categoryOf[press.combo] == category { combos[press.combo, default: 0] += 1 }
     let keys = combos.sorted { ($1.value, $0.key) < ($0.value, $1.key) }.map(\.key)
@@ -208,20 +261,21 @@ private func focus(_ a: Analysis, context: [ContextEvent]?) -> [Insight] {
         }.keys
         if appDays.count >= 3 {
             let appShare = Int((Double(appCounts[app]!) / Double(attributed) * 100).rounded())
-            let head = "\(display) mostly in "
             return [
                 Insight(
-                    kind: .focus, title: head + truncated(appName(app), to: 40 - head.count),
-                    detail: "\(appShare)% of \(attributed) attributed presses · \(appDays.count) days",
-                    keys: keys, value: share, dates: Array(appDays), app: app)
+                    kind: .focus, title: "\(display) mostly in \(appName(app))",
+                    detail: "\(appShare)% of \(grouped(attributed)) attributed presses · \(appDays.count) days",
+                    keys: keys, value: share, dates: Array(appDays), app: app, window: span,
+                    measure: Measure(count: appCounts[app]!, total: attributed, unit: "presses"))
             ]
         }
     }
     return [
         Insight(
-            kind: .focus, title: "\(display) leads your Hyper use",
-            detail: "\(share)% of \(window.count) presses · top on \(repeatDays.count) days",
-            keys: keys, value: share, dates: repeatDays)
+            kind: .focus, title: "\(display) leads shortcut use",
+            detail: "\(share)% of \(grouped(window.count)) presses · top on \(repeatDays.count) days",
+            keys: keys, value: share, dates: repeatDays, window: span,
+            measure: Measure(count: categoryCounts[category]!, total: window.count, unit: "presses"))
     ]
 }
 
@@ -274,14 +328,15 @@ private func trend(_ a: Analysis) -> [Insight] {
     guard let best else { return [] }
     let change = best.now - best.was
     let rising = change > 0
-    let suffix = " \(rising ? "up" : "down") \(abs(change)) presses this week"
     return [
         Insight(
             kind: rising ? .rising : .falling,
-            title: truncated(a.name(best.combo), to: 40 - suffix.count) + suffix,
-            detail: "\(best.combo.shortName) · \(best.now) vs \(best.was) the week before · "
+            title: "\(a.name(best.combo)) \(rising ? "up" : "down") \(grouped(abs(change))) presses",
+            detail: "\(best.combo.shortName) · \(grouped(best.now)) vs \(grouped(best.was)) the week before · "
                 + "\(rising ? "up" : "down") on \(best.repeats.count) days",
-            keys: [best.combo], value: abs(change), dates: best.repeats)
+            keys: [best.combo], value: abs(change), dates: best.repeats,
+            window: (a.keyDaysAgo(7), a.keyDaysAgo(1)), comparison: (a.keyDaysAgo(14), a.keyDaysAgo(8)),
+            measure: Measure(count: best.now, baseline: best.was, unit: "presses"))
     ]
 }
 
@@ -323,7 +378,9 @@ private func unused(_ a: Analysis) -> [Insight] {
             kind: .unused,
             title: "\(best.unused.count) of \(best.total) \(layerName) shortcuts unused",
             detail: "No presses on \(windowDays.count) recorded days",
-            keys: best.unused, value: best.unused.count, dates: windowDays)
+            keys: best.unused, value: best.unused.count, dates: windowDays,
+            window: (a.key(windowStart), a.key(a.today)),
+            measure: Measure(count: best.unused.count, total: best.total, unit: "bindings"))
     ]
 }
 
@@ -348,13 +405,15 @@ private func dormant(_ a: Analysis, monthStart: Date, previousMonthStart: Date) 
     let previousName = monthNames[a.calendar.component(.month, from: previousMonthStart) - 1]
     let currentShort = shortMonthNames[a.calendar.component(.month, from: monthStart) - 1]
     // "Not used yet" is true at any point in the month; it makes no claim about stopping.
-    let suffix = " not used yet this month"
+    let previousEnd = a.calendar.date(byAdding: .day, value: -1, to: monthStart)!
     return [
         Insight(
             kind: .dormant,
-            title: truncated(a.name(best.key), to: 40 - suffix.count) + suffix,
-            detail: "\(best.key.shortName) · \(best.value) presses in \(previousName) · none since \(currentShort) 1",
-            keys: [best.key], value: best.value, dates: Array(previous[best.key]!.keys))
+            title: "\(a.name(best.key)) not used yet this month",
+            detail: "\(best.key.shortName) · \(grouped(best.value)) presses in \(previousName) · none since \(currentShort) 1",
+            keys: [best.key], value: best.value, dates: Array(previous[best.key]!.keys),
+            window: a.monthToDate, comparison: (a.key(previousMonthStart), a.key(previousEnd)),
+            measure: Measure(count: 0, baseline: best.value, unit: "presses"))
     ]
 }
 
@@ -375,8 +434,10 @@ private func unbound(_ a: Analysis) -> [Insight] {
         Insight(
             kind: .unbound,
             title: "\(counts.count) logged \(counts.count == 1 ? "combo" : "combos") no longer bound",
-            detail: "\(presses) \(presses == 1 ? "press" : "presses") logged with no current binding",
-            keys: ranked.map(\.key), value: counts.count, dates: Array(days))
+            detail: "\(grouped(presses)) \(presses == 1 ? "press" : "presses") logged with no current binding",
+            keys: ranked.map(\.key), value: counts.count, dates: Array(days),
+            window: (a.key(a.history[0].date), a.key(a.today)),
+            measure: Measure(count: presses, unit: "presses"))
     ]
 }
 
@@ -414,9 +475,10 @@ private func burst(_ thisMonth: [PressEvent], _ a: Analysis) -> [Insight] {
     return [
         Insight(
             kind: .burst,
-            title: "\(a.name(best.key)) comes in bursts",
-            detail: "\(best.key.shortName) pressed 5+ times in a row, \(best.value) times on \(dayCount) days",
-            keys: [best.key], value: best.value, dates: Array(days[best.key]!))
+            title: "\(a.name(best.key)) repeats in bursts",
+            detail: "\(grouped(best.value)) \(best.value == 1 ? "burst" : "bursts") on \(dayCount) days · each 5+ presses in a row",
+            keys: [best.key], value: best.value, dates: Array(days[best.key]!), window: a.monthToDate,
+            measure: Measure(count: best.value, unit: "bursts"))
     ]
 }
 
@@ -439,8 +501,9 @@ private func peak(_ thisMonth: [PressEvent], _ a: Analysis) -> [Insight] {
     return [
         Insight(
             kind: .peak,
-            title: String(format: "Most active %02d:00–%02d:00", hour, (hour + 1) % 24),
-            detail: "\(share)% of this month's presses",
-            keys: [], value: hour, dates: Array(days[hour]))
+            title: String(format: "Most shortcut use: %02d:00–%02d:00", hour, (hour + 1) % 24),
+            detail: "\(share)% of this month's presses · on \(days[hour].count) days",
+            keys: [], value: hour, dates: Array(days[hour]), window: a.monthToDate,
+            measure: Measure(count: counts[hour], total: thisMonth.count, unit: "presses"))
     ]
 }

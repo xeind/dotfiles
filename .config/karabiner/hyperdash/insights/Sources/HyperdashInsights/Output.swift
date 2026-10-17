@@ -10,6 +10,14 @@ import Foundation
 ///     counts. A day is fully recorded when it is after the first logged day, and, with a
 ///     context log, when every Hyper press that day lies inside a recording session.
 ///     The live log is new, so these cards stay absent until enough days exist.
+///
+/// Additions within version 3, which older readers ignore:
+///   - Every insight has `windowStart` and `windowEnd`, and `comparisonStart` and
+///     `comparisonEnd` (null when it compares nothing), as "YYYY-MM-DD".
+///   - Every insight has `measure`: `count`, `total` and `baseline` (null when absent) and
+///     `unit`, the numbers its text states.
+///   - `title`, `detail`, `keys` and `dates` are no longer cut short. Counts in text group
+///     thousands ("14,301").
 public struct InsightsFile: Encodable, Sendable {
     public let version = 3
     public let generated: String
