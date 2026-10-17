@@ -2913,7 +2913,7 @@ function renderActivity(m) {
 function renderFooter() {
   const hints = dataError !== null ? [["esc", "close"]]
     : state.page === "insights" ? [["esc", "back"]]
-    : state.page === "activity" ? [["W", "highlight"], ["← →", state.activityMode === "day" ? "day" : "month"], ["↵", state.activityMode === "day" ? "month" : "day"], ["esc", state.highlight || state.interval !== null ? "clear" : "back"]]
+    : state.page === "activity" ? activityHints()
     : state.layer === null
       ? [["W", "layer"], ["I", "insights"], ["A", "activity"], ["← →", "month"]]
       : [["key", "select"], ["⇧ ← →", "month"], ["esc", state.selected ? "clear" : "back"]];
@@ -2923,6 +2923,16 @@ function renderFooter() {
     hint.append(label);
     return hint;
   }));
+}
+
+// On Activity a focused bin takes the arrows and Enter, and a keyboard-focused button takes Enter.
+function activityHints() {
+  const focused = document.activeElement;
+  const bin = focused?.classList?.contains("bin") ? Number(focused.dataset.bin) : null;
+  const day = state.activityMode === "day";
+  const enter = bin !== null ? (!day ? "day" : state.interval === bin ? "clear" : "select")
+    : keyboardFocused(focused) ? "press" : day ? "month" : "day";
+  return [["W", "highlight"], ["← →", bin !== null ? "bin" : day ? "day" : "month"], ["↵", enter], ["esc", state.highlight || state.interval !== null ? "clear" : "back"]];
 }
 
 // A key press means "open this layer" on the overview, "select" in a layer.
@@ -3225,6 +3235,9 @@ $("activity").addEventListener("focusin", showBin);
 $("activity").addEventListener("mouseover", showBin);
 $("activity").addEventListener("focusout", showBin);
 $("activity").addEventListener("mouseout", showBin);
+// The Activity hints follow focus.
+document.addEventListener("focusin", renderFooter);
+document.addEventListener("focusout", renderFooter);
 $("activity").addEventListener("keydown", (event) => {
   const bin = event.target.closest?.(".bin");
   if (bin && (event.key === "Enter" || event.key === " ") && state.activityMode === "day") {
