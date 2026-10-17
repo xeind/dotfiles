@@ -584,3 +584,26 @@ test("review data: a logged combo with no binding and no presses this month show
     await page.close();
   }
 });
+
+test("review R1: Tab reaches the group bar, Enter filters, and focus stays on the segment through a live update", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    await load(page, { now: "2026-10-17T12:00:00", bindings: BINDINGS, presses: [["2026-10-17T09:00:00", "v", "j"], ["2026-10-17T09:01:00", "s", "d"]] });
+    await page.tabTo("#groupbar button");
+    const group = await page.eval("document.activeElement.dataset.group");
+    assert.equal(await page.eval(`document.activeElement.matches(":focus-visible")`), true);
+    // The 2 px ring at a 1 px offset stays inside the bar's clipping wrapper.
+    const clipped = await page.eval(`(() => { const s = document.activeElement.getBoundingClientRect(), w = $("groupwrap").getBoundingClientRect();
+      return s.top - 3 < w.top || s.bottom + 3 > w.bottom; })()`);
+    assert.equal(clipped, false, "the focus ring is cut off by the group bar's wrapper");
+    await page.press("Enter");
+    assert.equal(await page.eval("state.group"), group, "Enter on a focused segment did not filter the list");
+    // A V J press changes the navigate total, which rebuilds the bar.
+    await appendPress(page, "2026-10-17T11:50:00");
+    assert.equal(await page.eval(`document.activeElement.closest?.("#groupbar") ? document.activeElement.dataset.group : document.activeElement.tagName`), group, "the update dropped focus from the segment");
+    await page.press("Escape");
+    assert.equal(await page.eval("state.group"), null, "Escape did not clear the filter");
+  } finally {
+    await page.close();
+  }
+});

@@ -2418,12 +2418,12 @@ function renderGroupbar(visible) {
   if (signature !== groupSignature) {
     groupSignature = signature;
     $("groupbar").replaceChildren(...GROUPS.filter((g) => totals[g]).map((group) => {
-      const segment = element("button", `grp-${group}`);
+      const segment = element("button", `grp-${group} tabstop`);
       segment.style.flex = String(totals[group]);
       segment.dataset.group = group;
       segment.setAttribute("aria-pressed", String(state.group === group));
       segment.setAttribute("aria-label", `${GROUP_LABELS[group]} ${totals[group]} presses, filter the list`);
-      segment.tabIndex = -1;
+      segment.tabIndex = tabStops ? 0 : -1;
       if (state.group !== null && state.group !== group) segment.classList.add("dimmed");
       return segment;
     }));
@@ -3308,7 +3308,7 @@ function toggleAbout(open) {
   render();
 }
 
-// The header buttons, the "i" button and the list are Tab stops only once the user has pressed Tab.
+// The header buttons, the "i" button, the group bar and the list are Tab stops only once the user has pressed Tab.
 // Edge fades follow the scroll position: set after every render and on every scroll, no animation.
 function refreshFade(node) {
   const next = HyperdashModel.fadeState(node);
@@ -3506,6 +3506,7 @@ const rebuiltControl = (node) => node.dataset.action ? [`.seg[data-action="${nod
   : node.classList.contains("evidence-back") ? [".evidence-back"]
   : node.dataset.evidence ? [`[data-evidence="${CSS.escape(node.dataset.evidence)}"]`, ".evidence-back"]
   : node.id === "theme-button" ? ["#theme-button"]
+  : node.dataset.group ? [`#groupbar button[data-group="${node.dataset.group}"]`]
   : node.classList.contains("time-chip") ? [`.time-chip[data-sec="${node.dataset.sec}"]`, ".bin.selected"] : null;
 
 // Focuses the first selector that matches, when the rebuild left focus on the body.
