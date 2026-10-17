@@ -288,3 +288,50 @@ test("bug 3: the About theme button keeps keyboard focus through a health update
     await page.close();
   }
 });
+
+// V J then S D, 5 s apart, four times: one sequence with four timestamps.
+const SEQUENCE = ["10:00", "10:10", "10:20", "10:30"].flatMap((clock) => [[`2026-10-17T${clock}:00`, "v", "j"], [`2026-10-17T${clock}:05`, "s", "d"]]);
+
+test("bug 4: the arrows reach every visible timestamp of a sequence", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    await load(page, { now: "2026-10-17T12:00:00", bindings: BINDINGS, presses: SEQUENCE });
+    await page.press("a");
+    const chips = await page.eval(`[...document.querySelectorAll(".seq .time-chip")].map((chip) => chip.textContent)`);
+    assert.deepEqual(chips, ["10:00:00", "10:10:00", "10:20:00", "10:30:00"]);
+    await page.tabTo(".time-chip");
+    const visited = [await page.eval("document.activeElement.textContent")];
+    for (let i = 1; i < chips.length; i++) {
+      await page.press("ArrowRight");
+      visited.push(await page.eval(`document.activeElement.matches(".time-chip") ? document.activeElement.textContent : document.activeElement.className || "body"`));
+    }
+    assert.deepEqual(visited, chips, "the later timestamps cannot be reached from the keyboard");
+    assert.equal(await page.eval(`$("month-label").textContent`), "TODAY", "the arrows changed the day");
+    await page.press("ArrowLeft");
+    assert.equal(await page.eval("document.activeElement.textContent"), "10:20:00");
+    // One Tab stop per sequence: Tab leaves the sequence from any of its timestamps.
+    await page.press("Tab");
+    assert.equal(await page.eval(`document.activeElement.matches(".time-chip")`), false);
+  } finally {
+    await page.close();
+  }
+});
+
+test("bug 4: Enter on a later timestamp opens its interval and hands focus to that bin", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    await load(page, { now: "2026-10-17T12:00:00", bindings: BINDINGS, presses: SEQUENCE });
+    await page.press("a");
+    await page.tabTo(".time-chip");
+    await page.press("ArrowRight");
+    await page.press("Enter");
+    assert.equal(await page.eval(`document.querySelector(".panel-head span").textContent`), "10:00–10:30 · 6 commands", "Enter did not open the timestamp's interval");
+    // The timestamps give way to the commands: focus moves to the selected bin, so the next Enter clears it.
+    assert.equal(await page.eval(`document.activeElement.matches(".bin.selected")`), true, "focus fell to the body");
+    await page.press("Enter");
+    assert.equal(await page.eval(`document.querySelector(".panel-head span").textContent`), "Observed sequences");
+    assert.equal(await page.eval(`$("month-label").textContent`), "TODAY");
+  } finally {
+    await page.close();
+  }
+});

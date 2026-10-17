@@ -2940,10 +2940,11 @@ function renderFooter() {
 function activityHints() {
   const focused = document.activeElement;
   const bin = focused?.classList?.contains("bin") ? Number(focused.dataset.bin) : null;
+  const chip = focused?.classList?.contains("time-chip");
   const day = state.activityMode === "day";
   const enter = bin !== null ? (!day ? "day" : state.interval === bin ? "clear" : "select")
     : keyboardFocused(focused) ? "press" : day ? "month" : "day";
-  return [["W", "highlight"], ["← →", bin !== null ? "bin" : day ? "day" : "month"], ["↵", enter], ["esc", state.highlight || state.interval !== null ? "clear" : "back"]];
+  return [["W", "highlight"], ["← →", bin !== null ? "bin" : chip ? "time" : day ? "day" : "month"], ["↵", enter], ["esc", state.highlight || state.interval !== null ? "clear" : "back"]];
 }
 
 // A key press means "open this layer" on the overview, "select" in a layer.
@@ -3238,11 +3239,13 @@ function run(action) {
 const keyboardFocused = (node) => Boolean(node?.matches?.("button:focus-visible"));
 
 // Activity rebuilds its controls on every change, Insights its cards and About its theme button; the same
-// control keeps keyboard focus.
+// control keeps keyboard focus. A time chip, which gives way to its interval's commands, hands focus to
+// the selected bin.
 const rebuiltControl = (node) => node.dataset.action ? `.seg[data-action="${node.dataset.action}"]`
   : node.dataset.app ? `.appchip[data-app="${node.dataset.app}"]`
   : node.classList.contains("insight") ? `.insight[data-key="${CSS.escape(node.dataset.key)}"]`
-  : node.id === "theme-button" ? "#theme-button" : null;
+  : node.id === "theme-button" ? "#theme-button"
+  : node.classList.contains("time-chip") ? ".bin.selected" : null;
 
 // Bin details: hover and keyboard focus show exact counts with the family split in words.
 function showBin(event) {
@@ -3266,13 +3269,15 @@ $("activity").addEventListener("keydown", (event) => {
     selectInterval(state.interval === Number(bin.dataset.bin) ? null : Number(bin.dataset.bin));
     return;
   }
-  if (!bin || event.shiftKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
-  const bins = [...$("activity").querySelectorAll(".bin")];
-  const next = bins[bins.indexOf(bin) + (event.key === "ArrowLeft" ? -1 : 1)];
+  // The arrows walk the bins, or the timestamps of one sequence (one Tab stop each).
+  const item = bin || event.target.closest?.(".time-chip");
+  if (!item || event.shiftKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
+  const peers = [...(bin ? $("activity") : item.parentNode).querySelectorAll(bin ? ".bin" : ".time-chip")];
+  const next = peers[peers.indexOf(item) + (event.key === "ArrowLeft" ? -1 : 1)];
   event.preventDefault();
   event.stopPropagation();
   if (!next) return;
-  bin.tabIndex = -1;
+  item.tabIndex = -1;
   next.tabIndex = 0;
   next.focus();
 });
