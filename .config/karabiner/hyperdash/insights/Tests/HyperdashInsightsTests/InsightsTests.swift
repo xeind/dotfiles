@@ -435,6 +435,19 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(insight(.rising, in: report(lines, bindings: bindings)) == nil)
     }
 
+    @Test func oneDaySpikeOnFewPressesDoesNotCount() {
+        // 2 to 73: +71 presses, 70 of them on one day. The other three days beat a weekly
+        // mean of 2/7 with a single press each.
+        let lines = week("w", "u", previous: [2, 0, 0, 0, 0, 0, 0], recent: [1, 1, 1, 0, 0, 0, 70])
+        #expect(insight(.rising, in: report(lines, bindings: bindings)) == nil)
+    }
+
+    @Test func oneDaySpikeInEarlierWeekDoesNotCountAsFalling() {
+        // 70 to 35: the earlier week is one day of 70. Without it nothing fell.
+        let lines = week("w", "u", previous: [70, 0, 0, 0, 0, 0, 0], recent: [5, 5, 5, 5, 5, 5, 5])
+        #expect(insight(.falling, in: report(lines, bindings: bindings)) == nil)
+    }
+
     @Test func steadyChangeBeatsLargerSpike() {
         let lines =
             week("o", "t", previous: [10, 10, 10, 10, 10, 10, 10], recent: [0, 0, 0, 0, 0, 0, 120])

@@ -228,8 +228,9 @@ private func focus(_ a: Analysis, context: [ContextEvent]?) -> [Insight] {
 // MARK: - rising and falling
 
 /// Compares the 7 whole days before today with the 7 before those. Needs all 14 days
-/// recorded, at least 10 presses in the larger week, a change of at least 5 presses, and
-/// the change repeated on at least 4 of the 7 recent days. Ranks by absolute change.
+/// recorded, at least 10 presses in the larger week, a change of at least 5 presses, the
+/// change repeated on at least 4 of the 7 recent days, and a change of at least 5 still
+/// left without the busiest day of the larger week. Ranks by absolute change.
 private func trend(_ a: Analysis) -> [Insight] {
     let recentDays = (1...7).map { a.keyDaysAgo($0) }
     let previousDays = (8...14).map { a.keyDaysAgo($0) }
@@ -258,6 +259,12 @@ private func trend(_ a: Analysis) -> [Insight] {
             return change > 0 ? count > was : count < was
         }
         guard repeats.count >= 4 else { continue }
+        // The change must survive dropping the busiest day of the week that carries it,
+        // scaled back to 7 days: (rest * 7 / 6) - other >= 5, in whole presses.
+        let carrier = change > 0 ? recentDays : previousDays
+        let busiest = carrier.map { days[$0, default: 0] }.max()!
+        let rest = (change > 0 ? now : was) - busiest
+        guard rest * 7 - (change > 0 ? was : now) * 6 >= 30 else { continue }
         if let current = best {
             let currentChange = abs(current.now - current.was)
             if (abs(change), repeats.count) <= (currentChange, current.repeats.count) { continue }
