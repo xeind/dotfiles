@@ -2998,7 +2998,15 @@ function toggleMode() {
     if (months.includes(month)) state.monthId = month;
     Object.assign(state, { activityMode: "month", interval: null, focusSec: null, appFilter: null });
   } else {
-    Object.assign(state, { activityMode: "day", day: HyperdashModel.clampDay(state.day, firstDay(), today()) });
+    // A browsed month opens on the same day of that month: its last day when shorter, and never outside
+    // the recorded days.
+    let day = state.day;
+    if (day.slice(0, 7) !== state.monthId) {
+      const [year, month] = state.monthId.split("-").map(Number);
+      const length = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      day = `${state.monthId}-${String(Math.min(Number(day.slice(8, 10)), length)).padStart(2, "0")}`;
+    }
+    Object.assign(state, { activityMode: "day", day: HyperdashModel.clampDay(day, firstDay(), today()) });
   }
   render();
 }

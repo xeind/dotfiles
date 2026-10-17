@@ -335,3 +335,35 @@ test("bug 4: Enter on a later timestamp opens its interval and hands focus to th
     await page.close();
   }
 });
+
+// Activity on `now`, Enter for the month, `back` months back with ←, Enter for the day: the pill's label.
+async function monthThenDay(page, now, presses, back) {
+  await load(page, { now, bindings: BINDINGS, presses: presses.map((stamp) => [stamp, "v", "j"]) });
+  await page.press("a");
+  await page.press("Enter");
+  for (let i = 0; i < back; i++) await page.press("ArrowLeft");
+  const month = await page.eval(`$("month-label").textContent`);
+  await page.press("Enter");
+  return [month, await page.eval(`$("month-label").textContent`)];
+}
+
+test("bug 5: Enter from a browsed month opens the same day of that month, within the month and the record", options, async () => {
+  const cases = [
+    // [now, presses, months back, month shown, day shown]
+    ["2026-10-17T12:00:00", ["2026-09-03T09:00:00", "2026-09-17T09:00:00", "2026-10-17T09:00:00"], 1, "SEPTEMBER", "THU SEP 17"],
+    // October 31 has no September twin: the month's last day.
+    ["2026-10-31T12:00:00", ["2026-09-03T09:00:00", "2026-10-31T09:00:00"], 1, "SEPTEMBER", "WED SEP 30"],
+    // Before the first recorded day: the first recorded day.
+    ["2026-10-17T12:00:00", ["2026-09-20T09:00:00", "2026-10-17T09:00:00"], 1, "SEPTEMBER", "SUN SEP 20"],
+    // Not browsed: back to the same day.
+    ["2026-10-17T12:00:00", ["2026-09-03T09:00:00", "2026-10-17T09:00:00"], 0, "OCTOBER", "TODAY"],
+  ];
+  for (const [now, presses, back, month, day] of cases) {
+    const page = await open(now);
+    try {
+      assert.deepEqual(await monthThenDay(page, now, presses, back), [month, day], `from ${now.slice(0, 10)}, ${back} month(s) back`);
+    } finally {
+      await page.close();
+    }
+  }
+});
