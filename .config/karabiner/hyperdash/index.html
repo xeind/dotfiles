@@ -300,6 +300,14 @@
     --mono-label: 10px;
     --mono-caption: 9.5px;
     --mono-monogram: 8px;
+
+    /* Line boxes (DESIGN.md §4): whole pixels, so a block of lines is a whole-pixel sum */
+    --leading-numeral: 26px;
+    --leading-content: 16px;
+    --leading-secondary: 16px;
+    --leading-prose: 18px;
+    --leading-note: 14px;
+    --leading-readout: 13.5px;
   }
 
 
@@ -406,7 +414,7 @@
     font-size: var(--text-numeral);
     font-weight: 500;
     letter-spacing: -0.04em;
-    line-height: 1;
+    line-height: var(--leading-numeral);
     font-variant-numeric: tabular-nums;
   }
 
@@ -666,8 +674,8 @@
     overflow: hidden;
   }
 
-  .insight-title { font-size: var(--text-content); line-height: 1.3; letter-spacing: -0.01em; }
-  .insight-detail { margin-top: 2px; font-size: var(--text-secondary); line-height: 1.3; color: var(--muted); }
+  .insight-title { font-size: var(--text-content); line-height: var(--leading-content); letter-spacing: -0.01em; }
+  .insight-detail { margin-top: 2px; font-size: var(--text-secondary); line-height: var(--leading-secondary); color: var(--muted); }
 
   .insight .chips { flex: none; }
 
@@ -751,7 +759,7 @@
     border: 1px solid var(--line);
     font-family: var(--mono);
     font-size: var(--mono-label);
-    line-height: 1.4;
+    line-height: var(--leading-note);
     color: var(--muted);
   }
 
@@ -777,7 +785,7 @@
     font-size: var(--mono-caption);
     letter-spacing: 0.02em;
     color: var(--faint);
-    line-height: 1.4;
+    line-height: var(--leading-readout);
     height: 27px; /* two lines, always */
     overflow: hidden;
   }
@@ -795,7 +803,7 @@
     background: var(--raised);
     border: 1px solid var(--line);
     font-size: var(--text-content);
-    line-height: 1.4;
+    line-height: var(--leading-prose);
     color: var(--soft);
   }
 
@@ -814,7 +822,7 @@
     overflow: hidden;
     font-family: var(--mono);
     font-size: var(--mono-label);
-    line-height: 13.5px;
+    line-height: var(--leading-readout);
     letter-spacing: 0.04em;
     color: var(--soft);
   }
@@ -912,7 +920,7 @@
   .cmd-app { font: var(--mono-label) var(--mono); color: var(--faint); max-width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   .seq { padding: 4px; border-radius: 8px; }
-  .seq-title { display: flex; justify-content: space-between; gap: 8px; font-size: var(--text-content); }
+  .seq-title { display: flex; justify-content: space-between; gap: 8px; font-size: var(--text-content); line-height: var(--leading-content); }
   .seq-title span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .seq-title span:last-child { font: var(--mono-key) var(--mono); color: var(--muted); }
   .seq-times { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }

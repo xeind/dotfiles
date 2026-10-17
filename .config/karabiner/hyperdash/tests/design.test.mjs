@@ -16,7 +16,6 @@ const TYPE_SCALE = {
 const SCALE = {
   "font-weight": ["400", "500"],
   "letter-spacing": ["-0.04em", "-0.01em", "0", "0.02em", "0.04em"],
-  "line-height": ["1", "1.3", "1.4"],
   "border-radius": ["5px", "7px", "8px", "10px", "30px", "50%", "999px", "inherit"],
   space: ["0", "2px", "4px", "6px", "8px", "12px", "20px", "auto"],
 };
@@ -37,7 +36,7 @@ const EXCEPTIONS = {
   ":root | --mono-monogram | 8px": "letter inside a 14 px icon placeholder: the 18 px slot's 10 px letter scaled by 14 / 18 = 7.8",
   ".list::-webkit-scrollbar-thumb | border-radius | 4px": "4 px scrollbar: fully round",
   ".panel-body::-webkit-scrollbar-thumb | border-radius | 4px": "4 px scrollbar: fully round",
-  ".bin-readout | line-height | 13.5px": "two fixed readout lines in a 27 px box",
+  ":root | --leading-readout | 13.5px": "two fixed lines in the 27 px status and readout boxes: 27 / 2",
 };
 
 // Splits the style block into [selector, declarations] pairs, ignoring @-rule wrappers.
@@ -80,44 +79,57 @@ test("every type, shape and spacing value is on the DESIGN.md scale or carries a
   assert.deepEqual(stale, [], "EXCEPTIONS lines that no longer match anything");
 });
 
-test("every font size is a type token, and every type token is on the scale", () => {
-  const TOKEN = /var\((--(?:text|mono)-[a-z-]+)\)/;
+// Sizes that live as tokens in the shared :root: which declarations must name one, the token names, and the values
+// a token may hold. Themes change colour only, so no theme block defines one.
+const KINDS = {
+  "font size": {
+    props: ["font-size", "font"], token: /var\((--(?:text|mono)-[a-z-]+)\)/, name: /^--(?:text|mono)-/,
+    legal: (name, value) => TYPE_SCALE[name.slice(0, 7)].includes(value),
+  },
+  "line height": {
+    props: ["line-height"], token: /var\((--leading-[a-z-]+)\)/, name: /^--leading-/,
+    legal: (name, value) => /^\d+px$/.test(value), // whole pixels, so a block of lines is a whole-pixel sum
+  },
+};
+
+function checkTokens(kind) {
+  const { props, token: TOKEN, name: NAME, legal } = KINDS[kind];
   const off = [];
   const used = new Set();
   for (const [selector, body] of rules(css)) {
     if (selector.startsWith(":root")) continue;
     for (const [prop, value] of declarations(body)) {
-      if (prop !== "font-size" && !(prop === "font" && value !== "inherit")) continue;
+      if (!props.includes(prop) || value === "inherit") continue;
       const token = TOKEN.exec(value)?.[1];
-      // A shorthand may carry a weight and a family; any length left besides the token is a size written by hand.
+      // A shorthand may carry a weight and a family; any length or /line-height left besides the token is by hand.
       const rest = value.replace(TOKEN, "").replace(/^\d{3}\s/, "");
-      if (!token || /\d(?:px|em|rem|%)|\b(?:small|medium|large|smaller|larger)\b/.test(rest)) off.push(`${selector} | ${prop} | ${value}`);
+      if (!token || /\d(?:px|em|rem|%)|\/|\b(?:small|medium|large|smaller|larger)\b/.test(rest)) off.push(`${selector} | ${prop} | ${value}`);
       else used.add(token);
     }
   }
-  assert.deepEqual(off, [], `font sizes not written as a type token:\n  ${off.join("\n  ")}`);
+  assert.deepEqual(off, [], `${kind}s not written as a token:\n  ${off.join("\n  ")}`);
 
-  // Tokens: defined once, in the shared :root block (themes change colour only), each on its voice's scale.
   const defined = new Map();
   for (const [selector, body] of rules(css)) {
     for (const [prop, value] of declarations(body)) {
-      if (!/^--(?:text|mono)-/.test(prop)) continue;
-      assert.equal(selector, ":root", `${prop} is defined in "${selector}"; type tokens belong in the shared :root block`);
+      if (!NAME.test(prop)) continue;
+      assert.equal(selector, ":root", `${prop} is defined in "${selector}"; size tokens belong in the shared :root block`);
       assert.ok(!defined.has(prop), `${prop} is defined twice`);
       defined.set(prop, value);
     }
   }
-  const offScale = [];
-  for (const [name, value] of defined) {
-    const steps = TYPE_SCALE[name.slice(0, 7)];
-    if (!steps.includes(value) && !(`:root | ${name} | ${value}` in EXCEPTIONS)) offScale.push(`${name}: ${value}`);
-  }
-  assert.deepEqual(offScale, [], "type tokens off the scale");
-  const stale = Object.keys(EXCEPTIONS).filter((key) => key.startsWith(":root") && defined.get(key.split(" | ")[1]) !== key.split(" | ")[2]);
-  assert.deepEqual(stale, [], "type token EXCEPTIONS lines that no longer match anything");
-  assert.deepEqual([...used].filter((name) => !defined.has(name)), [], "type tokens used but never defined");
-  assert.deepEqual([...defined.keys()].filter((name) => !used.has(name)), [], "type tokens defined but never used");
-});
+  const offScale = [...defined].filter(([name, value]) => !legal(name, value) && !(`:root | ${name} | ${value}` in EXCEPTIONS));
+  assert.deepEqual(offScale.map(([name, value]) => `${name}: ${value}`), [], `${kind} tokens off the scale`);
+  const stale = Object.keys(EXCEPTIONS).filter((key) => key.startsWith(":root") && NAME.test(key.split(" | ")[1])
+    && defined.get(key.split(" | ")[1]) !== key.split(" | ")[2]);
+  assert.deepEqual(stale, [], `${kind} token EXCEPTIONS lines that no longer match anything`);
+  assert.deepEqual([...used].filter((name) => !defined.has(name)), [], `${kind} tokens used but never defined`);
+  assert.deepEqual([...defined.keys()].filter((name) => !used.has(name)), [], `${kind} tokens defined but never used`);
+}
+
+test("every font size is a type token, and every type token is on the scale", () => checkTokens("font size"));
+
+test("every line height is a leading token in whole pixels", () => checkTokens("line height"));
 
 test("colours come only from theme tokens", () => {
   const literal = /#[0-9a-fA-F]{3,8}\b|\b(?:rgb|rgba|hsl|hsla|oklch|oklab)\(/;
