@@ -141,7 +141,8 @@ func dayKey(_ date: Date, calendar: Calendar) -> String {
 /// Days whose recording is complete enough to state an absence or a change.
 ///
 /// A day qualifies when it falls after the day of the first valid event and before the day
-/// of `now`. With a context log, every press on that day must also lie inside a session.
+/// of `now`. With a context log, the day must also overlap a session, and every press on
+/// that day must lie inside a session.
 public func recordedDays(
     events: [PressEvent], context: [ContextEvent]?, now: Date, calendar: Calendar
 ) -> Set<String> {
@@ -159,8 +160,10 @@ public func recordedDays(
     var result = Set<String>()
     while day < today {
         let key = dayKey(day, calendar: calendar)
-        if !unrecorded.contains(key) { result.insert(key) }
-        day = calendar.date(byAdding: .day, value: 1, to: day)!
+        let next = calendar.date(byAdding: .day, value: 1, to: day)!
+        let observed = sessions.map { $0.spans.contains { $0.start < next && $0.end >= day } } ?? true
+        if observed && !unrecorded.contains(key) { result.insert(key) }
+        day = next
     }
     return result
 }

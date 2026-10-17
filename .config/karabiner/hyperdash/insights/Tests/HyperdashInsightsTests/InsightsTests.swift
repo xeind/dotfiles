@@ -221,6 +221,16 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(result == [oct(11), oct(12), oct(14)])
     }
 
+    @Test func emptyDayOutsideEverySessionIsNotRecorded() {
+        // One press on 1 October; recording starts on 12 October. 2 to 11 October have no
+        // presses and no session, so nothing shows that the recorder saw them.
+        let result = recordedDays(
+            events: log([line("\(oct(1))T12:00:00", "w", "u")]),
+            context: parsedContext([context("\(oct(12))T00:00:00.000", "start")]).events,
+            now: now, calendar: calendar)
+        #expect(result == [oct(12), oct(13), oct(14)])
+    }
+
     @Test func lockAndSleepInsideSessionDoNotBreakIt() {
         let result = days([
             context("2026-08-01T00:00:00.000", "start"),
@@ -556,6 +566,17 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
             ])
         // Presses on 12 and 13 fall in the gap, leaving only day 11 and day 14.
         #expect(insight(.unused, in: result) == nil)
+    }
+
+    @Test func unobservedEmptyDaysAreNotCounted() {
+        let bindings = layer("w", 5)
+        let result = report(
+            presses(1, "w", "k0", day: oct(1)), bindings: bindings, anchored: false,
+            context: [context("\(oct(12))T00:00:00.000", "start")])
+        // 2 to 11 October have no session, so only 12, 13 and 14 October count.
+        let found = insight(.unused, in: result)
+        #expect(found?.detail == "No presses on 3 recorded days")
+        #expect(found?.dates == [oct(12), oct(13), oct(14)])
     }
 
     @Test func pressOlderThan30DaysDoesNotCount() {
