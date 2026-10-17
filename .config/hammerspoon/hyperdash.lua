@@ -785,10 +785,9 @@ local function create()
   -- Load the page once and keep it hidden; later calls only send new data.
   webview:navigationCallback(function(action)
     if action == "didFinishNavigation" then
-      if recovering then
-        recovering = false
-        if recoveryTimer then recoveryTimer:stop(); recoveryTimer = nil end
-      end
+      -- Ends the initial load's timeout as well as a reload's.
+      recovering = false
+      if recoveryTimer then recoveryTimer:stop(); recoveryTimer = nil end
       pageFailed = false
       refreshBindingsCache()
       pageReady = true
@@ -810,11 +809,16 @@ local function create()
         pendingOpen = false
         show()
       end
-    elseif (action == "didFailNavigation" or action == "didFailProvisionalNavigation") and recovering then
+    elseif (action == "didFailNavigation" or action == "didFailProvisionalNavigation") and (recovering or not pageReady) then
+      -- A failed first load enters the same failed state as a failed reload,
+      -- so the next toggle retries instead of waiting for a page that is not coming.
       recoveryFailed("navigation failed")
     end
   end)
   webview:html(readFile(PAGE) or "")
+  -- Bound the first load too: without this, a load that never ends leaves
+  -- pageReady and pageFailed false, and every toggle just waits.
+  recoveryTimer = hs.timer.doAfter(PAGE_RELOAD_TIMEOUT, function() recoveryFailed("initial load did not finish") end)
 
   -- Clicking another app closes the panel, like a popover.
   appWatcher = hs.application.watcher.new(function(name, event)

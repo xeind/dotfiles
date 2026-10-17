@@ -1001,6 +1001,69 @@ do
   check("theme recovery: the panel opened", env.shown == 1, env.shown)
 end
 
+---------------------------------------------------------------------------
+-- The first page load is bounded and can fail
+---------------------------------------------------------------------------
+do
+  local function fresh(name)
+    local home, p = baseHome(name)
+    write(p.log, lines(0, 3))
+    return sandbox.new({ moduleDir = MODULE_DIR, home = home, startTime = noon() }), p
+  end
+
+  -- A load that works leaves no timer behind to fail later.
+  local env = fresh("load_ok")
+  env.webview.navigation("didFinishNavigation")
+  env.flush()
+  local html = env.htmlCalls
+  env.advance(30)
+  toggle(env)
+  check("first load ok: no alert, no reload after the timeout window", #env.alerts == 0 and env.htmlCalls == html, #env.alerts)
+  check("first load ok: the panel opens", env.shown == 1)
+
+  -- The first navigation fails: the next toggle retries and opens.
+  env = fresh("load_fail")
+  html = env.htmlCalls
+  env.webview.navigation("didFailProvisionalNavigation")
+  check("first load fails: no alert while nobody asked to open", #env.alerts == 0)
+  env.module.toggle()
+  env.advance(0)
+  check("first load fails: the next toggle reloads the page", env.htmlCalls == html + 1, env.htmlCalls - html)
+  env.finishReload()
+  env.flush()
+  check("first load fails: it opens once the reload works", env.shown == 1, env.shown)
+
+  -- The first navigation never ends.
+  env = fresh("load_hang")
+  html = env.htmlCalls
+  env.advance(5.1)
+  env.module.toggle()
+  env.advance(0)
+  check("first load hangs: after the timeout a toggle reloads", env.htmlCalls == html + 1, env.htmlCalls - html)
+  env.finishReload()
+  env.flush()
+  check("first load hangs: and then opens", env.shown == 1, env.shown)
+
+  -- Someone pressed the shortcut during the first load, and it fails.
+  env = fresh("load_fail_asked")
+  env.module.toggle()
+  env.advance(0)
+  env.webview.navigation("didFailNavigation")
+  check("asked during a failing first load: one alert", #env.alerts == 1 and env.alerts[1] == "hyperdash: page failed to load", #env.alerts)
+  check("asked during a failing first load: nothing opens later by itself", env.shown == 0)
+  env.module.toggle()
+  env.advance(0)
+  env.finishReload()
+  env.flush()
+  check("asked during a failing first load: the next toggle works", env.shown == 1, env.shown)
+
+  -- Asked during a first load that hangs.
+  env = fresh("load_hang_asked")
+  env.module.toggle()
+  env.advance(5.1)
+  check("asked during a hanging first load: alert after the timeout", #env.alerts == 1, #env.alerts)
+end
+
 os.execute("rm -rf " .. SCRATCH)
 report[#report + 1] = string.format("passed=%d failed=%d", passed, failed)
 return table.concat(report, "\n")

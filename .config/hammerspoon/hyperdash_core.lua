@@ -276,11 +276,12 @@ function R.newRecorder(env)
       recorder.lastError = "cannot open " .. env.path
       return false
     end
-    local ok = file:write(line)
-    file:close()
-    if not ok then
+    local wrote = file:write(line)
+    -- Buffered output can fail only at close, after write looked fine.
+    local closed = file:close()
+    if not wrote or not closed then
       recorder.failed = recorder.failed + 1
-      recorder.lastError = "cannot write " .. env.path
+      recorder.lastError = (wrote and "cannot close " or "cannot write ") .. env.path
       return false
     end
     recorder.written = recorder.written + 1

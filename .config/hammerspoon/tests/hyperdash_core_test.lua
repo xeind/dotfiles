@@ -546,6 +546,24 @@ do
   check("insightsBackoff: many failures stay at 30 minutes", R.insightsBackoff(50) == 1800)
 end
 
+do
+  -- A write that looks fine can still fail when the file closes.
+  local base = os.time({ year = 2026, month = 10, day = 16, hour = 9, min = 30, sec = 12 })
+  local function recorderWith(close)
+    return R.newRecorder({ path = "/x/context.log", now = function() return base end,
+      open = function() return { write = function() return true end, close = close } end })
+  end
+  local good = recorderWith(function() return true end)
+  check("close ok: counted", good.app("com.apple.finder") == true and good.written == 1 and good.failed == 0)
+  local bad = recorderWith(function() return nil, "disk full" end)
+  check("close fails: the event is not counted", bad.app("com.apple.finder") == false and bad.written == 0 and bad.failed == 1)
+  check("close fails: the app is not remembered, so the next event retries", bad.lastApp == nil)
+  check("close fails: the error names the close", bad.lastError:find("close", 1, true) ~= nil, bad.lastError)
+  local both = R.newRecorder({ path = "/x/c.log", now = function() return base end,
+    open = function() return { write = function() return nil end, close = function() return true end } end })
+  check("write fails: still reported as a write failure", both.write("start") == false and both.lastError:find("write", 1, true) ~= nil, both.lastError)
+end
+
 os.execute("rm -rf " .. SCRATCH)
 report[#report + 1] = string.format("passed=%d failed=%d", passed, failed)
 return table.concat(report, "\n")

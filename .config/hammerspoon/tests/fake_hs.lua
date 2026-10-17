@@ -369,11 +369,11 @@ function sandbox.new(options)
 
   local path = options.moduleDir .. "/" .. (options.moduleFile or "hyperdash.lua")
   local source = assert(io.open(path, "rb")):read("a")
-  if options.recordContext then
-    local edited, count = source:gsub("local RECORD_CONTEXT = false", "local RECORD_CONTEXT = true")
-    assert(count == 1, "RECORD_CONTEXT line not found")
-    source = edited
-  end
+  -- Tests choose the recording setting; the file's own value (the user's
+  -- switch) must not change their results.
+  local edited, count = source:gsub("local RECORD_CONTEXT = %a+", "local RECORD_CONTEXT = " .. (options.recordContext and "true" or "false"), 1)
+  assert(count == 1, "RECORD_CONTEXT line not found")
+  source = edited
   local chunk, err = load(source, "@" .. path, "t", globals)
   assert(chunk, err)
   env.module = chunk()
