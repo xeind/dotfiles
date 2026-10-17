@@ -2470,8 +2470,15 @@ function renderDetail() {
   detail.className = "detail";
   const binding = view.scoped.find((b) => b.key === state.selected);
   const text = element("div", "detail-text");
+  // A combo logged in another month but unbound now has no row in this month.
+  const lastLogged = binding ? null : store.lastUsedOf(`${state.layer} ${state.selected}`);
 
-  if (!binding) {
+  if (lastLogged) {
+    text.append(
+      element("div", "detail-title", `${symbol(state.selected)} · no longer bound`),
+      element("div", "detail-value", `Not used in ${monthLabel(view.month)} · last ${timeAgo(lastLogged)}`),
+    );
+  } else if (!binding) {
     text.append(
       element("div", "detail-title", `${symbol(state.selected)} · not bound`),
       element("div", "detail-value", `Nothing on Hyper ${symbol(state.layer)} ${symbol(state.selected)} yet`),

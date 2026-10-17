@@ -488,3 +488,24 @@ test("review 5: a focused timestamp keeps focus through a live update", options,
     await page.close();
   }
 });
+
+test("review data: a logged combo with no binding and no presses this month shows its history, not 'Nothing yet'", options, async () => {
+  const now = "2026-10-15T15:00:00";
+  const unbound = { kind: "unbound", title: "1 logged combo no longer bound", detail: "1 press logged with no current binding", keys: [["z", "z"]], value: 1, dates: ["2026-08-01"], app: null };
+  const page = await open(now);
+  try {
+    await load(page, {
+      now, bindings: BINDINGS, insights: { version: 3, generated: now, month: "2026-10", recordingSince: "2026-08-01T00:00:00", rejectedLines: 0, insights: [unbound] },
+      presses: [["2026-08-01T00:00:00", "z", "z"], ["2026-10-15T09:00:00", "w", "u"]],
+    });
+    await page.press("i");
+    await page.tabTo(".insight");
+    await page.press("Enter");
+    const detail = await page.eval(`$("detail").textContent`);
+    assert.doesNotMatch(detail, /Nothing on/, "the card says the combo was logged; its page says it never was");
+    assert.match(detail, /no longer bound/);
+    assert.match(detail, /Not used in October · last 75d ago/);
+  } finally {
+    await page.close();
+  }
+});
