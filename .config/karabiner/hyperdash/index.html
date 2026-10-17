@@ -2257,8 +2257,8 @@ function render(announce = true) {
   if (listed) renderList(inLayer);
   else if (!broken && page === "insights") renderInsights();
   else if (!broken) renderActivity(am);
-  if (refocus && document.activeElement === document.body) document.querySelector(refocus)?.focus({ preventScroll: true });
   renderStatus(broken);
+  if (refocus && document.activeElement === document.body) document.querySelector(refocus)?.focus({ preventScroll: true });
   renderFooter();
 
   refreshFades();
@@ -2540,6 +2540,7 @@ function renderInsights() {
       // No command to open: show the first supporting day in Activity.
       card.addEventListener("click", () => openDay(item.dates[0], item.app));
     }
+    card.dataset.key = `${item.kind} ${item.title}`; // its identity when a render rebuilds it
     list.append(card);
   }
   root.append(list);
@@ -3164,10 +3165,12 @@ const hyperdash = {
   setHealth(nextHealth) {
     begin();
     health = HyperdashModel.normalizeHealth(nextHealth);
+    const refocus = keyboardFocused(document.activeElement) ? rebuiltControl(document.activeElement) : null;
     renderStatus(dataError !== null);
     if (dataError === null && state.page === null) renderList(state.layer !== null);
     else if (dataError === null && state.page === "insights" && !insightsData) renderInsights();
     else if (dataError === null && state.page === "activity") renderActivity(activityModel());
+    if (refocus && document.activeElement === document.body) document.querySelector(refocus)?.focus({ preventScroll: true });
     refreshFades();
     renderNow = null;
     return { ok: true, height: document.body.scrollHeight };
@@ -3234,9 +3237,12 @@ function run(action) {
 
 const keyboardFocused = (node) => Boolean(node?.matches?.("button:focus-visible"));
 
-// Activity rebuilds its controls on every change; the same control keeps keyboard focus.
+// Activity rebuilds its controls on every change, Insights its cards and About its theme button; the same
+// control keeps keyboard focus.
 const rebuiltControl = (node) => node.dataset.action ? `.seg[data-action="${node.dataset.action}"]`
-  : node.dataset.app ? `.appchip[data-app="${node.dataset.app}"]` : null;
+  : node.dataset.app ? `.appchip[data-app="${node.dataset.app}"]`
+  : node.classList.contains("insight") ? `.insight[data-key="${CSS.escape(node.dataset.key)}"]`
+  : node.id === "theme-button" ? "#theme-button" : null;
 
 // Bin details: hover and keyboard focus show exact counts with the family split in words.
 function showBin(event) {

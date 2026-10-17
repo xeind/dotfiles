@@ -228,3 +228,63 @@ test("bug 2: the selected app stays visible and removable on days where it ranks
     await page.close();
   }
 });
+
+// Five findings, each with one combo, long enough that the list scrolls.
+const INSIGHTS = {
+  version: 3, generated: "2026-10-17T06:00:00", month: "2026-10", recordingSince: "2026-10-01T08:00:00", rejectedLines: 0,
+  insights: Array.from({ length: 5 }, (_, i) => ({
+    kind: "peak", title: `Finding ${i + 1} with a title long enough to run on to a second line`,
+    detail: "A detail line that explains the finding in more words than fit on one single line of the card",
+    keys: [[BINDINGS[i % 3].layer, BINDINGS[i % 3].key]], value: i, dates: [], app: null,
+  })),
+};
+// Appends one press line through the host protocol, as the log watcher does.
+const appendPress = (page, stamp) => page.eval(`(() => {
+  const line = ${JSON.stringify(`${stamp}\tv\tj\n`)};
+  const result = hyperdash.append({ generation: 1, from: fixture.text.length, to: fixture.text.length + line.length, text: line });
+  fixture.text += line;
+  return result.ok;
+})()`);
+const focused = (page) => page.eval(`(() => { const n = document.activeElement; return n === document.body ? "body" : n.id || n.querySelector(".insight-title")?.textContent || n.className; })()`);
+
+test("bug 3: an insight card keeps keyboard focus and scroll through a log append and a tick", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    await load(page, { now: "2026-10-17T12:00:00", bindings: BINDINGS, insights: INSIGHTS, presses: [["2026-10-17T09:00:00", "v", "j"]] });
+    await page.press("i");
+    await page.tabTo(".insight:nth-child(2)");
+    const card = await focused(page);
+    assert.match(card, /^Finding 2 /);
+    const scroll = await page.eval(`$("insights").scrollTop = 40, $("insights").scrollTop`);
+    assert.ok(scroll > 0, "the insight list does not scroll");
+    assert.equal(await appendPress(page, "2026-10-17T11:59:00"), true);
+    assert.equal(await focused(page), card, "the append dropped focus from the card");
+    assert.equal(await page.eval(`$("insights").scrollTop`), scroll, "the append reset the insight list's scroll");
+    await page.eval(`hyperdash.tick({})`);
+    assert.equal(await focused(page), card, "the tick dropped focus from the card");
+    // Enter still opens the card's combo: S D, in the System layer.
+    await page.press("Enter");
+    assert.equal(await page.eval(`$("title").textContent`), "System");
+  } finally {
+    await page.close();
+  }
+});
+
+test("bug 3: the About theme button keeps keyboard focus through a health update and a log append", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    await load(page, { now: "2026-10-17T12:00:00", bindings: BINDINGS, insights: INSIGHTS, presses: [["2026-10-17T09:00:00", "v", "j"]] });
+    await page.eval(`$("about-toggle").click()`);
+    await page.tabTo("#theme-button");
+    await page.eval(`hyperdash.setHealth({ ...fixture.health, insights: { status: "stale", message: null } })`);
+    assert.equal(await focused(page), "theme-button", "the health update dropped focus from the theme button");
+    assert.equal(await appendPress(page, "2026-10-17T11:59:00"), true);
+    assert.equal(await focused(page), "theme-button", "the append dropped focus from the theme button");
+    // Enter routing reads :focus-visible, so the restored button must still match it.
+    assert.equal(await page.eval(`document.activeElement.matches(":focus-visible")`), true);
+    await page.press("Enter");
+    assert.equal(await page.eval(`document.documentElement.dataset.theme`), "kozo");
+  } finally {
+    await page.close();
+  }
+});
