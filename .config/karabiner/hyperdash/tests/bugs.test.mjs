@@ -367,3 +367,26 @@ test("bug 5: Enter from a browsed month opens the same day of that month, within
     }
   }
 });
+
+test("review A: a context reset with the same number of events does not reuse the old recording spans", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    const spans = await page.eval(`(() => {
+      const store = HyperdashModel.createContextStore();
+      store.reset("2026-10-17T09:00:00.000\\tstart\\t-\\n");
+      const first = store.sessions("2026-10-17T12:00:00");
+      store.reset("2026-10-17T11:00:00.000\\tstart\\t-\\n");
+      const second = store.sessions("2026-10-17T12:00:00");
+      const fresh = HyperdashModel.createContextStore();
+      fresh.reset("2026-10-17T11:00:00.000\\tstart\\t-\\n");
+      const clock = (s) => new Date(s * 1000).toISOString().slice(11, 16);
+      return [first, second, fresh.sessions("2026-10-17T12:00:00")].map((list) => list.map((s) => clock(s.start) + "-" + clock(s.end)));
+    })()`);
+    assert.deepEqual(spans[0], ["09:00-12:00"]);
+    assert.deepEqual(spans[1], spans[2], "the reset store kept the old 09:00 session");
+    assert.deepEqual(spans[1], ["11:00-12:00"]);
+  } finally {
+    await page.close();
+  }
+});
+

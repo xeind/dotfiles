@@ -1649,7 +1649,8 @@ var HyperdashModel = (() => {
     const minuteCache = new Map();
     let events, rejected, sorted, version, appList;
 
-    function clear() { events = []; rejected = 0; sorted = true; version = 0; appList = null; }
+    // version only ever grows, also across a reset, so a cache keyed on it never matches an older log.
+    function clear() { events = []; rejected = 0; sorted = true; version = (version ?? 0) + 1; appList = null; }
     clear();
 
     function ingest(text) {
