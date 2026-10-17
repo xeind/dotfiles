@@ -901,6 +901,8 @@
   .chart .cov-off { fill: none; stroke: var(--hatch); stroke-width: 0.8; }
   .chart .cov-none { fill: url(#hatch); stroke: var(--hatch); stroke-width: 0.8; }
   .bin.selected { fill: var(--edge-soft); stroke: var(--accent-soft); stroke-width: 1; }
+  /* Keyboard focus draws the 2 px ring every other control gets; hover keeps the fill alone. */
+  .bin:focus-visible { stroke: var(--accent-soft); stroke-width: 2; }
 
   /* Coverage legend: small bars, the same fills as the strip under the chart */
   .swatch.cov-recorded, .swatch.cov-locked, .swatch.cov-asleep, .swatch.cov-none { width: 12px; height: 5px; margin-top: calc((1lh - 5px) / 2); border-radius: 1.5px; }

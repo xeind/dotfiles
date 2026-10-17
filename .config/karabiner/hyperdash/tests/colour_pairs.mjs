@@ -105,6 +105,7 @@ const RAW = [
   [".time-chip:active", "value", "--text", [["active", "--line"]], "mono", 10, 400],
   [".seq-more", "caption", "--faint", [["rest", "--card"]], "mono", 10, 400],
   [".bin.selected", "focus", "--accent-soft", [["selected", "--card"]], "ring", 1, 500],
+  [".bin:focus-visible", "focus", "--accent-soft", [["focus", "--card"]], "ring", 2, 500],
 
   // Groups
   [".groupbar button", "mark", "--g-{g}", [["rest", "--card"]], "bar", 8, 500],
