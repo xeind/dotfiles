@@ -594,6 +594,16 @@ do
     return env.page.health.context.status == "ok" and env.page.health.context.bytes == #text
   end)(), env.page.health.context.status)
   check("recorder on: the panel's own open is not recorded as a Hyper event", select(2, text:gsub("\tapp\t", "")) == 2)
+
+  -- A rotated log starts a new session with the app that is frontmost now.
+  os.remove(contextPath(home))
+  env.frontmost = fakeApp("com.apple.Safari", "Safari", "/Applications/Safari.app")
+  env.advance(1)
+  sleepWatcher.fn(10) -- screensDidLock
+  text = readText(contextPath(home))
+  kinds = {}
+  for kind, value in text:gmatch("T[%d:%.]+\t(%a+)\t([^\n]+)\n") do kinds[#kinds + 1] = kind .. ":" .. value end
+  check("recorder on: rotated log begins with start and the front app", table.concat(kinds, " ") == "start:- app:com.apple.Safari lock:-", table.concat(kinds, " "))
 end
 
 -- Both streams: reset, append, independent generations and offsets.

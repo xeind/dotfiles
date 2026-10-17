@@ -456,6 +456,7 @@ do
     path = path,
     now = function() return clock end,
     open = io.open,
+    stat = hs.fs.attributes,
     ensureDirectory = function(d) ensured[#ensured + 1] = d; os.execute("mkdir -p " .. d) end,
   })
   check("recorder: starts empty", recorder.written == 0 and recorder.lastApp == nil)
@@ -493,11 +494,12 @@ do
   check("recorder: lines match the format", formatOk and select(2, text:gsub("\n", "")) == 5)
   check("recorder: times non-decreasing", ordered)
 
-  -- A deleted log is recreated by the next event.
+  -- A deleted log is recreated by the next event, as a new session. With no
+  -- frontApp in env there is no app line to seed.
   os.execute("rm -f " .. path)
   check("recorder: writes again after the file was deleted", recorder.write("wake") == true)
   f = io.open(path, "rb"); text = f:read("a"); f:close()
-  check("recorder: new file holds only the new line", select(2, text:gsub("\n", "")) == 1 and text:find("\twake\t-", 1, true) ~= nil)
+  check("recorder: new file holds start, then the new line", text == R.contextLine(clock, "start") .. R.contextLine(clock, "wake"), text)
 
   -- Failures are counted, never raised.
   local failing = R.newRecorder({ path = "/nonexistent-dir/x/context.log", now = function() return base end, open = io.open })
@@ -562,6 +564,59 @@ do
   local both = R.newRecorder({ path = "/x/c.log", now = function() return base end,
     open = function() return { write = function() return nil end, close = function() return true end } end })
   check("write fails: still reported as a write failure", both.write("start") == false and both.lastError:find("write", 1, true) ~= nil, both.lastError)
+end
+
+do
+  -- A replaced or deleted log has no start line, and readers attribute app
+  -- events only inside a session, so the recorder must open a new one.
+  local base = os.time({ year = 2026, month = 10, day = 16, hour = 9, min = 30, sec = 12 })
+  local path = "/fake/context.log"
+  local files, inode, openOk = {}, 100, true
+  local front = "com.apple.finder"
+  local function create() inode = inode + 1; files[path] = { ino = inode, text = "" } end
+  local env = {
+    path = path,
+    now = function() return base end,
+    stat = function(p) local f = files[p]; return f and { dev = 1, ino = f.ino, size = #f.text } end,
+    frontApp = function() return front end,
+    open = function(p)
+      if not openOk then return nil end
+      if not files[p] then create() end
+      local f = files[p]
+      return { write = function(_, s) f.text = f.text .. s; return true end, close = function() return true end }
+    end,
+  }
+  local function L(kind, value) return R.contextLine(base, kind, value) end
+
+  local recorder = R.newRecorder(env)
+  recorder.write("start")
+  recorder.app("com.apple.finder")
+  check("rotation: first session written once", files[path].text == L("start") .. L("app", "com.apple.finder"), files[path].text)
+
+  files[path] = nil
+  create()
+  front = "com.mitchellh.ghostty"
+  check("rotation: replaced file, event written", recorder.write("lock") == true)
+  check("rotation: replaced file begins a session with the front app",
+    files[path].text == L("start") .. L("app", "com.mitchellh.ghostty") .. L("lock"), files[path].text)
+  check("rotation: same file appends only the event", recorder.write("unlock") and files[path].text:sub(-#L("unlock")) == L("unlock")
+    and select(2, files[path].text:gsub("\tstart\t", "")) == 1, files[path].text)
+  check("rotation: seeded front app is remembered", recorder.app("com.mitchellh.ghostty") == false)
+
+  files[path] = nil
+  check("rotation: deleted file, app event written", recorder.app("com.apple.Safari") == true)
+  check("rotation: deleted file begins with start, app not repeated",
+    files[path].text == L("start") .. L("app", "com.apple.Safari"), files[path].text)
+
+  files[path] = nil
+  openOk = false
+  local late = R.newRecorder(env)
+  check("rotation: initial start fails", late.write("start") == false and late.failed == 1)
+  openOk = true
+  front = "com.apple.finder"
+  check("rotation: next write after a failed start succeeds", late.write("wake") == true)
+  check("rotation: recovery write begins with start",
+    files[path].text == L("start") .. L("app", "com.apple.finder") .. L("wake"), files[path] and files[path].text)
 end
 
 os.execute("rm -rf " .. SCRATCH)

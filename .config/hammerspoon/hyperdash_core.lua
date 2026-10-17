@@ -256,24 +256,43 @@ function R.contextLine(epoch, kind, value)
 end
 
 -- env = { path, now = function() -> epoch with fraction, open = io.open,
---         ensureDirectory = function(path) }
+--         ensureDirectory = function(path), stat = hs.fs.attributes,
+--         frontApp = function() -> bundle ID or nil }
 -- Each event opens the file, appends one line and closes it, so a log that
--- was deleted or replaced is recreated on the next event.
+-- was deleted or replaced is recreated on the next event. Readers attribute
+-- app events only after a start line, so the first write, a write after a
+-- failure, and a write to a new file (missing, or another (dev, ino)) begin
+-- with start and the front app.
 function R.newRecorder(env)
   local recorder = { lastApp = nil, written = 0, failed = 0, lastError = nil }
   local directory = env.path:match("^(.*)/[^/]+$")
+  local needStart, dev, ino = true, nil, nil
 
   function recorder.write(kind, value)
-    local line, reason = R.contextLine(env.now(), kind, value)
+    local now = env.now()
+    local line, reason = R.contextLine(now, kind, value)
     if not line then
       recorder.lastError = reason
       return false
+    end
+    local stat = env.stat and env.stat(env.path)
+    local seeded = nil
+    if env.stat and (not stat or stat.dev ~= dev or stat.ino ~= ino) then needStart = true end
+    if needStart and kind ~= "start" then
+      local prefix = R.contextLine(now, "start")
+      if kind ~= "app" and env.frontApp then
+        local bundleId = env.frontApp()
+        local front = R.contextLine(now, "app", bundleId)
+        if front then prefix, seeded = prefix .. front, bundleId end
+      end
+      line = prefix .. line
     end
     if env.ensureDirectory then env.ensureDirectory(directory) end
     local file = env.open(env.path, "ab")
     if not file then
       recorder.failed = recorder.failed + 1
       recorder.lastError = "cannot open " .. env.path
+      needStart = true
       return false
     end
     local wrote = file:write(line)
@@ -282,9 +301,14 @@ function R.newRecorder(env)
     if not wrote or not closed then
       recorder.failed = recorder.failed + 1
       recorder.lastError = (wrote and "cannot close " or "cannot write ") .. env.path
+      needStart = true
       return false
     end
     recorder.written = recorder.written + 1
+    needStart = false
+    if seeded then recorder.lastApp = seeded end
+    stat = env.stat and env.stat(env.path)
+    if stat then dev, ino = stat.dev, stat.ino end
     return true
   end
 

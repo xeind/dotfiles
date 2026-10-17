@@ -876,6 +876,11 @@ local function startContextRecording()
     ensureDirectory = function(directory)
       if not hs.fs.attributes(directory) then hs.fs.mkdir(directory) end
     end,
+    stat = hs.fs.attributes,
+    frontApp = function()
+      local front = hs.application.frontmostApplication()
+      return front and front:bundleID()
+    end,
   })
   contextRecorder.write("start")
   -- The app that is frontmost now, so the first Hyper events have an app.
