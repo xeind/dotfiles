@@ -224,7 +224,7 @@
     --dim: hsl(211 40% 56%);
     --faint: hsl(210 38% 66%);
     --muted: hsl(207 40% 76%);
-    --soft: #b8d4e3;
+    --soft: hsl(201 43% 82%);
     --text: #f6fbff;
 
     /* Interaction accent: focus rings and selection */
@@ -232,25 +232,26 @@
     --accent-soft: #e8f4ff;
     --accent-bg: hsl(213 72% 40%);
 
-    /* Quantity: more is brighter; q0 is bound but unused; ink is the text on each step */
-    --q0: hsl(213 80% 25%);
-    --q1: hsl(208 62% 42%);
-    --q2: hsl(200 66% 52%);
-    --q3: hsl(200 72% 70%);
+    /* Quantity: more is brighter; q0 is bound but unused; equal OKLCH lightness steps; ink is the text on each step */
+    --q0: hsl(212 94% 21.5%);
+    --q1: hsl(207 73% 36%);
+    --q2: hsl(200 66% 48.5%);
+    --q3: hsl(200 77% 71.8%);
     --q4: hsl(205 100% 95%);
     --ink-q0: hsl(205 60% 78%);
     --ink-light: #ffffff;
     --ink-dark: hsl(215 80% 14%);
 
     /* Colour groups for the twelve activity categories: blue ink only, as the site draws Blueprint syntax.
-       Groups part by lightness (at least 8 OKLCH points apart), from the code tokens' own hues: function,
-       constant, parameter, comment and string. Drafting cyan, the one hue the theme allows, marks Pointer */
-    --g-navigate: hsl(205 76% 78.7%);
-    --g-pointer: hsl(199 68% 51.2%);
-    --g-launch: hsl(212 63% 90.3%);
-    --g-windows: hsl(231 45% 75.1%);
+       Groups part by lightness and chroma (at least 8 OKLab points apart in normal, protan, deutan and tritan
+       vision), from the code tokens' own hues: function, constant, parameter, comment and string. Drafting cyan,
+       the one hue the theme allows, marks Pointer */
+    --g-navigate: hsl(205 95% 74.2%);
+    --g-pointer: hsl(199 78% 51%);
+    --g-launch: hsl(212 63% 89.8%);
+    --g-windows: hsl(231 9.5% 73.6%);
     --g-capture: hsl(213 100% 99.8%);
-    --g-system: hsl(217 26% 52.5%);
+    --g-system: hsl(217 13% 62.8%);
 
     /* Semantic: success, destructive, warning and info, each with a tinted background */
     --up: #7fd7b0;
@@ -265,7 +266,7 @@
     /* Text on each quantity step */
     --q0t: var(--ink-q0);
     --q1t: var(--ink-light);
-    --q2t: var(--ink-dark);
+    --q2t: var(--ink-light);
     --q3t: var(--ink-dark);
     --q4t: var(--ink-dark);
 
