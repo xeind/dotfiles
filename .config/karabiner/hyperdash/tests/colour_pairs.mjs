@@ -137,6 +137,7 @@ export const NOT_TEXT = {
   ".swatch.cov-none": "coverage key outline", ".bin": "transparent hit area", ".bin:hover, .bin:focus": "hover wash",
   ".icon.site svg": "fill: currentColor; the host supplies brand colours", ".cmd": "sets no colour",
   ".appchip .icon.mono": "size only; js: app monogram sets the colour", "button": "inherits",
+  ".key:not(:disabled):not(.selected):hover": "hover outline: one line step, like a border; the key fill carries the data",
 };
 
 // Every place a script writes a colour: the assigned expression, and the pair (or reason) that covers it.
