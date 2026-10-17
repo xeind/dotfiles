@@ -2166,6 +2166,7 @@ function render(announce = true) {
   const broken = dataError !== null;
   const am = !broken && page === "activity" ? activityModel() : null;
   const activity = am ? am.a : null;
+  const refocus = keyboardFocused(document.activeElement) ? rebuiltControl(document.activeElement) : null;
 
   // Swap the header icon only when the mode changes, so a focused Back button keeps focus.
   const mode = inLayer || page ? "back" : "home";
@@ -2256,6 +2257,7 @@ function render(announce = true) {
   if (listed) renderList(inLayer);
   else if (!broken && page === "insights") renderInsights();
   else if (!broken) renderActivity(am);
+  if (refocus && document.activeElement === document.body) document.querySelector(refocus)?.focus({ preventScroll: true });
   renderStatus(broken);
   renderFooter();
 
@@ -3223,6 +3225,10 @@ function run(action) {
 }
 
 const keyboardFocused = (node) => Boolean(node?.matches?.("button:focus-visible"));
+
+// Activity rebuilds its controls on every change; the same control keeps keyboard focus.
+const rebuiltControl = (node) => node.dataset.action ? `.seg[data-action="${node.dataset.action}"]`
+  : node.dataset.app ? `.appchip[data-app="${node.dataset.app}"]` : null;
 
 // Bin details: hover and keyboard focus show exact counts with the family split in words.
 function showBin(event) {
