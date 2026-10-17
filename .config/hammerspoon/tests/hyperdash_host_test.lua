@@ -465,6 +465,32 @@ do
   check("cancel during reload: next toggle opens", env.shown == 1)
 end
 
+do
+  -- The page dies while the panel is open; a background sync finds it and
+  -- reloads it under the open panel. A toggle then closes the panel, and the
+  -- finished reload does not open it again.
+  local home, p = baseHome("dead_while_open")
+  write(p.log, lines(0, 5))
+  write(p.tool, "#!/bin/sh\n")
+  os.execute("chmod 755 " .. p.tool)
+  os.remove(p.insights) -- due, so the open starts the tool
+  local env = startPanel(home, noon())
+  toggle(env)
+  check("dead while open: panel open", env.webview.visible and env.shown == 1, env.shown)
+  local html = env.htmlCalls
+  env.killPage()
+  env.tasks[1]:finish(0, "", "") -- its sync finds the page dead
+  env.flush()
+  check("dead while open: the page reloads", env.htmlCalls == html + 1, env.htmlCalls - html)
+  toggle(env)
+  check("dead while open: the toggle hides the panel", not env.webview.visible)
+  env.finishReload()
+  env.flush()
+  check("dead while open: the reload does not show it again", not env.webview.visible and env.shown == 1, env.shown)
+  toggle(env)
+  check("dead while open: the next toggle opens it", env.webview.visible and env.shown == 2, env.shown)
+end
+
 ---------------------------------------------------------------------------
 -- Round 4: context recorder and context stream
 ---------------------------------------------------------------------------

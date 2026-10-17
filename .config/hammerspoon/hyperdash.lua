@@ -854,6 +854,10 @@ function M.toggle()
       -- Each toggle during the render flips the intent, so an even number
       -- of toggles always ends hidden.
       cancelShow = not cancelShow
+    elseif open then
+      -- Before the page checks: a page reloading under the open panel must
+      -- not turn a close into a second open.
+      hide(true)
     elseif not pageReady then
       if pageFailed then
         -- The last reload failed: try again, and open when it works.
@@ -864,8 +868,6 @@ function M.toggle()
       else
         pendingOpen = not pendingOpen
       end
-    elseif open then
-      hide(true)
     else
       show()
     end
