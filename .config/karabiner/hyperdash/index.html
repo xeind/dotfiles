@@ -2817,11 +2817,18 @@ function renderAppbar(m) {
     root.replaceChildren(element("span", "", status === "disabled" || status === undefined ? "App context off" : `App context ${status}`));
     return;
   }
-  if (m.day.apps.length === 0) {
+  // The selected app keeps its chip, so the filter stays visible and removable: it takes the third
+  // place when it ranks lower, with 0 on a day it has no presses.
+  let shown = m.day.apps.slice(0, 3);
+  if (state.appFilter !== null && !shown.some(({ app }) => app === state.appFilter)) {
+    const selected = m.day.apps.find(({ app }) => app === state.appFilter) || { app: state.appFilter, count: 0 };
+    shown = [...shown.slice(0, 2), selected];
+  }
+  if (shown.length === 0) {
     root.replaceChildren(element("span", "", "No app activity recorded this day"));
     return;
   }
-  root.replaceChildren(...m.day.apps.slice(0, 3).map(({ app, count }) => {
+  root.replaceChildren(...shown.map(({ app, count }) => {
     const chip = element("button", "appchip");
     chip.dataset.app = app;
     chip.setAttribute("aria-pressed", String(state.appFilter === app));

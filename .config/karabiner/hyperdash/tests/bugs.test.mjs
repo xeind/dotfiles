@@ -180,3 +180,51 @@ test("bug 1: the chart follows a category change that keeps every total", option
     await page.close();
   }
 });
+
+const GAMMA = "com.example.gamma";
+const DELTA = "com.example.delta";
+// The pressed app chip, if any: [app, count shown].
+const pressedChip = (page) => page.eval(`(() => { const c = document.querySelector('.appchip[aria-pressed="true"]'); return c ? [c.dataset.app, c.querySelector("b").textContent] : null; })()`);
+
+test("bug 2: the selected app stays visible and removable on days where it ranks fourth or is absent", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    const at = (day, clock) => `2026-10-${day}T${clock}`;
+    await load(page, {
+      now: "2026-10-17T12:00:00", bindings: BINDINGS, apps: { [ALPHA]: "Alpha", [BETA]: "Beta", [GAMMA]: "Gamma", [DELTA]: "Delta" },
+      presses: [
+        // Oct 15: only B. Oct 16: B 4, C 3, D 2, A 1 (fourth). Oct 17: only A.
+        [at(15, "09:01:00"), "v", "j"], [at(15, "09:02:00"), "v", "j"],
+        ...["09:01", "09:02", "09:03", "09:04"].map((t) => [at(16, `${t}:00`), "v", "j"]),
+        ...["09:11", "09:12", "09:13"].map((t) => [at(16, `${t}:00`), "s", "d"]),
+        ...["09:21", "09:22"].map((t) => [at(16, `${t}:00`), "w", "u"]),
+        [at(16, "09:31:00"), "v", "j"],
+        ...["09:01", "09:02", "09:03"].map((t) => [at(17, `${t}:00`), "v", "j"]),
+      ],
+      context: [
+        "2026-10-15T08:00:00.100\tstart\t-", `${at(15, "09:00:00")}.250\tapp\t${BETA}`,
+        `${at(16, "09:00:00")}.250\tapp\t${BETA}`, `${at(16, "09:10:00")}.250\tapp\t${GAMMA}`,
+        `${at(16, "09:20:00")}.250\tapp\t${DELTA}`, `${at(16, "09:30:00")}.250\tapp\t${ALPHA}`,
+        `${at(17, "09:00:00")}.250\tapp\t${ALPHA}`,
+      ],
+    });
+    await page.press("a");
+    const height = await page.height();
+    await page.eval(`document.querySelector('.appchip[data-app="${ALPHA}"]').click()`);
+    assert.deepEqual(await pressedChip(page), [ALPHA, "3"]);
+    await page.press("ArrowLeft");
+    assert.equal(await page.eval(`$("month-label").textContent`), "YESTERDAY");
+    assert.deepEqual(await pressedChip(page), [ALPHA, "1"], "A ranks fourth on Oct 16 and its selected chip is gone");
+    assert.equal(await page.eval(`document.querySelectorAll(".appchip").length`), 3);
+    await page.press("ArrowLeft");
+    assert.deepEqual(await pressedChip(page), [ALPHA, "0"], "A is absent on Oct 15 and its selected chip is gone");
+    assert.equal(await page.height(), height);
+    // The chip removes the filter: the day's presses come back.
+    await page.eval(`document.querySelector('.appchip[aria-pressed="true"]').click()`);
+    assert.equal(await pressedChip(page), null);
+    assert.equal(await page.eval(`$("total").textContent`), "2");
+    assert.equal(await page.height(), height);
+  } finally {
+    await page.close();
+  }
+});
