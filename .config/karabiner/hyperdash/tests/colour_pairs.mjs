@@ -36,7 +36,7 @@ const RAW = [
   [".h3", "heat", "--q3t", [["step 3", "--q3"]], "mono", 11, 500],
   [".h4", "heat", "--q4t", [["step 4", "--q4"]], "mono", 11, 500],
   [".key.selected", "focus", "--accent-soft", [["selected", "--card"]], "ring", 2, 500],
-  [".heat-legend", "caption", "--faint", [["rest", "--card"]], "mono", 9.5, 400],
+  [".heat-legend", "caption", "--faint", [["rest", "--card"]], "mono", 10, 400],
 
   // Detail strip
   [".detail .chip", "value", "--accent-soft", [["rest", ["--raised", "--accent-bg"]]], "mono", 11, 400],
@@ -68,9 +68,9 @@ const RAW = [
   ["js: INSIGHT_KINDS peak", "icon", "--info", [["rest", ["--raised", "--info-bg"]]], "svg", 16, 500, ".marker"],
 
   // Activity
-  [".chart text", "label", "--muted", [["rest", "--card"]], "mono", 9.5, 500],
-  [".chart .peak-label", "value", "--soft", [["rest", "--card"]], "mono", 9.5, 500],
-  [".chart .now-label", "value", "--accent-soft", [["rest", "--card"]], "mono", 9.5, 500],
+  [".chart text", "label", "--muted", [["rest", "--card"]], "mono", 10, 500],
+  [".chart .peak-label", "value", "--soft", [["rest", "--card"]], "mono", 10, 500],
+  [".chart .now-label", "value", "--accent-soft", [["rest", "--card"]], "mono", 10, 500],
   [".dots.g-{g}", "dot", "--g-{g}", [["rest", "--card"]], "dot", 3.6, 500],
   [".dots.blue", "dot", "--accent", [["rest", "--card"]], "dot", 3.6, 500],
   [".dots.lit", "dot", "--accent-soft", [["rest", "--card"]], "dot", 3.6, 500],
@@ -96,7 +96,7 @@ const RAW = [
   ["js: app monogram", "value", "--soft", [["rest", "--hover"]], "mono", 10, 500],
   [".panel-head", "label", "--muted", [["rest", "--card"]], "mono", 10, 400],
   [".panel-head span:last-child", "caption", "--faint", [["rest", "--card"]], "mono", 10, 400],
-  [".panel-note", "caption", "--faint", [["rest", "--card"]], "mono", 9.5, 400],
+  [".panel-note", "caption", "--faint", [["rest", "--card"]], "mono", 10, 400],
   [".cmd-label", "content", "--text", [["rest", "--card"], ["focus", "--hover"]], "sans", 13, 400, "html, body"],
   [".seq-title", "content", "--text", [["rest", "--card"]], "sans", 13, 400, "html, body"],
   [".cmd time", "label", "--muted", [["rest", "--card"], ["focus", "--hover"]], "mono", 10, 400],
@@ -110,21 +110,21 @@ const RAW = [
 
   // Groups
   [".groupbar button", "mark", "--g-{g}", [["rest", "--card"]], "bar", 8, 500],
-  [".groupcap", "caption", "--faint", [["rest", "--card"]], "mono", 9.5, 400],
+  [".groupcap", "caption", "--faint", [["rest", "--card"]], "mono", 10, 400],
 
   // Footer, info, about, status
   [".footer", "caption", "--faint", [["rest", "--card"]], "sans", 11, 500],
   [".footer kbd", "label", "--muted", [["rest", "--hover"]], "mono", 10, 400],
-  [".info", "label", "--muted", [["rest", "--card"]], "mono", 9.5, 500],
-  [".info:hover", "content", "--text", [["hover", "--hover"]], "mono", 9.5, 500],
-  ['.info[aria-expanded="true"]', "value", "--accent-soft", [["selected", "--accent-bg"]], "mono", 9.5, 500],
+  [".info", "label", "--muted", [["rest", "--card"]], "mono", 10, 500],
+  [".info:hover", "content", "--text", [["hover", "--hover"]], "mono", 10, 500],
+  ['.info[aria-expanded="true"]', "value", "--accent-soft", [["selected", "--accent-bg"]], "mono", 10, 500],
   [".about", "label", "--muted", [["rest", "--raised"]], "mono", 10, 400],
   [".about p:first-child", "value", "--soft", [["rest", "--raised"]], "mono", 10, 400],
   [".themebtn", "value", "--soft", [["rest", "--hover"], ["hover", "--line"]], "mono", 10, 500],
   [".themebtn:active", "value", "--text", [["active", "--line"]], "mono", 10, 500],
-  [".status", "caption", "--faint", [["ok", "--card"]], "mono", 9.5, 400],
-  ['.status[data-level="warn"]', "status", "--warning", [["warn", "--card"]], "mono", 9.5, 400],
-  ['.status[data-level="error"]', "status", "--down", [["error", "--card"]], "mono", 9.5, 400],
+  [".status", "caption", "--faint", [["ok", "--card"]], "mono", 10, 400],
+  ['.status[data-level="warn"]', "status", "--warning", [["warn", "--card"]], "mono", 10, 400],
+  ['.status[data-level="error"]', "status", "--down", [["error", "--card"]], "mono", 10, 400],
   [".problem", "value", "--soft", [["rest", "--raised"]], "sans", 13, 400],
   ["button:focus-visible, .list:focus-visible", "focus", "--accent-soft", [["focus", "--card"]], "ring", 2, 500],
 ];

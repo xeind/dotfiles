@@ -11,7 +11,7 @@ const css = html.slice(html.indexOf("<style>") + 7, html.indexOf("</style>"));
 // Font sizes are tokens, defined once in :root. --text-* tokens hold Geist steps, --mono-* tokens Geist Mono steps.
 const TYPE_SCALE = {
   "--text-": ["26px", "16px", "13px", "12px", "11px"],
-  "--mono-": ["11px", "10px", "9.5px"],
+  "--mono-": ["11px", "10px"],
 };
 const SCALE = {
   "font-weight": ["400", "500"],

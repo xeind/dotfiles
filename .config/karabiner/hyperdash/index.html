@@ -323,7 +323,7 @@
     --text-label: 11px;
     --mono-key: 11px;
     --mono-label: 10px;
-    --mono-caption: 9.5px;
+    --mono-caption: 10px;
     --mono-monogram: 8px;
 
     /* Line boxes (DESIGN.md §4): whole pixels, so a block of lines is a whole-pixel sum */
@@ -819,7 +819,7 @@
     margin-top: var(--space-md);
     font-family: var(--mono);
     font-size: var(--mono-caption);
-    letter-spacing: 0.02em;
+    letter-spacing: 0;
     color: var(--faint);
     line-height: var(--leading-readout);
     height: 28px; /* two lines, always */
@@ -2886,7 +2886,7 @@ function renderPanel(m) {
     head.append(element("span", "", `${M.binTime(bin)}–${M.binTime(bin + 1)} · ${rows.length} ${rows.length === 1 ? "command" : "commands"}`), element("span", "", "esc · sequences"));
     const list = element("div", "cmds panel-body fade");
     list.append(...rows.map((event) => commandRow(event, state.focusSec)));
-    root.replaceChildren(head, list, element("p", "panel-note", withApp ? "App = app in front before that second (1 s resolution)" : ""));
+    root.replaceChildren(head, list, element("p", "panel-note", withApp ? "App = front app before that second (1 s resolution)" : ""));
     list.scrollTop = scrollTop;
     list.querySelector(".focus")?.scrollIntoView({ block: "nearest" });
     return;
