@@ -840,6 +840,8 @@
   .item-label .note { color: var(--faint); }
 
   button:focus-visible, .list:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 1px; }
+  /* Inside a box that clips (overflow or the edge-fade mask) the ring goes inside the control, or it is cut off. */
+  .list:focus-visible, .item:focus-visible, button.insight:focus-visible, .appchip:focus-visible { outline-offset: -2px; }
   .key:disabled { cursor: default; }
 
   .bin { fill: transparent; }
