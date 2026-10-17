@@ -390,3 +390,26 @@ test("review A: a context reset with the same number of events does not reuse th
   }
 });
 
+test("review B: commands show the new app after the context log changes their attribution", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  const contextWith = (app) => ["2026-10-17T08:00:00.100\tstart\t-", `2026-10-17T08:59:00.250\tapp\t${app}`].join("\n") + "\n";
+  try {
+    await load(page, {
+      now: "2026-10-17T12:00:00", bindings: BINDINGS, apps: { [ALPHA]: "Alpha", [BETA]: "Beta" },
+      presses: [["2026-10-17T09:00:00", "v", "j"], ["2026-10-17T09:10:00", "s", "d"]],
+      context: contextWith(ALPHA).trim().split("\n"),
+    });
+    await page.press("a");
+    const height = await page.height();
+    await page.eval(`document.querySelector('.bin[data-bin="18"]').dispatchEvent(new MouseEvent("click", { bubbles: true }))`);
+    const apps = () => page.eval(`[...document.querySelectorAll(".cmd .cmd-app")].map((n) => n.textContent)`);
+    assert.deepEqual(await apps(), ["Alpha", "Alpha"]);
+    // The same number of context events, now naming Beta: the attribution changes, the usage events do not.
+    await page.eval(`hyperdash.reset({ now: "2026-10-17T12:00:00", stream: "context", generation: 2, text: ${JSON.stringify(contextWith(BETA))}, offset: 0 })`);
+    assert.deepEqual(await apps(), ["Beta", "Beta"], "the commands kept the old app names");
+    assert.equal(await page.height(), height);
+  } finally {
+    await page.close();
+  }
+});
+

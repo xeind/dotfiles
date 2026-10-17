@@ -2885,7 +2885,7 @@ function renderPanel(m) {
   const day = m.day;
   const withApp = contextOn();
   const signature = [state.day, state.interval, state.focusSec, state.appFilter, day.events.length, day.events.length ? day.events[day.events.length - 1].sec : "",
-    day.sequences.map((s) => `${s.from}>${s.to}${s.count}`).join(","), withApp, appNamesVersion, iconVersion].join("|");
+    day.sequences.map((s) => `${s.from}>${s.to}${s.count}`).join(","), withApp, context.version(), appNamesVersion, iconVersion].join("|");
   if (signature === panelSignature) return;
   panelSignature = signature;
   const scrollTop = root.querySelector(".cmds")?.scrollTop ?? 0;
