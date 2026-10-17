@@ -470,3 +470,21 @@ test("review 4: a group filter with no presses in the new month stays visible an
   }
 });
 
+test("review 5: a focused timestamp keeps focus through a live update", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    await load(page, { now: "2026-10-17T12:00:00", bindings: BINDINGS, presses: SEQUENCE });
+    await page.press("a");
+    await page.tabTo(".time-chip");
+    await page.press("ArrowRight");
+    assert.equal(await page.eval("document.activeElement.textContent"), "10:10:00");
+    // A usage append that changes the day's events rebuilds the panel.
+    await page.eval(`(() => {
+      const line = "2026-10-17T11:50:00\\tv\\tj\\n";
+      hyperdash.append({ now: "2026-10-17T12:00:00", generation: 1, from: fixture.text.length, to: fixture.text.length + line.length, text: line });
+    })()`);
+    assert.equal(await page.eval(`document.activeElement.matches(".time-chip") ? document.activeElement.textContent : document.activeElement.tagName`), "10:10:00", "the update dropped focus from the timestamp");
+  } finally {
+    await page.close();
+  }
+});

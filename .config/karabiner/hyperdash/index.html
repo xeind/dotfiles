@@ -2272,7 +2272,7 @@ function render(announce = true) {
   else if (!broken && page === "insights") renderInsights();
   else if (!broken) renderActivity(am);
   renderStatus(broken);
-  if (refocus && document.activeElement === document.body) document.querySelector(refocus)?.focus({ preventScroll: true });
+  restoreFocus(refocus);
   renderFooter();
 
   refreshFades();
@@ -3201,7 +3201,7 @@ const hyperdash = {
     if (dataError === null && state.page === null) renderList(state.layer !== null);
     else if (dataError === null && state.page === "insights" && !insightsData) renderInsights();
     else if (dataError === null && state.page === "activity") renderActivity(activityModel());
-    if (refocus && document.activeElement === document.body) document.querySelector(refocus)?.focus({ preventScroll: true });
+    restoreFocus(refocus);
     refreshFades();
     renderNow = null;
     return { ok: true, height: document.body.scrollHeight };
@@ -3271,13 +3271,22 @@ function run(action) {
 const keyboardFocused = (node) => Boolean(node?.matches?.("button:focus-visible"));
 
 // Activity rebuilds its controls on every change, Insights its cards and About its theme button; the same
-// control keeps keyboard focus. A time chip, which gives way to its interval's commands, hands focus to
-// the selected bin.
-const rebuiltControl = (node) => node.dataset.action ? `.seg[data-action="${node.dataset.action}"]`
-  : node.dataset.app ? `.appchip[data-app="${node.dataset.app}"]`
-  : node.classList.contains("insight") ? `.insight[data-key="${CSS.escape(node.dataset.key)}"]`
-  : node.id === "theme-button" ? "#theme-button"
-  : node.classList.contains("time-chip") ? ".bin.selected" : null;
+// control keeps keyboard focus. Selectors in priority order: a time chip keeps focus while it is still
+// shown, and hands it to the selected bin once it has given way to its interval's commands.
+const rebuiltControl = (node) => node.dataset.action ? [`.seg[data-action="${node.dataset.action}"]`]
+  : node.dataset.app ? [`.appchip[data-app="${node.dataset.app}"]`]
+  : node.classList.contains("insight") ? [`.insight[data-key="${CSS.escape(node.dataset.key)}"]`]
+  : node.id === "theme-button" ? ["#theme-button"]
+  : node.classList.contains("time-chip") ? [`.time-chip[data-sec="${node.dataset.sec}"]`, ".bin.selected"] : null;
+
+// Focuses the first selector that matches, when the rebuild left focus on the body.
+function restoreFocus(selectors) {
+  if (!selectors || document.activeElement !== document.body) return;
+  for (const selector of selectors) {
+    const node = document.querySelector(selector);
+    if (node) { node.focus({ preventScroll: true }); return; }
+  }
+}
 
 // Bin details: hover and keyboard focus show exact counts with the family split in words.
 function showBin(event) {
