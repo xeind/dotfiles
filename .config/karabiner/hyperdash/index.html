@@ -2076,7 +2076,9 @@ let tabStops = false; // sequential focus is off after each open until Tab is pr
 let theme = "manila";
 let lastActivity = null;
 let lastSegments = null;
-let groupCaptionOverride = null;
+let groupHover = null; // the group segment under the pointer or focus; its caption is built from current counts
+let groupTotals = {};
+let groupSum = 0;
 let renderNow = null; // the "now" a protocol call supplied; interactions use the real clock
 let view = null;
 const keyNodes = new Map();
@@ -2312,29 +2314,35 @@ function renderGroupbar(visible) {
   }
   wrap.hidden = !visible;
   if (wrap.hidden) return;
-  const signature = `${state.group}|${groupCaptionOverride}|${GROUPS.map((g) => totals[g] || 0).join(",")}`;
-  if (signature === groupSignature) return;
-  groupSignature = signature;
-  if (sum === 0) {
-    $("groupbar").replaceChildren();
-    $("groupcap").textContent = "BY GROUP · NO PRESSES YET";
-    return;
+  groupTotals = totals;
+  groupSum = sum;
+  const signature = `${state.group}|${GROUPS.map((g) => totals[g] || 0).join(",")}`;
+  if (signature !== groupSignature) {
+    groupSignature = signature;
+    $("groupbar").replaceChildren(...GROUPS.filter((g) => totals[g]).map((group) => {
+      const segment = element("button", `grp-${group}`);
+      segment.style.flex = String(totals[group]);
+      segment.dataset.group = group;
+      segment.setAttribute("aria-pressed", String(state.group === group));
+      segment.setAttribute("aria-label", `${GROUP_LABELS[group]} ${totals[group]} presses, filter the list`);
+      segment.tabIndex = -1;
+      if (state.group !== null && state.group !== group) segment.classList.add("dimmed");
+      return segment;
+    }));
   }
+  renderGroupCaption();
+}
+
+// The caption under the group bar: the hovered segment, else the filter instruction, else the top three.
+// Always from the current counts, so a hover never shows numbers from before an update.
+function renderGroupCaption() {
+  const totals = groupTotals;
+  const sum = groupSum;
   const share = (n) => `${Math.round((n / sum) * 100)}%`;
-  $("groupbar").replaceChildren(...GROUPS.filter((g) => totals[g]).map((group) => {
-    const segment = element("button", `grp-${group}`);
-    segment.style.flex = String(totals[group]);
-    segment.dataset.group = group;
-    segment.setAttribute("aria-pressed", String(state.group === group));
-    segment.setAttribute("aria-label", `${GROUP_LABELS[group]} ${totals[group]} presses, filter the list`);
-    segment.dataset.caption = `${GROUP_LABELS[group].toUpperCase()} · ${totals[group].toLocaleString("en-US")} · ${share(totals[group])}`;
-    segment.tabIndex = -1;
-    if (state.group !== null && state.group !== group) segment.classList.add("dimmed");
-    return segment;
-  }));
   const top = GROUPS.filter((g) => totals[g]).sort((a, b) => totals[b] - totals[a]).slice(0, 3);
-  $("groupcap").textContent = groupCaptionOverride ? groupCaptionOverride : state.group
-    ? `${GROUP_LABELS[state.group].toUpperCase()} ONLY · CLICK AGAIN TO CLEAR`
+  $("groupcap").textContent = sum === 0 ? "BY GROUP · NO PRESSES YET"
+    : groupHover && totals[groupHover] ? `${GROUP_LABELS[groupHover].toUpperCase()} · ${totals[groupHover].toLocaleString("en-US")} · ${share(totals[groupHover])}`
+    : state.group ? `${GROUP_LABELS[state.group].toUpperCase()} ONLY · CLICK AGAIN TO CLEAR`
     : `BY GROUP · ${top.map((g) => `${GROUP_LABELS[g].toUpperCase()} ${share(totals[g])}`).join(" · ")}`;
 }
 
@@ -3207,6 +3215,7 @@ const hyperdash = {
     });
     listScope = null;
     listSignature = null;
+    groupHover = null;
     controlsSignature = chartSignature = appbarSignature = panelSignature = groupSignature = null;
     // Every open starts with no focused control and no Tab stops, so Space or a letter never activates a
     // stray button and the window becoming key draws no focus ring. The list starts at the top.
@@ -3327,11 +3336,14 @@ $("activity").addEventListener("click", (event) => {
 });
 
 // Hovering or focusing a group segment names it in the caption (no native tooltip, which clips at the card edge).
+// On leaving, the segment that matters is the one entered (relatedTarget), or none when the pointer or focus
+// leaves the bar. Only the caption changes, so the segment under the pointer is never replaced.
 const showGroup = (event) => {
-  const segment = event.target.closest?.("button");
-  groupCaptionOverride = segment ? segment.dataset.caption : null;
-  groupSignature = null;
-  renderGroupbar(!$("groupwrap").hidden);
+  const leaving = event.type === "mouseout" || event.type === "focusout";
+  const node = leaving ? event.relatedTarget : event.target;
+  const segment = node?.closest?.("#groupbar button");
+  groupHover = segment ? segment.dataset.group : null;
+  if (!$("groupwrap").hidden) renderGroupCaption();
 };
 $("groupbar").addEventListener("mouseover", showGroup);
 $("groupbar").addEventListener("mouseout", showGroup);

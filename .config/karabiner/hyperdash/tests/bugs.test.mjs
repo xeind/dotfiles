@@ -413,3 +413,34 @@ test("review B: commands show the new app after the context log changes their at
   }
 });
 
+test("review D: the group caption returns to the summary after hover ends, and never keeps old counts", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    await load(page, {
+      now: "2026-10-17T12:00:00", bindings: BINDINGS,
+      presses: [["2026-10-17T09:00:00", "v", "j"], ["2026-10-17T09:10:00", "s", "d"], ["2026-10-17T09:20:00", "v", "j"]],
+    });
+    const caption = () => page.eval(`$("groupcap").textContent`);
+    const summary = await caption();
+    assert.match(summary, /^BY GROUP/);
+    const hover = (group) => page.eval(`document.querySelector('#groupbar button[data-group="${group}"]').dispatchEvent(new MouseEvent("mouseover", { bubbles: true }))`);
+    const leave = (group) => page.eval(`document.querySelector('#groupbar button[data-group="${group}"]').dispatchEvent(new MouseEvent("mouseout", { bubbles: true, relatedTarget: document.body }))`);
+    // Hover names the segment; leaving the bar restores the summary.
+    await hover("navigate");
+    assert.equal(await caption(), "NAVIGATE · 2 · 67%");
+    await leave("navigate");
+    assert.equal(await caption(), summary, "the caption stayed on the segment after the pointer left");
+    // A hovered segment's caption follows new counts.
+    await hover("navigate");
+    await page.eval(`(() => {
+      const line = "2026-10-17T09:30:00\\tv\\tj\\n";
+      hyperdash.append({ now: "2026-10-17T12:00:00", generation: 1, from: fixture.text.length, to: fixture.text.length + line.length, text: line });
+    })()`);
+    assert.equal(await caption(), "NAVIGATE · 3 · 75%", "the caption kept the old count");
+    // Reopening starts from the summary, not from a stale hover.
+    await page.eval(`hyperdash.open({ now: "2026-10-17T12:00:00" })`);
+    assert.match(await caption(), /^BY GROUP/, "the hover caption survived a reopen");
+  } finally {
+    await page.close();
+  }
+});
