@@ -77,6 +77,8 @@ APCA's Lc 30, the minimum for any text.
 `--card` → `--raised` (inset surfaces, chips) → `--hover` → `--line` →
 `--line-strong`. A surface is set apart by one tone step plus
 `1px solid var(--line)`. `--edge` and `--edge-soft` are the card's own rim.
+The date box in the header (`.pill`) is the one dashed edge: square, with a
+1.5 px dashed `--line-strong` border, the site's own border style.
 
 Steps are about 3 OKLab points apart in Manila and Nightingale. Two are
 short: Kozo's `--card` to `--raised` is 2.1, and Blueprint's `--raised` is
@@ -259,13 +261,13 @@ buttons, segments and pop-ups. All of them are tokens.
 | `--control-xs` | 16 | 50 % | The "i" button |
 | `--control-sm` | 20 | `--radius-sm` 5 | Chips, delta, time chips, theme button, footer keys; pill arrows (round) |
 | `--control-md` | 24 | `--radius-md` 6 | Seg, app chips, header icon, insight marker, keys (`--key`) |
-| `--control-lg` | 28 | `--radius-lg` 7 | Header row, pill, close (round), detail chip |
+| `--control-lg` | 28 | `--radius-lg` 7 | Header row, close (round), detail chip; the date box is square (0) |
 | `--row-compact` | 24 | `--radius-md` 6 | Command row |
 | `--row` | 32 | `--radius-row` 10 | List row; sequences use the same radius |
 
 Other radii: card `--radius-card` 30; inset surfaces (detail, insight,
 problem, about) `--radius-inset` 10 = 30 − 20 card padding, so they share
-the card's centre; pill and bar 999; round buttons and dots 50 %; app icons a
+the card's centre; bar 999; round buttons and dots 50 %; app icons a
 quarter of the size (3.5 at 14, 4.5 at 18); swatches and bar segments a
 third (1.5, 3).
 
@@ -328,9 +330,10 @@ Six steps, as tokens (before v1: 12 gap values, 6 margins, 17 paddings).
 | `--space-xl` | 20 | Card side padding; the window's shadow margin |
 
 2 and 6 never stack vertically except as a pair that sums to the rhythm.
-`tests/design.test.mjs` fails a raw px gap, margin, padding or radius; 12
+`tests/design.test.mjs` fails a raw px gap, margin, padding or radius; 13
 exceptions, each with its arithmetic, are listed there (card top 14, pill
-2.5, footer rule 7, eight radii and the 8 px monogram token).
+2.5, footer rule 7, the square date box, eight radii and the 8 px monogram
+token).
 
 ### The 4 px rhythm
 
@@ -363,9 +366,12 @@ Page heights in WebKit, the same in all four themes:
 - Overlays (the about panel) sit over the card and never change its height.
 - Stack order per page: header 28 → totals → page body → status (two lines)
   → footer.
-- The footer holds at most four hints in one line. The widest, Activity in
-  month view, is 324.6 px of its 326 (measured in Chrome); a new hint needs
-  a shorter word, not a narrower gap.
+- The footer holds at most four hints in one line, `--space-sm` (6) apart,
+  the step for items in a row. A key that stands for any letter shows as
+  `KEY`, never as one example letter: Overview reads `KEY OPEN`, a layer
+  `KEY SELECT`, Activity `KEY MARK` (it marks that layer's dots). The widest,
+  Overview, is 323.3 px of its 326 (Chrome). `KEY LAYER` (327.2) and, on
+  Activity, `KEY HIGHLIGHT` (328 in month view) do not fit.
 
 ## 8. Behaviour invariants
 

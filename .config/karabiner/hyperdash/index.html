@@ -396,8 +396,8 @@
     align-items: center;
     height: var(--control-lg);
     padding: 0 2.5px;
-    border: 1.5px solid var(--line-strong);
-    border-radius: 999px;
+    border: 1.5px dashed var(--line-strong);
+    border-radius: 0;
     font-size: var(--text-label);
     font-weight: 500;
     letter-spacing: 0.04em;
@@ -985,7 +985,7 @@
 
   .footer {
     display: flex;
-    gap: var(--space-md);
+    gap: var(--space-sm);
     margin-top: var(--space-lg);
     padding-top: 7px;
     border-top: 1px solid var(--line);
@@ -2926,7 +2926,7 @@ function renderFooter() {
     : state.page === "insights" ? [["esc", "back"]]
     : state.page === "activity" ? activityHints()
     : state.layer === null
-      ? [["W", "layer"], ["I", "insights"], ["A", "activity"], ["← →", "month"]]
+      ? [["key", "open"], ["I", "insights"], ["A", "activity"], ["← →", "month"]]
       : [["key", "select"], ["⇧ ← →", "month"], ["esc", state.selected ? "clear" : "back"]];
   $("footer").replaceChildren(...hints.map(([keys, label]) => {
     const hint = element("span");
@@ -2944,7 +2944,7 @@ function activityHints() {
   const day = state.activityMode === "day";
   const enter = bin !== null ? (!day ? "day" : state.interval === bin ? "clear" : "select")
     : keyboardFocused(focused) ? "press" : day ? "month" : "day";
-  return [["W", "highlight"], ["← →", bin !== null ? "bin" : chip ? "time" : day ? "day" : "month"], ["↵", enter], ["esc", state.highlight || state.interval !== null ? "clear" : "back"]];
+  return [["key", "mark"], ["← →", bin !== null ? "bin" : chip ? "time" : day ? "day" : "month"], ["↵", enter], ["esc", state.highlight || state.interval !== null ? "clear" : "back"]];
 }
 
 // A key press means "open this layer" on the overview, "select" in a layer.

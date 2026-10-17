@@ -27,6 +27,7 @@ const SPACE = ["gap", "row-gap", "column-gap", "margin", "margin-top", "margin-r
 const EXCEPTIONS = {
   ".footer | padding-top | 7px": "1 px rule + 7 = 8 above the 20 px keys; 8 + 20 = 28, on the 4 px rhythm",
   ".card | padding | 14px": "card top inset: the 28 px header row carries its own air; 14 + 28 + 12 puts the totals on the 8 px rhythm",
+  ".pill | border-radius | 0": "the date box is square with a dashed border, the site's own border style (xeind.net design-system.md §5)",
   ".pill | padding | 2.5px": "wraps two 20 px round buttons in a 28 px pill: (28 - 20) / 2 = 4 = 1.5 px border + 2.5, the same on every side",
   ".heat-legend i | border-radius | 3px": "swatch at 10 px: a third of the size",
   ".groupbar button | border-radius | 3px": "8 px tall bar segment: a third of the height",
