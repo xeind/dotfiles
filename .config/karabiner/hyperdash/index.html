@@ -687,7 +687,8 @@
 
   .activity { margin-top: 12px; }
 
-  .chart { display: block; width: 100%; height: auto; }
+  /* Drawn at its viewBox size: a scaled SVG (height: auto gave 171.984 for 172) moves every row below it off whole pixels. */
+  .chart { display: block; }
   .chart text { font: 500 var(--mono-caption) var(--mono); letter-spacing: 0.04em; fill: var(--muted); }
   .chart .peak-label { fill: var(--soft); }
   .chart .baseline { stroke: var(--line); }
@@ -2659,7 +2660,7 @@ function renderChart(m) {
 
   const peak = a.total === 0 ? "" : `<line class="peak-line" x1="${peakX}" x2="${peakX}" y1="${top - 4}" y2="${base}"/>`
     + `<text class="peak-label" x="${peakX}" y="${peakRow}" text-anchor="${peakAnchor}">PEAK ${a.peakHour}H</text>`;
-  root.innerHTML = `<svg class="chart" viewBox="0 0 ${width} ${height}" role="group" aria-label="Presses by half hour of day">`
+  root.innerHTML = `<svg class="chart" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="group" aria-label="Presses by half hour of day">`
     + `<defs><pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="hatch-line" x1="0" y1="0" x2="0" y2="4"/></pattern></defs>`
     + `${grid}<line class="baseline" x1="0" x2="${width}" y1="${base}" y2="${base}"/>${strip}${now}${peak}`
     + Object.entries(paths).map(([name, d]) => `<path class="dots ${name}" d="${d}"/>`).join("")
