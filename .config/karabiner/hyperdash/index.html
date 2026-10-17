@@ -3212,6 +3212,8 @@ function run(action) {
   }
 }
 
+const keyboardFocused = (node) => Boolean(node?.matches?.("button:focus-visible"));
+
 // Bin details: hover and keyboard focus show exact counts with the family split in words.
 function showBin(event) {
   const bin = event.target.closest?.(".bin");
@@ -3312,9 +3314,9 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") post({ action: "close" });
     return;
   }
-  // A button focused from the keyboard (header, "i" or a list row) keeps its normal Enter and Space
-  // activation. A button focused by a mouse click does not, so Space still selects the Space binding.
-  const controlFocused = Boolean(event.target.closest?.(".header, .info, .item, .themebtn") && event.target.matches?.(":focus-visible"));
+  // A button focused from the keyboard keeps its normal Enter and Space activation. A button focused by a
+  // mouse click does not, so Space still selects the Space binding.
+  const controlFocused = keyboardFocused(event.target);
   const action = HyperdashModel.routeKey({
     controlFocused,
     page: state.page,
