@@ -415,7 +415,7 @@ private func burst(_ thisMonth: [PressEvent], _ a: Analysis) -> [Insight] {
 
 // MARK: - peak
 
-/// The hour with the most presses this month among hours with presses on 3 or more days.
+/// The hour with the most presses this month, if it has presses on 3 or more days.
 private func peak(_ thisMonth: [PressEvent], _ a: Analysis) -> [Insight] {
     guard thisMonth.count >= 20 else { return [] }
     var counts = [Int](repeating: 0, count: 24)
@@ -425,8 +425,8 @@ private func peak(_ thisMonth: [PressEvent], _ a: Analysis) -> [Insight] {
         counts[hour] += 1
         days[hour].insert(a.key(event.date))
     }
-    let eligible = (0..<24).filter { days[$0].count >= 3 }
-    guard let hour = eligible.max(by: { counts[$0] < counts[$1] || (counts[$0] == counts[$1] && $0 > $1) })
+    guard let hour = (0..<24).max(by: { counts[$0] < counts[$1] || (counts[$0] == counts[$1] && $0 > $1) }),
+          days[hour].count >= 3
     else { return [] }
     let share = Int((Double(counts[hour]) / Double(thisMonth.count) * 100).rounded())
     return [

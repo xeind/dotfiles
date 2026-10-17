@@ -723,11 +723,13 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(insight(.peak, in: report(presses(30, "w", "u", day: oct(14), hour: 14))) == nil)
     }
 
-    @Test func skipsBusiestHourWithoutRepeatAndUsesRepeatedOne() {
-        let lines = presses(40, "w", "u", day: oct(14), hour: 20)
-            + presses(4, "w", "u", day: oct(10), hour: 9) + presses(4, "w", "u", day: oct(11), hour: 9)
-            + presses(4, "w", "u", day: oct(12), hour: 9)
-        #expect(insight(.peak, in: report(lines))?.value == 9)
+    @Test func busiestHourOnOneDayBlocksPeak() {
+        // 100 presses at 09:00 on one day outweigh one press at 15:00 on each of three days.
+        let busy = (0..<100).map {
+            line("\(oct(10))T09:\(String(format: "%02d:%02d", $0 / 2, $0 % 2 * 30))", "w", "u")
+        }
+        let lines = busy + [11, 12, 13].flatMap { presses(1, "w", "u", day: oct($0), hour: 15) }
+        #expect(insight(.peak, in: report(lines)) == nil)
     }
 
     @Test func needsTwentyPresses() {
