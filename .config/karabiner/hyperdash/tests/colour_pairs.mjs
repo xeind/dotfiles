@@ -59,6 +59,8 @@ const RAW = [
   // Insights
   [".insight-title", "content", "--text", [["rest", "--raised"], ["hover", "--hover"]], "sans", 13, 400, "html, body"],
   [".insight-detail", "label", "--muted", [["rest", "--raised"], ["hover", "--hover"]], "sans", 12, 400],
+  [".insight-heading", "caption", "--faint", [["rest", "--card"]], "mono", 10, 400],
+  [".insight-note", "label", "--muted", [["rest", "--card"]], "sans", 12, 400],
   [".insight-meta", "caption", "--faint", [["rest", "--raised"], ["hover", "--hover"]], "mono", 10, 400],
   [".chip.combo i", "caption", "--faint", [["rest", "--hover"]], "mono", 10, 400],
   [".chip.combo b", "value", "--soft", [["rest", "--hover"]], "mono", 10, 400],

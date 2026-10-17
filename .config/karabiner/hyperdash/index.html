@@ -716,6 +716,12 @@
   .insight-refs { display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-xs); }
   .insight-more { font-size: var(--text-secondary); color: var(--muted); }
 
+  /* Below the cards: why the other rules have none, and how the page works */
+  .insight-notes { margin-top: var(--space-lg); }
+  .insight-heading { font: var(--mono-caption) var(--mono); line-height: var(--leading-note); letter-spacing: 0.04em; color: var(--faint); }
+  .insight-note { margin-top: var(--space-xs); font-size: var(--text-secondary); line-height: var(--leading-secondary); color: var(--muted); }
+  .insight-disclosure { margin-top: var(--space-lg); }
+
   .chip.combo { display: flex; gap: var(--space-xs); }
   .chip.combo i { font-style: normal; color: var(--faint); }
   .chip.combo b { font-weight: 400; color: var(--soft); }
@@ -1090,6 +1096,7 @@ var HyperdashModel = (() => {
   const NAMED_VALUES = new Set(Object.values(NAMED_KEYS));
   const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const INSIGHT_STATUSES = ["ok", "stale", "running", "missing-tool", "failed"];
+  const RULE_STATUSES = ["shown", "held", "not-ready", "no-pattern"];
   const LOG_STATUSES = ["ok", "missing", "unreadable"];
   const BINDINGS_STATUSES = ["ok", "missing", "invalid"];
   const CONTEXT_STATUSES = ["ok", "missing", "unreadable", "disabled"];
@@ -1150,17 +1157,27 @@ var HyperdashModel = (() => {
           ? item.keys.filter((pair) => Array.isArray(pair) && pair.length === 2 && isText(pair[0]) && isText(pair[1]))
           : [],
         value: typeof item.value === "number" ? item.value : 0,
-        // Version 3 adds the days a finding rests on and the app it concerns.
-        dates: Array.isArray(item.dates) ? item.dates.filter(isValidDate).slice(0, 7) : [],
+        // Version 3 adds the days a finding rests on, the app it concerns and the period it counts.
+        dates: Array.isArray(item.dates) ? item.dates.filter(isValidDate) : [],
         app: isText(item.app) && BUNDLE_ID.test(item.app) ? item.app : null,
-      }))
-      .slice(0, 5);
+        windowStart: isValidDate(item.windowStart) ? item.windowStart : null,
+        windowEnd: isValidDate(item.windowEnd) ? item.windowEnd : null,
+        comparisonStart: isValidDate(item.comparisonStart) ? item.comparisonStart : null,
+        comparisonEnd: isValidDate(item.comparisonEnd) ? item.comparisonEnd : null,
+      }));
+    // The engine picks and orders the cards (Insights.swift, cardPriority) and says why each other rule has none.
+    const rules = Array.isArray(raw.rules)
+      ? raw.rules
+        .filter((r) => r && isText(r.rule) && RULE_STATUSES.includes(r.status))
+        .map((r) => ({ rule: r.rule, status: r.status, reason: isText(r.reason) ? r.reason : null }))
+      : [];
     return {
       generated: isValidTimestamp(raw.generated) ? raw.generated : null,
       month: isText(raw.month) && /^\d{4}-\d{2}$/.test(raw.month) ? raw.month : null,
       recordingSince: isValidTimestamp(raw.recordingSince) ? raw.recordingSince : null,
       rejectedLines: Number.isInteger(raw.rejectedLines) && raw.rejectedLines >= 0 ? raw.rejectedLines : 0,
       insights,
+      rules,
     };
   }
 
@@ -1619,6 +1636,18 @@ var HyperdashModel = (() => {
     const d = new Date(dayNumber(date) * 86400000);
     return `${WEEKDAYS[d.getUTCDay()]} ${SHORT_MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
   }
+  // "Oct 9–15", "Sep 28–Oct 4", with " vs " and the comparison when there is one; null without a window.
+  function windowLabel({ windowStart, windowEnd, comparisonStart, comparisonEnd }) {
+    const span = (start, end) => {
+      const [, sm, sd] = start.split("-").map(Number);
+      const [, em, ed] = end.split("-").map(Number);
+      const first = `${SHORT_MONTHS[sm - 1]} ${sd}`;
+      return start === end ? first : sm === em ? `${first}–${ed}` : `${first}–${SHORT_MONTHS[em - 1]} ${ed}`;
+    };
+    if (!windowStart || !windowEnd) return null;
+    const label = span(windowStart, windowEnd);
+    return comparisonStart && comparisonEnd ? `${label} vs ${span(comparisonStart, comparisonEnd)}` : label;
+  }
   // Insight icons: one outline family, a 24-unit box with a 2-unit stroke, drawn at 16 px in the text colour.
   // Every kind the engine emits (InsightKind in Insights.swift) has its own drawing; shape carries the meaning.
   const insightGlyph = (paths) => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
@@ -1973,7 +2002,7 @@ var HyperdashModel = (() => {
   return {
     THEMES, normalizeTheme, nextTheme, fadeState,
     GROUPS, GROUP_LABELS, CATEGORIES, CATEGORY_LABELS, CATEGORY_GROUP, groupOf, groupOfLayer, classifier,
-    isValidDate, dateOf, addDays, dayLabel, clampDay, INSIGHT_ICONS, insightIcon, moreShortcuts, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
+    isValidDate, dateOf, addDays, dayLabel, windowLabel, clampDay, INSIGHT_ICONS, insightIcon, moreShortcuts, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
     localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
     monthOf, previousMonth, isMonthComplete, compareMonths,
     sumCounts, buildRows, buildActivityFromCombos, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, compactCount, coverageNote, describeBin,
@@ -2211,8 +2240,8 @@ function render(announce = true) {
   $("month-pill").hidden = insightsPage;
   $("updated").hidden = !insightsPage || !insightsData?.generated;
   if (!$("updated").hidden) {
-    const month = insightsData.month ? `${monthLabel(insightsData.month).slice(0, 3).toUpperCase()} · ` : "";
-    $("updated-label").textContent = `${month}UPDATED ${timeAgo(insightsData.generated).toUpperCase()}`;
+    // Each card names its own period, so the header carries only the report's age.
+    $("updated-label").textContent = `UPDATED ${timeAgo(insightsData.generated).toUpperCase()}`;
   }
   $("totals").hidden = insightsPage || broken;
   $("keyboard").hidden = page !== null || broken;
@@ -2532,20 +2561,24 @@ function insightsEmptyMessage() {
   return "No insights yet — they appear after the first analysis runs.";
 }
 
+const INSIGHTS_DISCLOSURE = "Computed locally from recorded shortcuts with fixed rules. No AI.";
+
 function renderInsights() {
   const root = $("insights");
   root.replaceChildren();
+  const disclosure = element("p", "insight-note insight-disclosure", INSIGHTS_DISCLOSURE);
 
   if (!insightsData) {
-    root.append(element("p", "empty-list", insightsEmptyMessage()));
+    root.append(element("p", "empty-list", insightsEmptyMessage()), disclosure);
     return;
   }
+  const quiet = insightsData.rules.filter((rule) => rule.status !== "shown" && rule.reason);
   if (insightsData.insights.length === 0) {
-    root.append(element("p", "empty-list", "Nothing stands out this month."));
-    return;
+    const waiting = quiet.some((rule) => rule.status === "not-ready");
+    root.append(element("p", "empty-list", waiting ? "Not enough recorded history for a card yet." : "No pattern met the rules for these periods."));
   }
 
-  // A card: icon and title on one row, then the explanation, its days and its shortcuts at full width.
+  // A card: icon and title on one row, then the explanation, its period and its shortcuts at full width.
   // The icon is decoration; the title says what the card is about.
   const list = element("div", "insight-list");
   for (const item of insightsData.insights) {
@@ -2562,8 +2595,11 @@ function renderInsights() {
       card.append(open);
     }
     card.append(element("div", "insight-detail", item.detail));
-    // Version 3 findings name the days they rest on and, when one applies, the app.
-    const meta = [...item.dates.map((date) => HyperdashModel.dayLabel(date, today())), ...(item.app ? [appName(item.app)] : [])];
+    // A finding names the period it counts and, when one applies, the app. A report without
+    // windows names up to seven of the days it rests on instead.
+    const span = HyperdashModel.windowLabel(item);
+    const days = span ? [span] : item.dates.slice(0, 7).map((date) => HyperdashModel.dayLabel(date, today()));
+    const meta = [...days, ...(item.app ? [appName(item.app)] : [])];
     if (meta.length) card.append(element("div", "insight-meta", meta.join(" · ").toUpperCase()));
 
     if (keys.length) {
@@ -2581,7 +2617,13 @@ function renderInsights() {
     card.dataset.key = `${item.kind} ${item.title}`; // its identity when a render rebuilds it
     list.append(card);
   }
-  root.append(list);
+  if (list.childElementCount) root.append(list);
+  if (quiet.length) {
+    const notes = element("div", "insight-notes");
+    notes.append(element("p", "insight-heading", "NOT SHOWN"), ...quiet.map((rule) => element("p", "insight-note", rule.reason)));
+    root.append(notes);
+  }
+  root.append(disclosure);
 }
 
 // Activity ------------------------------------------------------------------------------------------

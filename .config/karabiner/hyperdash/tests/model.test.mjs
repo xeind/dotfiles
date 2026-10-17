@@ -148,7 +148,8 @@ test("normalizeInsights: versions 2 and 3 are accepted, others are not", () => {
   }));
   assert.equal(parsed.month, "2026-10");
   assert.equal(parsed.recordingSince, "2026-10-14T13:06:00");
-  assert.equal(parsed.insights.length, 5);
+  // The engine picks the cards; the page keeps every valid one.
+  assert.equal(parsed.insights.length, 7);
   assert.deepEqual(parsed.insights[0].keys, [["w", "u"]]);
   assert.equal(M.normalizeInsights({ version: 2, generated: "junk", insights: [] }).generated, null);
   // Version 2 has no dates or app; version 3 carries them.
@@ -1092,6 +1093,39 @@ test("moreShortcuts: a counted noun, never a bare +N", () => {
   assert.equal(M.moreShortcuts(1), "1 more shortcut");
   assert.equal(M.moreShortcuts(2), "2 more shortcuts");
   assert.equal(M.moreShortcuts(1234), "1,234 more shortcuts");
+});
+
+test("insights: windows, every date and rule statuses ride along; older reports get empty defaults", () => {
+  const dates = Array.from({ length: 12 }, (_, i) => `2026-10-${String(i + 1).padStart(2, "0")}`);
+  const report = plain(M.normalizeInsights({ version: 3, generated: NOW, month: "2026-10", insights: [
+    { kind: "rising", title: "t", detail: "d", keys: [], value: 1, dates, windowStart: "2026-10-08", windowEnd: "2026-10-14",
+      comparisonStart: "2026-10-01", comparisonEnd: "2026-10-07" },
+    { kind: "peak", title: "t", detail: "d", keys: [], value: 9, windowStart: "junk", windowEnd: "2026-10-15", comparisonStart: null },
+  ], rules: [
+    { rule: "trend", status: "shown", reason: null },
+    { rule: "peak", status: "not-ready", reason: "The busiest hour needs 20 presses this month; 18 so far." },
+    { rule: "x", status: "weird", reason: "r" }, null,
+  ] }));
+  assert.equal(report.insights[0].dates.length, 12);
+  assert.deepEqual([report.insights[0].windowStart, report.insights[0].windowEnd], ["2026-10-08", "2026-10-14"]);
+  assert.deepEqual([report.insights[0].comparisonStart, report.insights[0].comparisonEnd], ["2026-10-01", "2026-10-07"]);
+  assert.deepEqual([report.insights[1].windowStart, report.insights[1].comparisonStart], [null, null]);
+  assert.deepEqual(report.rules, [
+    { rule: "trend", status: "shown", reason: null },
+    { rule: "peak", status: "not-ready", reason: "The busiest hour needs 20 presses this month; 18 so far." },
+  ]);
+  const old = plain(M.normalizeInsights({ version: 3, insights: [{ kind: "peak", title: "t", detail: "d" }] }));
+  assert.deepEqual(old.rules, []);
+  assert.equal(old.insights[0].windowStart, null);
+});
+
+test("windowLabel: one day, one month, two months, and a comparison", () => {
+  assert.equal(M.windowLabel({ windowStart: "2026-10-15", windowEnd: "2026-10-15" }), "Oct 15");
+  assert.equal(M.windowLabel({ windowStart: "2026-10-09", windowEnd: "2026-10-15" }), "Oct 9–15");
+  assert.equal(M.windowLabel({ windowStart: "2026-09-28", windowEnd: "2026-10-04" }), "Sep 28–Oct 4");
+  assert.equal(M.windowLabel({ windowStart: "2026-10-08", windowEnd: "2026-10-14", comparisonStart: "2026-10-01", comparisonEnd: "2026-10-07" }),
+    "Oct 8–14 vs Oct 1–7");
+  assert.equal(M.windowLabel({ windowStart: null, windowEnd: "2026-10-14" }), null);
 });
 
 test("describeHealth: the healthy line is short enough for one line; warnings and errors keep every word", () => {

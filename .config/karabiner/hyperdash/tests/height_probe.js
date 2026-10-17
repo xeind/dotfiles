@@ -48,7 +48,11 @@
   const okHealth = (extra) => ({ log: { status: "ok", bytes: 9000, modified: stamp(now) }, bindings: { status: "ok" }, insights: { status: "ok", message: null }, context: { status: "ok" }, ...extra });
   const insights = (n) => ({ version: 3, generated: stamp(now), month: stamp(now).slice(0, 7), recordingSince: stamp(at(-40, 8 * 3600)), rejectedLines: 0,
     insights: Array.from({ length: n }, (_, i) => ({ kind: ["rising", "peak", "unused", "burst", "dormant"][i % 5], title: i % 2 ? "A much longer title that runs on to two lines on this card" : "Short title",
-      detail: i % 2 ? "A long detail line that explains the finding in more words than fit on one single line of the card" : "Short detail", keys: i % 3 === 0 ? [["v", "q"], ["w", "u"], ["o", "t"]] : [], value: i, dates: i % 2 ? ["2026-10-14", "2026-10-15"] : [], app: i % 2 ? "org.mozilla.firefox" : null })) });
+      detail: i % 2 ? "A long detail line that explains the finding in more words than fit on one single line of the card" : "Short detail", keys: i % 3 === 0 ? [["v", "q"], ["w", "u"], ["o", "t"]] : [], value: i, dates: i % 2 ? ["2026-10-14", "2026-10-15"] : [], app: i % 2 ? "org.mozilla.firefox" : null,
+      windowStart: "2026-10-08", windowEnd: "2026-10-14", comparisonStart: i % 2 ? "2026-10-01" : null, comparisonEnd: i % 2 ? "2026-10-07" : null })),
+    // Why the other rules have no card: one line and two-line reasons below the cards.
+    rules: [{ rule: "trend", status: "not-ready", reason: "Week comparisons need 14 recorded days; 9 qualify." },
+      { rule: "burst", status: "no-pattern", reason: "No shortcut came in bursts (5+ presses, each within 3 s) on 2+ days this month." }] });
 
   hyperdash.reset({ generation: 1, bindings, text, offset: text.length, insights: insights(3), health: okHealth() });
   hyperdash.reset({ stream: "context", generation: 1, text: ctx.join("\n") + "\n", offset: 0 });
