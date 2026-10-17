@@ -16,8 +16,9 @@ const TYPE_SCALE = {
 const SCALE = {
   "font-weight": ["400", "500"],
   "letter-spacing": ["-0.04em", "-0.01em", "0", "0.02em", "0.04em"],
-  "border-radius": ["5px", "6px", "7px", "8px", "10px", "30px", "50%", "999px", "inherit"],
-  space: ["0", "2px", "4px", "6px", "8px", "12px", "20px", "auto"],
+  // Radius and space go through the tokens in the shared :root block (checked below); raw px needs an EXCEPTIONS line.
+  "border-radius": ["50%", "999px", "inherit"],
+  space: ["0", "auto"],
 };
 const SPACE = ["gap", "row-gap", "column-gap", "margin", "margin-top", "margin-right", "margin-bottom", "margin-left", "padding",
   "padding-top", "padding-right", "padding-bottom", "padding-left"];
@@ -143,4 +144,19 @@ test("colours come only from theme tokens", () => {
 test("nothing moves: no transitions or animations", () => {
   assert.doesNotMatch(css, /\b(transition|animation)\s*:/);
   assert.doesNotMatch(css, /@keyframes/);
+});
+
+// The ladders in DESIGN.md, held where they are defined: the shared :root block.
+test("size, radius and space tokens hold the native ladder and the 4 px rhythm", () => {
+  const shared = /\/\* Type and layout, shared by every theme \*\/\s*:root \{([\s\S]*?)\n  \}/.exec(css)[1];
+  const token = (name) => shared.match(new RegExp(`--${name}:\\s*([^;]+);`))?.[1].trim();
+  // macOS 27.0.1 NSControl.ControlSize: mini 16, small 20, regular 24, large 28 (native/native_controls.json).
+  assert.deepEqual(["xs", "sm", "md", "lg"].map((s) => token(`control-${s}`)), ["16px", "20px", "24px", "28px"]);
+  assert.deepEqual([token("row-compact"), token("row")], ["24px", "32px"]);
+  // A quarter of the height, as AppKit draws its push buttons, segmented controls and pop-ups (4.2, 5.2, 6.1 measured
+  // at 16, 20, 24); 10 for a 32 px row, as it draws a source-list selection (10.2 measured).
+  for (const s of ["sm", "md", "lg"]) assert.equal(token(`radius-${s}`), `calc(var(--control-${s}) / 4)`);
+  assert.equal(token("radius-row"), "10px");
+  assert.equal(token("radius-inset"), "calc(var(--radius-card) - var(--space-xl))");
+  assert.deepEqual(["2xs", "xs", "sm", "md", "lg", "xl"].map((s) => token(`space-${s}`)), ["2px", "4px", "6px", "8px", "12px", "20px"]);
 });
