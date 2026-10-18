@@ -724,6 +724,8 @@
   .insight-heading { font: var(--mono-caption) var(--mono); line-height: var(--leading-note); letter-spacing: 0.04em; color: var(--faint); }
   .insight-note { margin-top: var(--space-xs); font-size: var(--text-secondary); line-height: var(--leading-secondary); color: var(--muted); }
   .insight-disclosure { margin-top: var(--space-lg); }
+  /* Under the "more insights" note it reads as that note's second line, so three cards fit without a scrollbar. */
+  .insight-notes + .insight-disclosure { margin-top: var(--space-xs); }
 
   /* One finding, opened from its card, in the same scroll area: its whole text, the numbers behind it,
      and a button for each day and shortcut it rests on. */
@@ -3024,7 +3026,7 @@ function renderEvidence(root, item) {
   root.append(box);
 }
 
-const INSIGHTS_DISCLOSURE = "Computed locally from recorded shortcuts with fixed rules. No AI.";
+const INSIGHTS_DISCLOSURE = "Computed locally with fixed rules. No AI.";
 
 function renderInsights() {
   const root = $("insights");
