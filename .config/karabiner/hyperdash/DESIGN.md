@@ -21,6 +21,7 @@ before these rules (v1, 2026-10-17) and where each one went.
 | One height per page, fades, tooltips | `tests/height.test.mjs` with `height_probe.js` |
 | The page-size motion and its host handshake, in WebKit | `tests/motion.test.mjs`; the host side in `hammerspoon/tests/hyperdash_host_test.lua` |
 | Token parity across themes | `tests/model.test.mjs` ("every theme defines every colour token") |
+| What each insight claims, what fails and recovers, how the data ages | [`docs/`](docs/): `CLAIMS.md`, `RECOVERY.md`, `LIFECYCLE.md` |
 
 The site's design system is the parent. The panel departs from it in two
 places, on purpose: rounded corners (a floating panel, which the user asked
