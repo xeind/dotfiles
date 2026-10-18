@@ -11,6 +11,9 @@ struct Options {
     var output = ""
     var context: String?
     var now: Date?
+    /// Retention manifest to read the logs through (insights) or to write (compact).
+    var retention: String?
+    var compact = false
 }
 
 func parseArguments(_ arguments: [String], calendar: Calendar) throws -> Options {
@@ -28,6 +31,8 @@ func parseArguments(_ arguments: [String], calendar: Calendar) throws -> Options
         case "--bindings": options.bindings = try value(for: flag)
         case "--output": options.output = try value(for: flag)
         case "--context": options.context = try value(for: flag)
+        case "--retention": options.retention = try value(for: flag)
+        case "--compact": options.compact = true
         case "--now":
             let text = try value(for: flag)
             guard let date = parseTimestamp(text, calendar: calendar) else {
@@ -38,10 +43,14 @@ func parseArguments(_ arguments: [String], calendar: Calendar) throws -> Options
         }
         index += 1
     }
-    guard !options.log.isEmpty, !options.bindings.isEmpty, !options.output.isEmpty else {
+    let complete = options.compact
+        ? !options.log.isEmpty && options.retention != nil
+        : !options.log.isEmpty && !options.bindings.isEmpty && !options.output.isEmpty
+    guard complete else {
         throw UsageError(
             description:
-                "usage: hyperdash-insights --log <path> --bindings <path> --output <path> [--context <path>] [--now YYYY-MM-DDTHH:MM:SS]"
+                "usage: hyperdash-insights --log <path> --bindings <path> --output <path> [--context <path>] [--retention <path>] [--now YYYY-MM-DDTHH:MM:SS]\n"
+                + "       hyperdash-insights --compact --log <path> [--context <path>] --retention <path> [--now YYYY-MM-DDTHH:MM:SS]"
         )
     }
     return options
@@ -58,6 +67,22 @@ do {
     options = try parseArguments(Array(CommandLine.arguments.dropFirst()), calendar: calendar)
 } catch {
     fail("\(error)")
+}
+
+let now = options.now ?? Date()
+
+// Compact: write the retention manifest for the logs as they are now. The logs are only read.
+if options.compact, let path = options.retention {
+    do {
+        if let manifest = try compactLogs(
+            logPath: options.log, contextPath: options.context, now: now, calendar: calendar)
+        {
+            try writeDurably(manifest.jsonData(), to: path)
+        }
+    } catch {
+        fail("cannot compact: \(error)")
+    }
+    exit(0)
 }
 
 let logText: String
@@ -91,7 +116,7 @@ if let path = options.context {
 
 let parsedLog = parseLog(logText, calendar: calendar)
 let report = computeReport(
-    events: parsedLog.events, bindings: bindings, now: options.now ?? Date(),
+    events: parsedLog.events, bindings: bindings, now: now,
     rejectedLines: parsedLog.rejectedLines, context: contextEvents, calendar: calendar)
 
 do {

@@ -62,19 +62,25 @@ private func isBundleIdentifier(_ text: Substring) -> Bool {
         }
 }
 
+/// One non-empty line without its line break; nil for a line that is rejected.
+func parseContextLine(_ line: Substring, calendar: Calendar) -> ContextEvent? {
+    let fields = line.split(separator: "\t", omittingEmptySubsequences: false)
+    guard fields.count == 3, let kind = ContextKind(rawValue: String(fields[1])),
+          kind == .app ? isBundleIdentifier(fields[2]) : fields[2] == "-",
+          let date = parseContextTimestamp(String(fields[0]), calendar: calendar)
+    else { return nil }
+    return ContextEvent(date: date, kind: kind, value: String(fields[2]))
+}
+
 public func parseContextLog(_ text: String, calendar: Calendar = .current) -> ParsedContext {
     var events: [ContextEvent] = []
     var rejected = 0
     for line in text.split(whereSeparator: { $0 == "\n" || $0 == "\r\n" }) {
-        let fields = line.split(separator: "\t", omittingEmptySubsequences: false)
-        guard fields.count == 3, let kind = ContextKind(rawValue: String(fields[1])),
-              kind == .app ? isBundleIdentifier(fields[2]) : fields[2] == "-",
-              let date = parseContextTimestamp(String(fields[0]), calendar: calendar)
-        else {
+        guard let event = parseContextLine(line, calendar: calendar) else {
             rejected += 1
             continue
         }
-        events.append(ContextEvent(date: date, kind: kind, value: String(fields[2])))
+        events.append(event)
     }
     let sorted = events.enumerated()
         .sorted { ($0.element.date, $0.offset) < ($1.element.date, $1.offset) }

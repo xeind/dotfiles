@@ -108,20 +108,26 @@ private func isIdentifier(_ text: Substring) -> Bool {
     !text.isEmpty && text.utf8.allSatisfy { ($0 >= 97 && $0 <= 122) || ($0 >= 48 && $0 <= 57) || $0 == 95 }
 }
 
+/// One non-empty line without its line break, by the rules at the top of this file.
+/// Returns nil for a line that is rejected.
+func parseLogLine(_ line: Substring, calendar: Calendar) -> PressEvent? {
+    let fields = line.split(separator: "\t", omittingEmptySubsequences: false)
+    guard fields.count == 3, isIdentifier(fields[1]), isIdentifier(fields[2]),
+          let date = parseTimestamp(String(fields[0]), calendar: calendar)
+    else { return nil }
+    return PressEvent(date: date, combo: Combo(layer: String(fields[1]), key: String(fields[2])))
+}
+
 /// Parses the usage log by the rules at the top of this file.
 public func parseLog(_ text: String, calendar: Calendar = .current) -> ParsedLog {
     var events: [PressEvent] = []
     var rejected = 0
     for line in text.split(whereSeparator: { $0 == "\n" || $0 == "\r\n" }) {
-        let fields = line.split(separator: "\t", omittingEmptySubsequences: false)
-        guard fields.count == 3, isIdentifier(fields[1]), isIdentifier(fields[2]),
-              let date = parseTimestamp(String(fields[0]), calendar: calendar)
-        else {
+        guard let event = parseLogLine(line, calendar: calendar) else {
             rejected += 1
             continue
         }
-        events.append(
-            PressEvent(date: date, combo: Combo(layer: String(fields[1]), key: String(fields[2]))))
+        events.append(event)
     }
     let sorted = events.enumerated()
         .sorted { ($0.element.date, $0.offset) < ($1.element.date, $1.offset) }
