@@ -1290,3 +1290,37 @@ test("fadeState: an edge fades only where content continues past it", () => {
   assert.equal(M.fadeState({ scrollTop: 0, clientHeight: 240, scrollHeight: 241 }), "none", "one pixel of overflow is not worth a fade");
   assert.equal(M.fadeState({ scrollTop: 0, clientHeight: 0, scrollHeight: 0 }), "none", "a hidden area");
 });
+
+test("context store: sessions after random appends equal a fresh store's, in order or not", () => {
+  let seed = 20261018;
+  const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32; };
+  const stamp = (second) => `2026-10-17T${String(Math.floor(second / 3600)).padStart(2, "0")}:${String(Math.floor(second / 60) % 60).padStart(2, "0")}:${String(second % 60).padStart(2, "0")}.${random() < 0.5 ? "000" : "500"}`;
+  const kinds = ["start", "app", "app", "lock", "unlock", "sleep", "wake"];
+  const nows = ["2026-10-17T03:00:00", "2026-10-17T12:00:00", "2026-10-17T23:59:59"];
+  const spansOf = (store, now) => plain(store.sessions(now).map((span) => [span.start, span.end]));
+  for (let round = 0; round < 40; round++) {
+    const inOrder = round % 4 !== 3; // every fourth round appends older lines too
+    const live = M.createContextStore();
+    const lines = [];
+    let second = 0;
+    for (let step = 0; step < 30; step++) {
+      const batch = [];
+      for (let n = 1 + Math.floor(random() * 3); n > 0; n--) {
+        second = inOrder || random() < 0.8 ? second + Math.floor(random() * (random() < 0.2 ? 400 : 90)) : Math.floor(random() * second);
+        const kind = kinds[Math.floor(random() * kinds.length)];
+        batch.push(ctxLine(stamp(Math.min(second, 86399)), kind, kind === "app" ? `com.app${Math.floor(random() * 3)}` : "-"));
+      }
+      lines.push(...batch);
+      live.append(batch.join("\n") + "\n");
+      const fresh = contextFrom(lines);
+      const events = lines.map((text) => { const [t, kind] = text.split("\t"); return { t, kind }; });
+      for (const now of nows) {
+        const expected = R.sessionSpansNaive(events, M.absSeconds(now)).map((span) => [span.start, span.end]);
+        assert.deepEqual(spansOf(live, now), expected, `round ${round} step ${step} now ${now}`);
+        assert.deepEqual(spansOf(fresh, now), expected, `fresh, round ${round} step ${step} now ${now}`);
+      }
+      assert.equal(live.appAt("2026-10-17T10:00:00", nows[2]), fresh.appAt("2026-10-17T10:00:00", nows[2]), `appAt, round ${round} step ${step}`);
+      assert.deepEqual(plain(live.segments("2026-10-17", nows[1])), plain(fresh.segments("2026-10-17", nows[1])), `segments, round ${round} step ${step}`);
+    }
+  }
+});

@@ -1767,10 +1767,11 @@ var HyperdashModel = (() => {
 
   function createContextStore() {
     const minuteCache = new Map();
-    let events, rejected, sorted, version, appList;
+    let events, rejected, sorted, version, appList, starts, ends, spansStale;
 
     // version only ever grows, also across a reset, so a cache keyed on it never matches an older log.
-    function clear() { events = []; rejected = 0; sorted = true; version = (version ?? 0) + 1; appList = null; }
+    // starts and ends hold the session boundaries: ends[i] closes the session that starts at starts[i].
+    function clear() { events = []; rejected = 0; sorted = true; version = (version ?? 0) + 1; appList = null; starts = []; ends = []; spansStale = false; }
     clear();
 
     function ingest(text) {
@@ -1786,10 +1787,28 @@ var HyperdashModel = (() => {
         if (ok === undefined) { ok = isValidTimestamp(`${minute}:00`); minuteCache.set(minute, ok); }
         if (!ok || Number(match[1].slice(17, 19)) > 59) { rejected += 1; continue; }
         if (events.length && fields[0] < events[events.length - 1].t) sorted = false;
-        events.push({ t: fields[0], kind, value, abs: absSeconds(fields[0]) });
+        const event = { t: fields[0], kind, value, abs: absSeconds(fields[0]) };
+        // An append in time order extends the session list and app list in place. An older line makes
+        // both stale, and the next read rebuilds them from the sorted events.
+        if (!sorted) { spansStale = true; appList = null; }
+        else {
+          if (!spansStale) markStart(events, events.length, event);
+          if (appList !== null && (kind === "app" || kind === "start")) appList.push(event);
+        }
+        events.push(event);
         version += 1;
-        appList = null;
       }
+    }
+
+    // A new start closes the session before it at the last event strictly earlier, never before its own start.
+    function markStart(list, length, event) {
+      if (event.kind !== "start") return;
+      if (starts.length) {
+        let back = length - 1;
+        while (back >= 0 && list[back].abs >= event.abs) back -= 1;
+        ends.push(Math.max(starts[starts.length - 1], back >= 0 ? list[back].abs : -Infinity));
+      }
+      starts.push(event.abs);
     }
 
     function ordered() {
@@ -1812,21 +1831,23 @@ var HyperdashModel = (() => {
       const nowAbs = absSeconds(now);
       const key = `${version}|${nowAbs}`;
       if (spanCache.key === key) return spanCache.spans;
-      const known = ordered().filter((event) => event.abs <= nowAbs);
-      const starts = known.filter((event) => event.kind === "start").map((event) => event.abs);
+      if (spansStale) {
+        const all = ordered();
+        starts = [];
+        ends = [];
+        all.forEach((event, index) => markStart(all, index, event));
+        spansStale = false;
+      }
+      let known = 0; // starts at or before now
+      while (known < starts.length && starts[known] <= nowAbs) known += 1;
       const spans = [];
-      let cursor = 0;
-      starts.forEach((start, index) => {
-        let end = nowAbs;
-        if (index + 1 < starts.length) {
-          const next = starts[index + 1];
-          while (cursor < known.length && known[cursor].abs < next) cursor += 1;
-          end = Math.max(start, cursor > 0 ? known[cursor - 1].abs : start);
-        }
+      for (let index = 0; index < known; index++) {
+        const start = starts[index];
+        const end = index + 1 < known ? ends[index] : nowAbs;
         const last = spans[spans.length - 1];
         if (last && start - last.end <= 60) last.end = Math.max(last.end, end);
         else spans.push({ start, end });
-      });
+      }
       spanCache = { key, spans };
       return spans;
     }
