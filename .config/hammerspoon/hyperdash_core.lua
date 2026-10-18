@@ -4,7 +4,7 @@
 --
 -- Sections:
 --   1. validation of bindings.json entries and insights.json (stage A)
---   2. incremental log reader (stage B)
+--   2. incremental log reader (stage B), retention cuts
 --   3. context log: line format and the recorder
 
 local R = {}
@@ -119,16 +119,72 @@ local function sameIdentity(a, b)
   return a and b and a.dev == b.dev and a.ino == b.ino
 end
 
--- A fresh reset action: complete lines of bytes [0, size).
-local function planReset(state, env, path, stat)
-  local raw, err = readRange(env, path, 0, stat.size)
+-- Retention (docs/RETENTION.md). A manifest written by the insights tool
+-- names a cut in each log: bytes [0, offset) are archived and summarised
+-- there, the tail starts at the offset. A cut is used only when the file has
+-- the cut's (dev, ino), holds at least `offset` bytes, and the line
+-- `lastLine` ends exactly at `offset`; otherwise the log is read from 0.
+R.RETENTION_VERSION = 1
+
+local function isCut(cut)
+  return type(cut) == "table" and type(cut.dev) == "number" and type(cut.ino) == "number"
+    and math.type(cut.offset) == "integer" and cut.offset > 0 and type(cut.lastLine) == "string"
+end
+
+-- Accepts a decoded manifest. `now` is "YYYY-MM-DDTHH:MM:SS": a clock set back
+-- before the tail start makes the whole log the safe reading. Returns true, or
+-- false and a message.
+function R.checkRetention(decoded, now)
+  if type(decoded) ~= "table" then return false, "retention manifest is not a JSON object" end
+  if decoded.version ~= R.RETENTION_VERSION then
+    return false, "retention manifest is version " .. tostring(decoded.version) .. ", expected " .. R.RETENTION_VERSION
+  end
+  if type(decoded.tailStart) ~= "string" or not decoded.tailStart:match("^%d%d%d%d%-%d%d%-01T00:00:00$") then
+    return false, "retention manifest has no tail start"
+  end
+  if now < decoded.tailStart then return false, "the clock is before the retention tail start" end
+  if not isCut(decoded.usage) then return false, "retention manifest has no usage cut" end
+  if decoded.context ~= nil and not isCut(decoded.context) then return false, "retention manifest has a bad context cut" end
+  return true
+end
+
+-- "YYYY-MM-01T00:00:00" of the month that holds the day 31 days before `date`
+-- (os.date("*t") fields). The insights tool computes the same (Retention.swift).
+function R.retentionTailStart(date)
+  local day = os.date("*t", os.time({ year = date.year, month = date.month, day = date.day - 31, hour = 12 }))
+  return string.format("%04d-%02d-01T00:00:00", day.year, day.month)
+end
+
+-- The offset to read `path` from: the cut's offset when it belongs to the
+-- file whose attributes are `stat`, else 0.
+function R.cutOffset(cut, env, path, stat)
+  if not isCut(cut) or not stat or stat.dev ~= cut.dev or stat.ino ~= cut.ino or stat.size < cut.offset then return 0 end
+  local expected = cut.lastLine .. "\n"
+  local lineStart = cut.offset - #expected
+  if lineStart < 0 then return 0 end
+  -- The archived line, and the byte before it, which must end the line before.
+  local raw = readRange(env, path, math.max(lineStart - 1, 0), cut.offset)
+  if not raw or raw:sub(-#expected) ~= expected then return 0 end
+  if lineStart > 0 and raw:byte(1) ~= 10 then return 0 end
+  return cut.offset
+end
+
+-- A fresh reset action: complete lines of bytes [from, size), where `from` is
+-- the retention cut of `base` = { cut, archive } when it applies, else 0.
+-- `archive` (the manifest's JSON text) goes with the action only when the cut
+-- was used.
+local function planReset(state, env, path, stat, base)
+  local from = base and R.cutOffset(base.cut, env, path, stat) or 0
+  local raw, err = readRange(env, path, from, stat.size)
   if not raw then return { kind = "error", message = err } end
   local cut = lastNewline(raw)
   return {
     kind = "reset",
     generation = state.generation + 1,
     text = raw:sub(1, cut),
-    offset = cut,
+    offset = from + cut,
+    from = from,
+    archive = from > 0 and base.archive or nil,
     dev = stat.dev,
     ino = stat.ino,
     size = stat.size,
@@ -146,11 +202,13 @@ end
 --
 -- Returns one of:
 --   { kind = "none" }                       nothing new (a partial line stays unread)
---   { kind = "reset", generation, text, offset, dev, ino, size, status }
+--   { kind = "reset", generation, text, offset, from, archive, dev, ino, size, status }
+--                                           text holds bytes [from, offset)
 --   { kind = "append", generation, from, to, text }
 --   { kind = "error", message }             read failed; state unchanged
 --   { kind = "retry" }                      file changed during the read; plan again
-function R.plan(state, env, path)
+-- `base` = { cut, archive } is the retention cut a reset may start from (nil: 0).
+function R.plan(state, env, path, base)
   local stat = env.stat(path)
   if not stat then
     if state.status == "missing" and not state.needReset then return { kind = "none" } end
@@ -161,7 +219,7 @@ function R.plan(state, env, path)
   end
 
   if state.needReset or state.status == "missing" or not sameIdentity(state, stat) or stat.size < state.offset then
-    local action = planReset(state, env, path, stat)
+    local action = planReset(state, env, path, stat, base)
     if action.kind ~= "reset" then return action end
     local after = env.stat(path)
     if not sameIdentity(stat, after) or after.size < action.offset then

@@ -630,6 +630,113 @@ do
     files[path].text == L("start") .. L("app", "com.apple.finder") .. L("wake"), files[path] and files[path].text)
 end
 
+---------------------------------------------------------------------------
+-- Retention: manifest checks, cuts, and resets that start at a cut
+---------------------------------------------------------------------------
+do
+  local good = { version = 1, tailStart = "2026-09-01T00:00:00", usage = { dev = 1, ino = 2, offset = 24, lastLine = "x" } }
+  check("retention: a good manifest passes", R.checkRetention(good, "2026-10-17T18:00:00") == true)
+  local function bad(name, change, now)
+    local copy = { version = good.version, tailStart = good.tailStart, usage = good.usage }
+    for k, v in pairs(change) do copy[k] = v end
+    local ok, message = R.checkRetention(copy, now or "2026-10-17T18:00:00")
+    check("retention: " .. name .. " is refused with a message", ok == false and type(message) == "string", message)
+  end
+  bad("another version", { version = 2 })
+  bad("a tail start that is not a month start", { tailStart = "2026-09-02T00:00:00" })
+  bad("a missing usage cut", { usage = false })
+  bad("a fractional offset", { usage = { dev = 1, ino = 2, offset = 2.5, lastLine = "x" } })
+  bad("a zero offset", { usage = { dev = 1, ino = 2, offset = 0, lastLine = "x" } })
+  bad("a bad context cut", { context = { dev = 1 } })
+  bad("a clock before the tail start", {}, "2026-08-31T23:59:59")
+  check("retention: not a table", R.checkRetention("x", "2026-10-17T18:00:00") == false)
+
+  local starts = {
+    { { year = 2026, month = 10, day = 17 }, "2026-09-01T00:00:00" },
+    { { year = 2026, month = 3, day = 1 }, "2026-01-01T00:00:00" },
+    { { year = 2026, month = 3, day = 31 }, "2026-02-01T00:00:00" },
+    { { year = 2026, month = 1, day = 15 }, "2025-12-01T00:00:00" },
+    { { year = 2026, month = 12, day = 31 }, "2026-11-01T00:00:00" },
+    { { year = 2026, month = 11, day = 1 }, "2026-10-01T00:00:00" },
+  }
+  for _, case in ipairs(starts) do
+    local got = R.retentionTailStart(case[1])
+    check("retention: tail start for " .. case[1].month .. "/" .. case[1].day, got == case[2], got)
+  end
+end
+
+do
+  local old = "2026-08-30T10:00:00\tw\tu\n2026-08-31T23:59:59\to\tt\n"
+  local new = "2026-09-01T00:00:00\tw\tu\n2026-09-02T00:00:00\tw\tv\n"
+  write(LOG, old .. new)
+  local e = env(5)
+  local stat = hs.fs.attributes(LOG)
+  local cut = { dev = stat.dev, ino = stat.ino, offset = #old, lastLine = "2026-08-31T23:59:59\to\tt" }
+  check("cut: a matching cut gives its offset", R.cutOffset(cut, e, LOG, stat) == #old)
+  local function refused(name, change)
+    local copy = { dev = cut.dev, ino = cut.ino, offset = cut.offset, lastLine = cut.lastLine }
+    for k, v in pairs(change) do copy[k] = v end
+    check("cut: " .. name .. " reads from 0", R.cutOffset(copy, e, LOG, stat) == 0)
+  end
+  refused("another inode", { ino = stat.ino + 1 })
+  refused("another device", { dev = stat.dev + 1 })
+  refused("another last line", { lastLine = "2026-08-31T23:59:58\to\tt" })
+  refused("a last line that is only the end of the line", { lastLine = "31T23:59:59\to\tt" })
+  refused("an offset past the end", { offset = #old + #new + 1 })
+  refused("an offset off the line end", { offset = #old + 1 })
+  check("cut: no stat reads from 0", R.cutOffset(cut, e, LOG, nil) == 0)
+  local first = { dev = stat.dev, ino = stat.ino, offset = 24, lastLine = "2026-08-30T10:00:00\tw\tu" }
+  check("cut: a cut after the first line is accepted", R.cutOffset(first, e, LOG, stat) == 24)
+
+  -- A reset from the cut: the page holds bytes [cut, end) and the absolute offset.
+  local state, page = R.newState(), newPage()
+  local base = { cut = cut, archive = '{"version":1}' }
+  local action = R.plan(state, e, LOG, base)
+  check("cut reset: starts at the cut", action.kind == "reset" and action.from == #old and action.text == new, action.text)
+  check("cut reset: offset is absolute", action.offset == #old + #new, action.offset)
+  check("cut reset: carries the archive", action.archive == base.archive)
+  deliver(page, action)
+  R.commit(state, action)
+  write(LOG, "2026-09-03T00:00:00\tw\tu\n", "ab")
+  local append = R.plan(state, e, LOG, base)
+  check("cut reset: later lines arrive as an append", append.kind == "append" and append.from == #old + #new, append.kind)
+  deliver(page, append)
+  R.commit(state, append)
+  check("cut reset: page holds the tail", page.text == completeLines(read(LOG)):sub(#old + 1), page.text)
+
+  -- A newer manifest does not disturb the generation the page holds: appends go on.
+  local later = { cut = { dev = stat.dev, ino = stat.ino, offset = #old + 24, lastLine = "2026-09-01T00:00:00\tw\tu" }, archive = '{"version":1,"n":2}' }
+  write(LOG, "2026-09-04T00:00:00\tw\tu\n", "ab")
+  local more = R.plan(state, e, LOG, later)
+  check("new manifest: the held generation keeps appending", more.kind == "append" and more.generation == action.generation, more.kind)
+  deliver(page, more)
+  R.commit(state, more)
+  R.fail(state)
+  local again = R.plan(state, e, LOG, later)
+  check("new manifest: the next reset starts at the new cut", again.kind == "reset" and again.from == #old + 24 and again.archive == later.archive, again.from)
+
+  -- A cut that no longer fits the file: the reset reads from 0 without the archive.
+  R.fail(state)
+  local wrong = { cut = { dev = stat.dev, ino = stat.ino, offset = #old, lastLine = "nope" }, archive = "{}" }
+  local full = R.plan(state, e, LOG, wrong)
+  check("bad cut: the reset reads the whole log", full.kind == "reset" and full.from == 0 and full.text == completeLines(read(LOG)), full.from)
+  check("bad cut: no archive goes with it", full.archive == nil)
+
+  -- The archived part rewritten in place, same size: the last line no longer matches.
+  write(LOG, (old:gsub("23:59:59", "23:59:58")) .. new)
+  local rewritten = R.plan(R.newState(), e, LOG, base)
+  check("rewritten archive: reads from 0", rewritten.kind == "reset" and rewritten.from == 0 and rewritten.archive == nil)
+  -- Replaced by rename: a new inode, so the cut is not used.
+  write(LOG .. ".new", old .. new)
+  os.rename(LOG .. ".new", LOG)
+  local replaced = R.plan(R.newState(), e, LOG, base)
+  check("replaced log: reads from 0", replaced.kind == "reset" and replaced.from == 0 and replaced.archive == nil)
+  -- Truncated below the cut.
+  write(LOG, old:sub(1, 10))
+  local short = R.plan(R.newState(), e, LOG, { cut = { dev = hs.fs.attributes(LOG).dev, ino = hs.fs.attributes(LOG).ino, offset = #old, lastLine = cut.lastLine }, archive = "{}" })
+  check("truncated log: reads from 0", short.kind == "reset" and short.from == 0 and short.archive == nil)
+end
+
 os.execute("rm -rf " .. SCRATCH)
 report[#report + 1] = string.format("passed=%d failed=%d", passed, failed)
 return table.concat(report, "\n")
