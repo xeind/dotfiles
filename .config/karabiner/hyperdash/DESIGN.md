@@ -19,20 +19,23 @@ before these rules (v1, 2026-10-17) and where each one went.
 | A rule for every state of every control | `tests/states.test.mjs` |
 | Keyboard and pointer do the same thing; footer hints | `tests/interaction.test.mjs` |
 | One height per page, fades, tooltips | `tests/height.test.mjs` with `height_probe.js` |
+| The page-size motion and its host handshake, in WebKit | `tests/motion.test.mjs`; the host side in `hammerspoon/tests/hyperdash_host_test.lua` |
 | Token parity across themes | `tests/model.test.mjs` ("every theme defines every colour token") |
 
 The site's design system is the parent. The panel departs from it in two
 places, on purpose: rounded corners (a floating panel, which the user asked
 for) and a soft shadow on the card and the about overlay (they float over
 other windows). Everything else follows the site: Geist and Geist Mono with
-one job each, tokens only, no motion.
+one job each, tokens only, no motion but the one the user asked for: the
+card's height on a page change (§8).
 
 ## 1. The look
 
 A dark rounded card, 368 px wide, floating over whatever is on screen. One
 large numeral, a keyboard drawn as a heatmap, and dense rows of mono labels
-and keycap chips. Quantity reads as brightness, groups as hue. Nothing moves
-and nothing changes size: the panel is a fixed instrument, not a page.
+and keycap chips. Quantity reads as brightness, groups as hue. Within a page
+nothing moves and nothing changes size: the panel is a fixed instrument, not
+a page. Between pages only the card's bottom edge moves (§8).
 
 ## 2. Themes
 
@@ -391,7 +394,28 @@ Layer.
 
 - No `title` attributes or SVG `<title>`; native tooltips clip at the card
   edge. Use `aria-label` and visible text.
-- No transitions, animations or keyframes.
+- No transitions, animations or keyframes, with one exception. When the user
+  changes page (Overview, a layer, Activity, Insights), the card's height
+  moves from where it is to the new page's height: 180 ms,
+  `cubic-bezier(0.455, 0.03, 0.515, 0.955)`, one Web Animations call in
+  `moveCard()`. The rules for it:
+  - Content is laid out at the new size at once and never scales; the card
+    clips it at its moving bottom edge. Width, type, corners and shadow do
+    not change.
+  - Keys and clicks act on the new page at once. Escape and close keep their
+    meaning. A new page change starts from the card's current height; the
+    latest page wins and nothing queues.
+  - The window holds the card all the way. Before growing, the page asks the
+    host for the taller window (`resize` with `transition: id`) and waits for
+    `hostReady(id)`, at most 100 ms, then settles at once. While the card
+    shrinks the window keeps its height; it shrinks after.
+  - Every height the page reports (resize, protocol results) is the window
+    height, never the card's passing height.
+  - Data updates, theme changes, `open()` and every in-page interaction
+    change at once. Under `prefers-reduced-motion: reduce` page changes do
+    too, and turning it on mid-motion settles at once.
+  - No other motion: no CSS transitions or keyframes, no smooth scrolling,
+    no `requestAnimationFrame`.
 - Only `open()` resets navigation; `tick`, `append` and data updates never do.
 - A rebuilt control keeps keyboard focus.
 - A button focused from the keyboard keeps Enter and Space; the footer names
@@ -422,6 +446,6 @@ node --test hyperdash/tests/states.test.mjs        # a rule for every control st
 HYPERDASH_TEST_LOG=<log copy> node --test hyperdash/tests/*.test.mjs
 ```
 
-`grid.test.mjs` needs Playwright WebKit (`npx -y playwright@latest install
-webkit`); `interaction.test.mjs` and `bugs.test.mjs` need Google Chrome. Each
+`grid.test.mjs` and `motion.test.mjs` need Playwright WebKit (`npx -y
+playwright@latest install webkit`); `interaction.test.mjs` and `bugs.test.mjs` need Google Chrome. Each
 skips when its browser is missing.

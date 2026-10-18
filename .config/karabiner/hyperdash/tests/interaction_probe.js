@@ -96,6 +96,7 @@
     for (const [focusName, selector] of Object.entries(FOCUS)) {
       const setup = () => { enter(scene); const n = selector && document.querySelector(`#card ${selector}`); if (selector && (!n || n.closest("[hidden]"))) return false; n?.focus(); return true; };
       if (!setup()) continue;
+      for (const a of document.getAnimations()) a.finish(); // the height where a page change's motion ends
       (out.heights[`activity ${scene}`] ||= new Set()).add(document.body.scrollHeight);
       const card = document.getElementById("footer");
       if (card.scrollWidth > card.clientWidth) out.footerOverflow.push(`${scene} ${focusName}: ${card.scrollWidth}>${card.clientWidth}`);

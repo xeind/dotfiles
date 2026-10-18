@@ -145,6 +145,16 @@ test("colours come only from theme tokens", () => {
 test("nothing moves: no transitions or animations", () => {
   assert.doesNotMatch(css, /\b(transition|animation)\s*:/);
   assert.doesNotMatch(css, /@keyframes/);
+  assert.doesNotMatch(css, /scroll-behavior\s*:\s*smooth/);
+});
+
+// DESIGN.md §8: the one exception, the card's height on a page change. motion.test.mjs holds its behaviour.
+test("the one motion is the card's height, 180 ms, from script", () => {
+  const script = html.slice(html.indexOf("</style>"));
+  assert.deepEqual(script.match(/\.animate\(/g), [".animate("], "one Web Animations call");
+  assert.match(script, /card\.animate\(\[\{ height: `\$\{from\}px` \}, \{ height: `\$\{to\}px` \}\], \{ duration: MOTION\.duration, easing: MOTION\.easing \}\)/);
+  assert.match(script, /const MOTION = \{ duration: 180, easing: "cubic-bezier\(0\.455, 0\.03, 0\.515, 0\.955\)", hostWait: 100 \};/);
+  assert.doesNotMatch(script, /requestAnimationFrame|behavior: "smooth"|\.style\.transition/);
 });
 
 // The ladders in DESIGN.md, held where they are defined: the shared :root block.

@@ -47,6 +47,7 @@ async function webkit() {
 
 // Runs inside the page: the census for the page on screen.
 function measure() {
+  for (const a of document.getAnimations()) a.finish(); // a page change moves the card; measure where it ends
   const EPS = 1e-3;
   const whole = (v) => Math.abs(v * devicePixelRatio - Math.round(v * devicePixelRatio)) < EPS;
   const on4 = (v) => Math.abs(v / 4 - Math.round(v / 4)) < EPS;

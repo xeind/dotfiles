@@ -1,7 +1,8 @@
 // Height probe, run inside the page by height.test.mjs. It walks every interaction on every page and records
 // document.body.scrollHeight. The panel must keep one height per page: the host resizes the window on any change.
 (() => {
-  const H = () => document.body.scrollHeight;
+  // A page change moves the card (motion.test.mjs); the height that counts is where it ends.
+  const H = () => { for (const a of document.getAnimations()) a.finish(); return document.body.scrollHeight; };
   const seen = {}; // page -> { height -> [labels] }
   let page = "overview";
   const clipped = []; // steps where a legend cell is wider than its box (its text would be cut off)

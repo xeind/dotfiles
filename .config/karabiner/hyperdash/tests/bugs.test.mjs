@@ -93,7 +93,8 @@ async function open(now) {
       }
       throw new Error(`Tab never reached ${selector}`);
     },
-    height: () => page.eval("document.body.scrollHeight"),
+    // The height where a page change's motion ends.
+    height: () => page.eval("document.getAnimations().forEach((a) => a.finish()), document.body.scrollHeight"),
     close: () => send("Target.closeTarget", { targetId }),
   };
   for (let i = 0; i < 100 && !(await page.eval("document.readyState === 'complete' && typeof hyperdash === 'object'").catch(() => false)); i++) {
