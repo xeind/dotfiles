@@ -60,7 +60,7 @@ private func anonymous(_ m: RetentionManifest) -> RetentionManifest {
     let clear = { (cut: LogCut) in LogCut(dev: 0, ino: 0, offset: cut.offset, lastLine: cut.lastLine) }
     return RetentionManifest(
         version: m.version, created: m.created, tailStart: m.tailStart, usage: clear(m.usage),
-        context: m.context.map(clear), archive: m.archive)
+        context: m.context.map(clear), archive: m.archive, index: m.index)
 }
 
 @Suite struct RetentionTests {
@@ -154,8 +154,15 @@ private func anonymous(_ m: RetentionManifest) -> RetentionManifest {
         #expect(readManifest(path, now: now, calendar: calendar) == manifest)
         #expect(readManifest(path, now: date("2026-08-31T23:59:59"), calendar: calendar) == nil)
         let text = String(decoding: try manifest.jsonData(), as: UTF8.self)
-            .replacingOccurrences(of: "\"version\":1", with: "\"version\":2")
+            .replacingOccurrences(of: "\"version\":2", with: "\"version\":3")
         try write(text, to: URL(fileURLWithPath: path))
+        #expect(readManifest(path, now: now, calendar: calendar) == nil)
+        // Version 1 had no index line and is still read; version 2 needs its index line.
+        let lines = String(decoding: try manifest.jsonData(), as: UTF8.self).split(separator: "\n")
+        try write(lines[0].replacingOccurrences(of: "\"version\":2", with: "\"version\":1") + "\n" + lines[1] + "\n", to: URL(fileURLWithPath: path))
+        let old = try #require(readManifest(path, now: now, calendar: calendar))
+        #expect(old.version == 1 && old.index == nil && old.archive == manifest.archive)
+        try write(lines[0] + "\n" + lines[1] + "\n", to: URL(fileURLWithPath: path))
         #expect(readManifest(path, now: now, calendar: calendar) == nil)
         try write("{\"version\":1,", to: URL(fileURLWithPath: path))
         #expect(readManifest(path, now: now, calendar: calendar) == nil)
@@ -198,6 +205,66 @@ private func anonymous(_ m: RetentionManifest) -> RetentionManifest {
             to: folder.appendingPathComponent("context.log"))
         let cut = try #require(try compact(folder)?.context)
         #expect(cut.lastLine == "2026-08-20T09:00:00.000\tapp\tcom.a")
+    }
+
+    @Test func theDayIndexSpansEveryArchivedLineOfEachDay() throws {
+        let folder = try scratch()
+        let manifest = try #require(try compact(folder))
+        let days = try #require(manifest.index).days
+        // Every day from the first archived day to the day before the tail start, gaps included.
+        var expected: [String] = []
+        var day = "2026-07-20"
+        while day < "2026-09-01" { expected.append(day); day = nextDay(day) }
+        #expect(days.keys.sorted() == expected)
+        let bytes = [UInt8](try Data(contentsOf: folder.appendingPathComponent("usage.log")))
+        for (date, entry) in days {
+            var archived = 0
+            for pairs in manifest.archive.days[date]?.values ?? [:].values {
+                for i in stride(from: 1, to: pairs.count, by: 2) { archived += pairs[i] }
+            }
+            // The span holds every archived line of the day: as many as the summary counts.
+            let span = String(decoding: bytes[entry[0]..<entry[1]], as: UTF8.self)
+            let lines = parseLog(span, calendar: calendar).events.filter { formatTimestamp($0.date, calendar: calendar).hasPrefix(date) }
+            #expect(entry[1] <= manifest.usage.offset && lines.count == archived, "\(date)")
+            #expect(entry[0] == 0 || bytes[entry[0] - 1] == 10, "\(date)")
+        }
+        // The first day, the day at the cut, a day with no presses, and days whose presses
+        // all sit after the cut (the September line among the August ones).
+        #expect(days["2026-07-20"]![0] == 0)
+        #expect(days["2026-08-25"]![1] == manifest.usage.offset)
+        #expect(days["2026-08-13"]![0...1] == [0, 0] && manifest.archive.days["2026-08-13"] == nil)
+        #expect(days["2026-08-26"]![0...1] == [0, 0])
+    }
+
+    @Test func theDayIndexContextSpanStartsAtTheSessionBeforeTheDay() throws {
+        let folder = try scratch()
+        let manifest = try #require(try compact(folder))
+        let days = try #require(manifest.index).days
+        let context = try #require(manifest.context)
+        // Until the 08-10 start, every day continues the session of the 07-20 start at byte 0.
+        #expect(days["2026-07-21"]![2] == 0 && days["2026-08-10"]![2] == 0)
+        // From 08-28 the session is the one of the 08-27 start, which is the context cut.
+        #expect(days["2026-08-28"]![2] == context.offset && days["2026-08-31"]![2] == context.offset)
+        // The 08-05 line written on 08-26 sits far from its day; the span reaches it.
+        let log = try String(contentsOf: folder.appendingPathComponent("context.log"), encoding: .utf8)
+        let late = try #require(log.range(of: "2026-08-05T10:00:00.000"))
+        #expect(days["2026-08-05"]![3] > log.utf8.distance(from: log.startIndex, to: late.lowerBound))
+
+        // A session that ends in the evening and the next start days later: the span reaches
+        // the first line after the day and every line in its millisecond.
+        try write(
+            "2026-08-01T08:00:00.000\tstart\t-\n2026-08-01T09:00:00.000\tapp\tcom.a\n"
+                + "2026-08-03T09:00:00.000\tapp\tcom.b\n2026-08-03T09:00:00.000\tstart\t-\n"
+                + "2026-08-03T10:00:00.000\tapp\tcom.c\n",
+            to: folder.appendingPathComponent("context.log"))
+        try write("2026-08-01T09:30:00\tw\tu\n2026-09-02T10:00:00\tw\tu\n", to: folder.appendingPathComponent("usage.log"))
+        let small = try #require(try compact(folder)?.index).days
+        // 08-01 and 08-02 end with the app line of 08-03 and the start in the same millisecond.
+        #expect(small["2026-08-01"] == [0, 24, 0, 132])
+        #expect(small["2026-08-02"] == [0, 0, 0, 132])
+        // No line after the day yet: read to the end of the file.
+        #expect(small["2026-08-03"] == [0, 0, 0, -1])
+        #expect(small["2026-08-04"] == [0, 0, 100, -1])
     }
 
     @Test func aLogThatIsNotUTF8IsNotCompacted() throws {

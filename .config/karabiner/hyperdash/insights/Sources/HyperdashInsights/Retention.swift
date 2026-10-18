@@ -1,11 +1,13 @@
-// RETENTION (hyperdash/docs/RETENTION.md; manifest version 1)
+// RETENTION (hyperdash/docs/RETENTION.md; manifest version 2, version 1 still read)
 //
 // The logs are never moved, truncated or rewritten. A manifest names a cut offset in each
 // log: bytes [0, offset) are the archive, bytes from the offset on are the tail. Readers
 // parse only the tail and take the archive from the manifest's summary.
 //
-// The file is two lines of JSON: the header (version, created, tailStart and the cuts), then
-// the summary. The host decodes only the header; the summary goes to the panel as it is.
+// The file is three lines of JSON: the header (version, created, tailStart and the cuts), the
+// summary, and the day index. The host decodes only the header; the summary goes to the panel
+// as it is, and the host looks one day up in the index without decoding it. Version 1 had no
+// index line.
 //
 // A cut is used only when the file still has the (dev, ino) it was made in, holds at least
 // `offset` bytes, and ends the line `lastLine` exactly at `offset`. Otherwise, and for a
@@ -19,7 +21,7 @@
 
 import Foundation
 
-public let retentionVersion = 1
+public let retentionVersion = 2
 
 /// A cut in one log, and the file it was made in.
 public struct LogCut: Codable, Equatable, Sendable {
@@ -48,6 +50,22 @@ public struct UsageArchive: Codable, Equatable, Sendable {
     public let days: [String: [String: [Int]]]
 }
 
+/// For each day from the first archived day to the day before the tail start, the bytes a
+/// reader needs to rebuild that day as the whole logs show it: "YYYY-MM-DD" to
+/// [usageFrom, usageTo, contextFrom, contextTo]. Offsets are absolute and start or end lines.
+///
+/// Usage: from the first to the end of the last archived line dated that day, in file order;
+/// 0, 0 for a day with none. Lines of other days inside the span are skipped by the reader.
+///
+/// Context, in time order: from the last `start` before the day (or the first line), which
+/// sets the app and the session at 00:00, to the first line after the day and any line in
+/// the same millisecond, which settles whether the day's last session runs past midnight.
+/// The span covers each of those lines wherever it sits in the file. contextTo is -1 when no
+/// line follows the day yet: the reader reads to the end of the file. 0, 0 without a context log.
+public struct DayIndex: Codable, Equatable, Sendable {
+    public let days: [String: [Int]]
+}
+
 public struct RetentionManifest: Equatable, Sendable {
     public let version: Int
     public let created: String
@@ -58,6 +76,8 @@ public struct RetentionManifest: Equatable, Sendable {
     public let context: LogCut?
     /// The second line of the file.
     public let archive: UsageArchive
+    /// The third line; nil in a version 1 manifest.
+    public let index: DayIndex?
 
     private struct Header: Codable {
         let version: Int
@@ -68,7 +88,8 @@ public struct RetentionManifest: Equatable, Sendable {
     }
 
     public init(
-        version: Int, created: String, tailStart: String, usage: LogCut, context: LogCut?, archive: UsageArchive
+        version: Int, created: String, tailStart: String, usage: LogCut, context: LogCut?, archive: UsageArchive,
+        index: DayIndex?
     ) {
         self.version = version
         self.created = created
@@ -76,25 +97,33 @@ public struct RetentionManifest: Equatable, Sendable {
         self.usage = usage
         self.context = context
         self.archive = archive
+        self.index = index
     }
 
-    /// Reads the two lines; throws when either is not what this version writes.
+    /// Reads the lines of version 1 (header, summary) or version 2 (header, summary, index);
+    /// throws when one is not what its version writes.
     public init(fileData data: Data) throws {
-        guard let split = data.firstIndex(of: 10) else {
-            throw RetentionError(description: "retention manifest has one line")
+        var lines = data.split(separator: 10, omittingEmptySubsequences: false)
+        if lines.last?.isEmpty == true { lines.removeLast() }
+        guard lines.count >= 2 else { throw RetentionError(description: "retention manifest has one line") }
+        let header = try JSONDecoder().decode(Header.self, from: lines[0])
+        guard lines.count == (header.version >= 2 ? 3 : 2) else {
+            throw RetentionError(description: "retention manifest has \(lines.count) lines")
         }
-        let header = try JSONDecoder().decode(Header.self, from: data[..<split])
         self.init(
             version: header.version, created: header.created, tailStart: header.tailStart,
             usage: header.usage, context: header.context,
-            archive: try JSONDecoder().decode(UsageArchive.self, from: data[(split + 1)...]))
+            archive: try JSONDecoder().decode(UsageArchive.self, from: lines[1]),
+            index: header.version >= 2 ? try JSONDecoder().decode(DayIndex.self, from: lines[2]) : nil)
     }
 
     public func jsonData() throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         let header = Header(version: version, created: created, tailStart: tailStart, usage: usage, context: context)
-        return try encoder.encode(header) + Data("\n".utf8) + encoder.encode(archive) + Data("\n".utf8)
+        var data = try encoder.encode(header) + Data("\n".utf8) + encoder.encode(archive) + Data("\n".utf8)
+        if let index { data += try encoder.encode(index) + Data("\n".utf8) }
+        return data
     }
 }
 
@@ -190,6 +219,7 @@ public func compactLogs(
     var lastEvent: String?
     var lastUsed: [String: String] = [:]
     var bins: [String: [String: [Int: Int]]] = [:]
+    var usageSpans: [String: (from: Int, to: Int)] = [:]
     for line in lines where line.next <= offset && line.end > line.start {
         let lineText = text(log.bytes, line.start, line.end)
         guard let event = parseLogLine(lineText, calendar: calendar) else {
@@ -202,6 +232,8 @@ public func compactLogs(
         let hour = Int(time.dropFirst(11).prefix(2))!
         let minute = Int(time.dropFirst(14).prefix(2))!
         bins[String(time.prefix(10)), default: [:]][id, default: [:]][hour * 2 + (minute >= 30 ? 1 : 0), default: 0] += 1
+        let span = usageSpans[String(time.prefix(10))]
+        usageSpans[String(time.prefix(10))] = (span?.from ?? line.start, line.next)
         if lastUsed[id].map({ time > $0 }) ?? true { lastUsed[id] = time }
         if firstEvent.map({ time < $0 }) ?? true { firstEvent = time }
         if lastEvent.map({ time > $0 }) ?? true { lastEvent = time }
@@ -212,6 +244,7 @@ public func compactLogs(
     }
 
     var contextCut: LogCut?
+    var contextLines: [ContextLine]?
     if let contextPath {
         let context = try readLogFile(contextPath)
         guard String(validating: context.bytes, as: UTF8.self) != nil else {
@@ -219,6 +252,14 @@ public func compactLogs(
         }
         var latest: Date?
         var cut = 0
+        var valid: [ContextLine] = []
+        for line in completeLines(context.bytes) where line.end > line.start {
+            let lineText = text(context.bytes, line.start, line.end)
+            if let event = parseContextLine(lineText, calendar: calendar) {
+                valid.append(ContextLine(time: String(lineText.prefix(23)), start: event.kind == .start, from: line.start, to: line.next))
+            }
+        }
+        contextLines = valid
         for line in completeLines(context.bytes) where line.end > line.start {
             guard let event = parseContextLine(text(context.bytes, line.start, line.end), calendar: calendar)
             else { continue }
@@ -244,15 +285,78 @@ public func compactLogs(
         context: contextCut,
         archive: UsageArchive(
             tailStart: start, count: count, rejected: rejected, firstEvent: firstEvent, lastEvent: lastEvent,
-            lastUsed: lastUsed, days: days))
+            lastUsed: lastUsed, days: days),
+        index: dayIndex(
+            first: days.keys.min(), tailStart: String(start.prefix(10)), usage: usageSpans, context: contextLines))
 }
 
-/// Reads a manifest. Nil when it is missing, unreadable, of another version, or dated after
+/// A valid context line: its timestamp text, whether it is a `start`, and its bytes.
+struct ContextLine {
+    let time: String
+    let start: Bool
+    let from: Int
+    let to: Int
+}
+
+/// The day after "YYYY-MM-DD", on the proleptic Gregorian calendar.
+func nextDay(_ date: String) -> String {
+    let parts = date.split(separator: "-").map { Int($0)! }
+    var (year, month, day) = (parts[0], parts[1], parts[2] + 1)
+    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
+    let length = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1]
+    if day > length { (month, day) = (month + 1, 1) }
+    if month > 12 { (year, month) = (year + 1, 1) }
+    return String(format: "%04d-%02d-%02d", year, month, day)
+}
+
+/// The day index (see DayIndex) for every day from `first` to the day before `tailStart`.
+/// `context` is nil without a context log. Context lines are taken in time order, as the
+/// panel sorts them: by timestamp text, then file order.
+func dayIndex(
+    first: String?, tailStart: String, usage: [String: (from: Int, to: Int)], context: [ContextLine]?
+) -> DayIndex {
+    let sorted = (context ?? []).enumerated()
+        .sorted { $0.element.time != $1.element.time ? $0.element.time < $1.element.time : $0.offset < $1.offset }
+        .map(\.element)
+    // The first index whose time is not below (or, with `after`, is above) `time`.
+    func bound(_ time: String, after: Bool) -> Int {
+        var low = 0
+        var high = sorted.count
+        while low < high {
+            let mid = (low + high) / 2
+            if after ? sorted[mid].time <= time : sorted[mid].time < time { low = mid + 1 } else { high = mid }
+        }
+        return low
+    }
+    var lastStart: [Int] = []
+    for (index, line) in sorted.enumerated() { lastStart.append(line.start ? index : (lastStart.last ?? -1)) }
+
+    var days: [String: [Int]] = [:]
+    var date = first ?? tailStart
+    while date < tailStart {
+        let span = usage[date] ?? (0, 0)
+        var entry = [span.from, span.to, 0, 0]
+        if context != nil, !sorted.isEmpty {
+            let dayStart = bound("\(date)T00:00:00.000", after: false)
+            let lower = dayStart > 0 ? max(lastStart[dayStart - 1], 0) : 0
+            let following = bound("\(nextDay(date))T00:00:00.000", after: true)
+            let upper = following < sorted.count ? bound(sorted[following].time, after: true) : sorted.count
+            let lines = sorted[lower..<upper]
+            entry[2] = lines.map(\.from).min()!
+            entry[3] = following < sorted.count ? lines.map(\.to).max()! : -1
+        }
+        days[date] = entry
+        date = nextDay(date)
+    }
+    return DayIndex(days: days)
+}
+
+/// Reads a manifest of version 1 or 2. Nil when it is missing, unreadable, of another version, or dated after
 /// `now` (a clock set back past the tail start: the whole log is then the safe reading).
 public func readManifest(_ path: String, now: Date, calendar: Calendar = .current) -> RetentionManifest? {
     guard let data = FileManager.default.contents(atPath: path),
           let manifest = try? RetentionManifest(fileData: data),
-          manifest.version == retentionVersion,
+          (1...retentionVersion).contains(manifest.version),
           let tailStart = parseTimestamp(manifest.tailStart, calendar: calendar), tailStart <= now
     else { return nil }
     return manifest
