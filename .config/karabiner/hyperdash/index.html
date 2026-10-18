@@ -1021,6 +1021,11 @@
   .groupbar button { border-radius: 3px; background: var(--grp); min-width: 3px; }
   .groupbar button[aria-pressed="false"].dimmed { opacity: 0.35; }
   .groupcap { margin-top: var(--space-xs); font: var(--mono-caption) var(--mono); letter-spacing: 0.04em; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* The caption of a filter with no segment left, as one 16 px button; its text sits where the plain caption does. */
+  .groupclear { display: block; box-sizing: border-box; width: 100%; height: var(--control-xs); margin-top: calc(-1 * var(--space-xs)); padding: var(--space-xs) 0 0; text-align: left; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: var(--radius-sm); }
+  .groupclear:hover { color: var(--soft); }
+  .groupclear:active { color: var(--text); }
+  .groupclear:focus-visible { outline-offset: -2px; }
   .insight-meta { margin-top: var(--space-xs); font: var(--mono-label) var(--mono); letter-spacing: 0.04em; color: var(--faint); }
 
   /* Footer: the keys that work on this page */
@@ -2536,8 +2541,17 @@ function renderGroupCaption() {
   const share = (n) => `${Math.round((n / sum) * 100)}%`;
   const top = GROUPS.filter((g) => totals[g]).sort((a, b) => totals[b] - totals[a]).slice(0, 3);
   // A filter whose group has nothing this month has no segment to click, so its caption names Escape.
-  $("groupcap").textContent = state.group && !totals[state.group] ? `${GROUP_LABELS[state.group].toUpperCase()} ONLY · NONE THIS MONTH · ESC TO CLEAR`
-    : sum === 0 ? "BY GROUP · NO PRESSES YET"
+  if (state.group && !totals[state.group]) {
+    const text = `${GROUP_LABELS[state.group].toUpperCase()} · NONE THIS MONTH · CLICK OR ESC TO CLEAR`;
+    // The same button stays while the text does, so a focused one keeps focus through an update.
+    if ($("groupcap").firstElementChild?.textContent !== text) {
+      const clear = element("button", "groupclear tabstop", text);
+      clear.tabIndex = tabStops ? 0 : -1;
+      $("groupcap").replaceChildren(clear);
+    }
+    return;
+  }
+  $("groupcap").textContent = sum === 0 ? "BY GROUP · NO PRESSES YET"
     : groupHover && totals[groupHover] ? `${GROUP_LABELS[groupHover].toUpperCase()} · ${totals[groupHover].toLocaleString("en-US")} · ${share(totals[groupHover])}`
     : state.group ? `${GROUP_LABELS[state.group].toUpperCase()} ONLY · CLICK OR ESC TO CLEAR`
     : `BY GROUP · ${top.map((g) => `${GROUP_LABELS[g].toUpperCase()} ${share(totals[g])}`).join(" · ")}`;
@@ -3712,6 +3726,12 @@ $("groupbar").addEventListener("click", (event) => {
   const segment = event.target.closest("button");
   if (!segment) return;
   state.group = state.group === segment.dataset.group ? null : segment.dataset.group;
+  render();
+});
+
+$("groupcap").addEventListener("click", (event) => {
+  if (!event.target.closest(".groupclear")) return;
+  state.group = null;
   render();
 });
 

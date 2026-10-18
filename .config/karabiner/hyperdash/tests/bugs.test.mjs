@@ -640,3 +640,26 @@ test("pointer 1: the footer's insights and activity hints open their pages with 
     await page.close();
   }
 });
+
+test("pointer 2: a group filter with nothing this month clears with a click on its caption", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    await load(page, {
+      now: "2026-10-17T12:00:00", bindings: BINDINGS,
+      presses: [["2026-09-10T09:00:00", "s", "d"], ["2026-10-10T09:00:00", "v", "j"], ["2026-10-10T09:10:00", "s", "d"]],
+    });
+    const height = await page.height();
+    await click(page, '#groupbar button[data-group="navigate"]');
+    assert.equal(await page.eval(`document.querySelectorAll("#groupcap button").length`), 0, "a clear button while a segment is there to click");
+    await page.press("ArrowLeft");
+    assert.match(await page.eval(`$("groupcap").textContent`), /NONE THIS MONTH/);
+    assert.ok((await box(page, "#groupcap button")).height >= 16, "hit area under 16 px");
+    assert.equal(await page.eval(`document.querySelector("#groupcap button").scrollWidth <= document.querySelector("#groupcap button").clientWidth`), true, "the caption is cut off");
+    await click(page, "#groupcap button");
+    assert.equal(await page.eval("state.group"), null, "the click did not clear the filter");
+    assert.match(await page.eval(`$("groupcap").textContent`), /^BY GROUP/);
+    assert.equal(await page.height(), height);
+  } finally {
+    await page.close();
+  }
+});

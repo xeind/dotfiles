@@ -120,6 +120,8 @@ const RAW = [
   // Groups
   [".groupbar button", "mark", "--g-{g}", [["rest", "--card"]], "bar", 8, 500],
   [".groupcap", "caption", "--faint", [["rest", "--card"]], "mono", 10, 400],
+  [".groupclear:hover", "value", "--soft", [["hover", "--card"]], "mono", 10, 400],
+  [".groupclear:active", "value", "--text", [["active", "--card"]], "mono", 10, 400],
 
   // Footer, info, about, status
   [".footer", "caption", "--faint", [["rest", "--card"]], "sans", 11, 500],

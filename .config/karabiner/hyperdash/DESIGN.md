@@ -297,6 +297,8 @@ wide). Both are also reachable from the keyboard.
 
 The overview's `I INSIGHTS` and `A ACTIVITY` hints are buttons (20 px, the
 keycap and its word), so a key is never the only way to open those pages.
+A group caption that offers to clear a filter with no segment left is one
+too (16 px: the text keeps its place and the box reaches 4 px above it).
 Each has hover, focus and pressed rules and joins the Tab order with the
 other controls.
 
