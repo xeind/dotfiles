@@ -286,6 +286,53 @@ public func readLog(_ path: String, cut: LogCut?) throws -> (text: String, offse
     return (text, 0)
 }
 
+/// The usage log as the insights run reads it: from the manifest's cut when it applies,
+/// with the archive summary; otherwise whole, with no archive.
+public func readUsage(
+    _ path: String, manifest: RetentionManifest?, calendar: Calendar = .current
+) throws -> (log: ParsedLog, archive: ArchivedHistory?) {
+    let read = try readLog(path, cut: manifest?.usage)
+    let archive = read.offset > 0 ? manifest.map { ArchivedHistory($0.archive, calendar: calendar) } : nil
+    return (parseLog(read.text, calendar: calendar), archive)
+}
+
+/// The context log from the manifest's cut, but only alongside the usage cut it was made
+/// with (`archived`): the tail then covers every press read raw.
+public func readContext(
+    _ path: String, manifest: RetentionManifest?, archived: Bool, calendar: Calendar = .current
+) throws -> ParsedContext {
+    parseContextLog(try readLog(path, cut: archived ? manifest?.context : nil).text, calendar: calendar)
+}
+
+/// What the rules need from the archive: the first press, the rejected lines, and presses
+/// per combo per day (for unbound).
+public struct ArchivedHistory: Sendable {
+    public let first: Date?
+    public let rejected: Int
+    public let comboDays: [Combo: [String: Int]]
+
+    public init(first: Date?, rejected: Int, comboDays: [Combo: [String: Int]]) {
+        self.first = first
+        self.rejected = rejected
+        self.comboDays = comboDays
+    }
+
+    public init(_ usage: UsageArchive, calendar: Calendar) {
+        var comboDays: [Combo: [String: Int]] = [:]
+        for (day, combos) in usage.days {
+            for (id, bins) in combos {
+                let parts = id.split(separator: " ")
+                let combo = Combo(layer: String(parts[0]), key: String(parts[1]))
+                comboDays[combo, default: [:]][day, default: 0] += stride(from: 1, to: bins.count, by: 2)
+                    .reduce(0) { $0 + bins[$1] }
+            }
+        }
+        self.init(
+            first: usage.firstEvent.flatMap { parseTimestamp($0, calendar: calendar) },
+            rejected: usage.rejected, comboDays: comboDays)
+    }
+}
+
 /// Writes `data` beside `path` under a temporary name, flushes it to disk, then renames it
 /// over `path`. An interrupted run leaves the old manifest and at most a temporary file,
 /// which the next run removes.

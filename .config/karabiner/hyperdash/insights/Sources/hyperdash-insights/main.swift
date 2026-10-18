@@ -85,11 +85,14 @@ if options.compact, let path = options.retention {
     exit(0)
 }
 
-let logText: String
+// A valid manifest gives the archive summary and the cuts; without one both logs are read whole.
+let manifest = options.retention.flatMap { readManifest($0, now: now, calendar: calendar) }
+let parsedLog: ParsedLog
+let archive: ArchivedHistory?
 do {
-    logText = try String(contentsOfFile: options.log, encoding: .utf8)
+    (parsedLog, archive) = try readUsage(options.log, manifest: manifest, calendar: calendar)
 } catch {
-    fail("cannot read log \(options.log): \(error.localizedDescription)")
+    fail("cannot read log \(options.log): \(error)")
 }
 
 let bindings: [Binding]
@@ -102,8 +105,8 @@ do {
 var contextEvents: [ContextEvent]?
 if let path = options.context {
     do {
-        let parsedContext = parseContextLog(
-            try String(contentsOfFile: path, encoding: .utf8), calendar: calendar)
+        let parsedContext = try readContext(
+            path, manifest: manifest, archived: archive != nil, calendar: calendar)
         if parsedContext.rejectedLines > 0 {
             FileHandle.standardError.write(
                 Data("hyperdash-insights: \(parsedContext.rejectedLines) context lines rejected\n".utf8))
@@ -114,10 +117,9 @@ if let path = options.context {
     }
 }
 
-let parsedLog = parseLog(logText, calendar: calendar)
 let report = computeReport(
     events: parsedLog.events, bindings: bindings, now: now,
-    rejectedLines: parsedLog.rejectedLines, context: contextEvents, calendar: calendar)
+    rejectedLines: parsedLog.rejectedLines, context: contextEvents, archive: archive, calendar: calendar)
 
 do {
     try writeAtomically(InsightsFile(report: report).jsonData(), to: options.output)

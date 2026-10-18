@@ -158,12 +158,13 @@ func dayKey(_ date: Date, calendar: Calendar) -> String {
 ///
 /// A day qualifies when it falls after the day of the first valid event and before the day
 /// of `now`. With a context log, the day must also overlap a session, and every press on
-/// that day must lie inside a session.
+/// that day must lie inside a session. `firstEvent` is the first press before a retention cut.
 public func recordedDays(
-    events: [PressEvent], context: [ContextEvent]?, now: Date, calendar: Calendar
+    events: [PressEvent], context: [ContextEvent]?, now: Date, calendar: Calendar,
+    firstEvent: Date? = nil
 ) -> Set<String> {
     let history = events.filter { $0.date <= now }
-    guard let first = history.map(\.date).min() else { return [] }
+    guard let first = (history.map(\.date) + [firstEvent].compactMap { $0 }).min() else { return [] }
     let sessions = context.map { Sessions(context: $0, now: now) }
     var unrecorded = Set<String>()
     if let sessions {

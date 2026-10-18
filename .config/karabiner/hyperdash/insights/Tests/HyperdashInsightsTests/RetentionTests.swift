@@ -4,7 +4,7 @@ import Testing
 @testable import HyperdashInsights
 
 // Retention (Retention.swift): the manifest the tool writes for the shared fixture in
-// hyperdash/tests/retention_cases, and the cut checks of its readers.
+// hyperdash/tests/retention_cases, and the report read through it against the whole log.
 
 private let calendar: Calendar = {
     var calendar = Calendar(identifier: .gregorian)
@@ -34,6 +34,19 @@ private func scratch() throws -> URL {
 
 private func write(_ text: String, to url: URL) throws {
     try Data(text.utf8).write(to: url)
+}
+
+/// The report JSON as the insights run makes it, with or without a manifest.
+private func reportJSON(_ folder: URL, manifest: RetentionManifest?) throws -> Data {
+    let usage = try readUsage(folder.appendingPathComponent("usage.log").path, manifest: manifest, calendar: calendar)
+    let context = try readContext(
+        folder.appendingPathComponent("context.log").path, manifest: manifest,
+        archived: usage.archive != nil, calendar: calendar)
+    let bindings = try parseBindings(Data(contentsOf: folder.appendingPathComponent("bindings.json")))
+    let report = computeReport(
+        events: usage.log.events, bindings: bindings, now: now, rejectedLines: usage.log.rejectedLines,
+        context: context.events, archive: usage.archive, calendar: calendar)
+    return try InsightsFile(report: report).jsonData()
 }
 
 private func compact(_ folder: URL, at time: Date = now) throws -> RetentionManifest? {
@@ -74,6 +87,18 @@ private func anonymous(_ m: RetentionManifest) -> RetentionManifest {
         #expect(anonymous(made) == committed)
     }
 
+    @Test func reportThroughTheManifestEqualsTheWholeLog() throws {
+        let folder = try scratch()
+        let manifest = try #require(try compact(folder))
+        let full = try reportJSON(folder, manifest: nil)
+        let cut = try reportJSON(folder, manifest: manifest)
+        #expect(String(decoding: cut, as: UTF8.self) == String(decoding: full, as: UTF8.self))
+        // The fixture makes every rule find something, so the equality covers each of them.
+        let decoded = try JSONSerialization.jsonObject(with: full) as! [String: Any]
+        let statuses = (decoded["rules"] as! [[String: Any]]).map { $0["status"] as! String }
+        #expect(statuses.allSatisfy { $0 == "shown" || $0 == "held" }, "\(statuses)")
+    }
+
     @Test func theCutReallyShortensTheRead() throws {
         let folder = try scratch()
         let manifest = try #require(try compact(folder))
@@ -82,6 +107,16 @@ private func anonymous(_ m: RetentionManifest) -> RetentionManifest {
         #expect(read.offset == manifest.usage.offset && read.offset > 0)
         #expect(manifest.context != nil)
         #expect(manifest.archive.count > 0 && manifest.archive.rejected == 1)
+    }
+
+    @Test func appendedLinesAfterTheCutStillCount() throws {
+        let folder = try scratch()
+        let manifest = try #require(try compact(folder))
+        let log = try FileHandle(forWritingTo: folder.appendingPathComponent("usage.log"))
+        try log.seekToEnd()
+        try log.write(contentsOf: Data("00\tw\tu\n2026-10-17T17:59:30\to\tt\n".utf8))
+        try log.close()
+        #expect(try reportJSON(folder, manifest: manifest) == reportJSON(folder, manifest: nil))
     }
 
     @Test func aCutThatNoLongerFitsReadsTheWholeLog() throws {
@@ -101,6 +136,7 @@ private func anonymous(_ m: RetentionManifest) -> RetentionManifest {
         try FileManager.default.removeItem(at: url)
         try original.write(to: url)
         #expect(try readLog(url.path, cut: manifest.usage).offset == 0)
+        #expect(try reportJSON(folder, manifest: manifest) == reportJSON(folder, manifest: nil))
 
         // Truncated below the cut.
         let fresh = try #require(try compact(folder))

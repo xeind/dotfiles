@@ -197,6 +197,8 @@ private struct Analysis {
     let calendar: Calendar
     let recorded: Set<String>
     let labels: [Combo: String]
+    /// Presses before the retention cut; nil when the whole log was read.
+    let archive: ArchivedHistory?
 
     func name(_ combo: Combo) -> String { labels[combo] ?? "Hyper \(combo.shortName)" }
     func key(_ date: Date) -> String { dayKey(date, calendar: calendar) }
@@ -208,10 +210,11 @@ private struct Analysis {
     var monthToDate: (start: String, end: String) { (key(monthStart), key(today)) }
 }
 
-/// `events` must be sorted by time, as `parseLog` returns them.
+/// `events` must be sorted by time, as `parseLog` returns them. With `archive`, `events` are
+/// the tail after a retention cut (Retention.swift) and `rejectedLines` counts the tail only.
 public func computeReport(
     events: [PressEvent], bindings: [Binding], now: Date, rejectedLines: Int = 0,
-    context: [ContextEvent]? = nil, calendar: Calendar = .current
+    context: [ContextEvent]? = nil, archive: ArchivedHistory? = nil, calendar: Calendar = .current
 ) -> InsightReport {
     var labels: [Combo: String] = [:]
     for binding in bindings { labels[binding.combo] = binding.label }
@@ -219,16 +222,16 @@ public func computeReport(
     // Presses after `now` are ignored so every rule sees the same history.
     let history = events.filter { $0.date <= now }
     let monthStart = calendar.dateInterval(of: .month, for: now)!.start
+    // Claims about absence or change need recorded history to back them up.
+    let recordingStart = (history.map(\.date) + [archive?.first].compactMap { $0 }).min()
     let analysis = Analysis(
         history: history, bindings: bindings, now: now, today: calendar.startOfDay(for: now),
         monthStart: monthStart, calendar: calendar,
-        recorded: recordedDays(events: history, context: context, now: now, calendar: calendar),
-        labels: labels)
+        recorded: recordedDays(
+            events: history, context: context, now: now, calendar: calendar, firstEvent: archive?.first),
+        labels: labels, archive: archive)
     let previousMonthStart = calendar.date(byAdding: .month, value: -1, to: monthStart)!
     let thisMonth = history.filter { $0.date >= monthStart }
-
-    // Claims about absence or change need recorded history to back them up.
-    let recordingStart = history.map(\.date).min()
 
     let dormantOutcome: Outcome
     if let recordingStart,
@@ -279,7 +282,7 @@ public func computeReport(
         rules: rules,
         monthTotal: thisMonth.count,
         recordingSince: recordingStart.map { formatTimestamp($0, calendar: calendar) },
-        rejectedLines: rejectedLines)
+        rejectedLines: rejectedLines + (archive?.rejected ?? 0))
 }
 
 // MARK: - focus
@@ -518,7 +521,12 @@ private func unbound(_ a: Analysis) -> Outcome {
         counts[event.combo, default: 0] += 1
         days.insert(a.key(event.date))
     }
+    for (combo, perDay) in a.archive?.comboDays ?? [:] where !bound.contains(combo) {
+        counts[combo, default: 0] += perDay.values.reduce(0, +)
+        days.formUnion(perDay.keys)
+    }
     guard !counts.isEmpty else { return .noPattern("Every logged shortcut is still bound.") }
+    let first = ([a.archive?.first].compactMap { $0 } + a.history.prefix(1).map(\.date)).min()!
     let ranked = counts.sorted { ($1.value, $0.key) < ($0.value, $1.key) }
     let presses = counts.values.reduce(0, +)
     return .found(
@@ -527,7 +535,7 @@ private func unbound(_ a: Analysis) -> Outcome {
             title: "\(counts.count) logged \(counts.count == 1 ? "combo" : "combos") no longer bound",
             detail: "\(grouped(presses)) \(presses == 1 ? "press" : "presses") logged with no current binding",
             keys: ranked.map(\.key), value: counts.count, dates: Array(days),
-            window: (a.key(a.history[0].date), a.key(a.today)),
+            window: (a.key(first), a.key(a.today)),
             measure: Measure(count: presses, unit: "presses")))
 }
 
