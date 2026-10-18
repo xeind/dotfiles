@@ -64,15 +64,18 @@ const KEYS = {
 };
 
 // A fresh tab on the page with the clock frozen at `now`, so key handlers and protocol calls agree on today.
-async function open(now) {
-  const clock = `<script>(() => { const fixed = new Date(${JSON.stringify(now)}).getTime(); const Real = Date;
-    globalThis.Date = class extends Real { constructor(...a) { super(...(a.length ? a : [fixed])); } static now() { return fixed; } }; })();</script>`;
+// `now` is a local stamp or any string Date parses (an ISO instant with Z); the clock stands still unless a test
+// sets globalThis.__now (milliseconds). `timezoneId` makes the tab use that zone.
+async function open(now, timezoneId) {
+  const clock = `<script>(() => { globalThis.__now = new Date(${JSON.stringify(now)}).getTime(); const Real = Date;
+    globalThis.Date = class extends Real { constructor(...a) { super(...(a.length ? a : [globalThis.__now])); } static now() { return globalThis.__now; } }; })();</script>`;
   const file = join(dir, `page-${++lastId}.html`);
   writeFileSync(file, html.replace("<head>", `<head>${clock}`));
   const { targetId } = await send("Target.createTarget", { url: "about:blank" });
   const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
   const call = (method, params) => send(method, params, sessionId);
   await call("Emulation.setFocusEmulationEnabled", { enabled: true });
+  if (timezoneId) await call("Emulation.setTimezoneOverride", { timezoneId });
   await call("Page.navigate", { url: pathToFileURL(file).href });
   const page = {
     async eval(expression) {
@@ -718,6 +721,77 @@ test("pointer 4: the overview list keeps its scroll when a layer closes", option
     // A reopen starts at the top.
     await page.eval(`hyperdash.open({ now: "2026-10-17T12:00:00" })`);
     assert.equal(await top(), 0);
+  } finally {
+    await page.close();
+  }
+});
+
+// What the header shows: the pill, the total, and whether the next-month arrow is live.
+const header = (page) => page.eval(`({ pill: $("month-label").textContent, total: $("total").textContent, nextDisabled: $("next-month").disabled, day: state.day, months: months.join(",") })`);
+const setClock = (page, instant) => page.eval(`globalThis.__now = new Date(${JSON.stringify(instant)}).getTime()`);
+
+test("clock: a panel left open on Activity across midnight keeps its day, relabels it, and reaches the new day and month", options, async () => {
+  const page = await open("2026-10-31T23:59:30");
+  try {
+    await load(page, { now: "2026-10-31T23:59:30", bindings: BINDINGS, presses: [["2026-09-30T10:00:00", "v", "j"], ["2026-10-31T23:58:00", "v", "j"]] });
+    await page.press("a");
+    assert.deepEqual(await header(page), { pill: "TODAY", total: "1", nextDisabled: true, day: "2026-10-31", months: "2026-09,2026-10" });
+    // A line stamped after midnight arrives while the clock still reads 23:59:58: it waits.
+    await setClock(page, "2026-10-31T23:59:58");
+    await page.eval(`(() => { const line = "2026-11-01T00:00:10\\tv\\tj\\n"; hyperdash.append({ generation: 1, from: fixture.text.length, to: fixture.text.length + line.length, text: line }); fixture.text += line; })()`);
+    assert.equal(await page.eval("store.summary().pending"), 1);
+    assert.equal((await header(page)).months, "2026-09,2026-10");
+    // The clock passes midnight and the host's tick (no press) promotes it.
+    await setClock(page, "2026-11-01T00:00:30");
+    await page.eval("hyperdash.tick({})");
+    assert.equal(await page.eval("store.summary().pending"), 0);
+    assert.deepEqual(await header(page), { pill: "YESTERDAY", total: "1", nextDisabled: false, day: "2026-10-31", months: "2026-09,2026-10,2026-11" });
+    await page.press("ArrowRight");
+    assert.deepEqual(await header(page), { pill: "TODAY", total: "1", nextDisabled: true, day: "2026-11-01", months: "2026-09,2026-10,2026-11" });
+    // The strip's "now" line is at 00:00:30 of the new day.
+    assert.equal(await page.eval(`HyperdashModel.absSeconds(currentNow()) - HyperdashModel.absSeconds(state.day + "T00:00:00")`), 30);
+  } finally {
+    await page.close();
+  }
+});
+
+test("clock: on a fall-back day the repeated hour counts in Today, and a first-pass press shows once the clock reaches it", options, async () => {
+  // 06:05Z is 01:05 EST, the second pass of the hour that began at 05:00Z (01:00 EDT).
+  const page = await open("2026-11-01T06:05:00Z", "America/New_York");
+  try {
+    // The log holds the first pass (00:30, 01:10, 01:25) and, after them, one second-pass press at 01:02.
+    await load(page, { now: "2026-11-01T01:05:00", bindings: BINDINGS, presses: [["2026-11-01T00:30:00", "v", "j"], ["2026-11-01T01:10:00", "v", "j"], ["2026-11-01T01:25:00", "v", "j"], ["2026-11-01T01:02:00", "v", "j"]] });
+    await page.press("a");
+    assert.equal(await page.eval("currentNow()"), "2026-11-01T01:05:00");
+    // The first-pass presses stamped after 01:05 wait for the wall clock to reach them again.
+    assert.equal(await page.eval("store.summary().pending"), 2);
+    assert.deepEqual(await header(page), { pill: "TODAY", total: "2", nextDisabled: true, day: "2026-11-01", months: "2026-11" });
+    await setClock(page, "2026-11-01T06:30:00Z"); // 01:30 EST
+    await page.eval("hyperdash.tick({})");
+    assert.equal(await page.eval("store.summary().pending"), 0);
+    assert.deepEqual(await header(page), { pill: "TODAY", total: "4", nextDisabled: true, day: "2026-11-01", months: "2026-11" });
+    // 01:02 (second pass), 01:10 and 01:25 (first pass) all fall in the 01:00 to 01:29 bin.
+    assert.deepEqual(await page.eval(`store.binsOf("2026-11")["v j"].slice(0, 5)`), [0, 1, 3, 0, 0]);
+  } finally {
+    await page.close();
+  }
+});
+
+test("clock: on a spring-forward day the skipped hour is rejected and Today runs through the jump", options, async () => {
+  // 06:59:30Z is 01:59:30 EST; 07:00:30Z is 03:00:30 EDT.
+  const page = await open("2026-03-08T06:59:30Z", "America/New_York");
+  try {
+    await load(page, { now: "2026-03-08T01:59:30", bindings: BINDINGS, presses: [["2026-03-08T01:59:00", "v", "j"]] });
+    await page.press("a");
+    assert.deepEqual(await header(page), { pill: "TODAY", total: "1", nextDisabled: true, day: "2026-03-08", months: "2026-03" });
+    await setClock(page, "2026-03-08T07:00:30Z");
+    assert.equal(await page.eval("currentNow()"), "2026-03-08T03:00:30");
+    assert.equal(await appendPress(page, "2026-03-08T03:00:10"), true);
+    assert.equal(await appendPress(page, "2026-03-08T02:30:00"), true, "the host may send a stamp that does not exist; the page counts it as rejected");
+    assert.equal(await page.eval("store.summary().rejected"), 1);
+    assert.deepEqual(await header(page), { pill: "TODAY", total: "2", nextDisabled: true, day: "2026-03-08", months: "2026-03" });
+    // One hour later on the clock's axis, the 03:00 press sits at 03:00 on the strip.
+    assert.equal(await page.eval(`HyperdashModel.absSeconds(currentNow()) - HyperdashModel.absSeconds(state.day + "T00:00:00")`), 3 * 3600 + 30);
   } finally {
     await page.close();
   }
