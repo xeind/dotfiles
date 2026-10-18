@@ -123,6 +123,8 @@ const RAW = [
 
   // Footer, info, about, status
   [".footer", "caption", "--faint", [["rest", "--card"]], "sans", 11, 500],
+  [".footer button:hover", "value", "--soft", [["hover", "--card"]], "sans", 11, 500],
+  [".footer button:active", "value", "--text", [["active", "--card"]], "sans", 11, 500],
   [".footer kbd", "label", "--muted", [["rest", "--hover"]], "mono", 10, 400],
   [".info", "label", "--muted", [["rest", "--card"]], "mono", 10, 500],
   [".info:hover", "content", "--text", [["hover", "--hover"]], "mono", 10, 500],

@@ -295,6 +295,11 @@ cannot shift another's offset. No control a user clicks is under 16 px,
 with two old exceptions still open: the group bar segments (8 px tall) and the chart bins (6.8 px
 wide). Both are also reachable from the keyboard.
 
+The overview's `I INSIGHTS` and `A ACTIVITY` hints are buttons (20 px, the
+keycap and its word), so a key is never the only way to open those pages.
+Each has hover, focus and pressed rules and joins the Tab order with the
+other controls.
+
 ### Depth
 
 Two shadows: the card, and the about overlay that floats over it. Everything

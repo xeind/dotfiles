@@ -1038,7 +1038,11 @@
     color: var(--faint);
   }
 
-  .footer span { display: flex; align-items: center; gap: var(--space-xs); }
+  .footer span, .footer button { display: flex; align-items: center; gap: var(--space-xs); }
+  /* A hint that a click can also run: the keycap and its word are one button. */
+  .footer button { letter-spacing: 0.04em; text-transform: uppercase; border-radius: var(--radius-sm); }
+  .footer button:hover { color: var(--soft); }
+  .footer button:active { color: var(--text); }
 
   .footer kbd {
     min-width: var(--control-sm);
@@ -2183,6 +2187,7 @@ let iconVersion = 0;
 let listScope = null;
 let listSignature = null;
 let listSelected = null;
+let footerSignature = null;
 let headerMode = null;
 let bindings = [];
 let months = [];
@@ -3265,10 +3270,16 @@ function renderFooter() {
     : state.page === "insights" ? [["esc", "back"]]
     : state.page === "activity" ? activityHints()
     : state.layer === null
-      ? [["key", "open"], ["I", "insights"], ["A", "activity"], ["← →", "month"]]
+      ? [["key", "open"], ["I", "insights", "insights"], ["A", "activity", "activity"], ["← →", "month"]]
       : [["key", "select"], ["⇧ ← →", "month"], ["esc", state.selected ? "clear" : "back"]];
-  $("footer").replaceChildren(...hints.map(([keys, label]) => {
-    const hint = element("span");
+  // Focus changes ask for the footer too; an unchanged one stays, so a focused hint button keeps focus.
+  const signature = JSON.stringify(hints);
+  if (signature === footerSignature) return;
+  footerSignature = signature;
+  $("footer").replaceChildren(...hints.map(([keys, label, page]) => {
+    // On the overview the I and A hints are buttons for the same two pages.
+    const hint = element(page ? "button" : "span", page ? "tabstop" : "");
+    if (page) { hint.dataset.page = page; hint.tabIndex = tabStops ? 0 : -1; }
     for (const k of keys.split(" ")) hint.append(element("kbd", "", k));
     hint.append(label);
     return hint;
@@ -3702,6 +3713,11 @@ $("groupbar").addEventListener("click", (event) => {
   if (!segment) return;
   state.group = state.group === segment.dataset.group ? null : segment.dataset.group;
   render();
+});
+
+$("footer").addEventListener("click", (event) => {
+  const hint = event.target.closest("button[data-page]");
+  if (hint) openPage(hint.dataset.page);
 });
 
 $("list").addEventListener("click", (event) => {

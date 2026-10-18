@@ -608,3 +608,35 @@ test("review R1: Tab reaches the group bar, Enter filters, and focus stays on th
     await page.close();
   }
 });
+
+// A real pointer click: detail 1 marks it as a mouse click, as the browser sends it, not a keyboard Enter or el.click().
+const click = (page, selector) => page.eval(`document.querySelector(${JSON.stringify(selector)}).dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1 }))`);
+const box = (page, selector) => page.eval(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return { width: r.width, height: r.height }; })()`);
+
+test("pointer 1: the footer's insights and activity hints open their pages with a click", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    await load(page, { now: "2026-10-17T12:00:00", bindings: BINDINGS, presses: [["2026-10-17T09:00:00", "v", "j"]] });
+    const height = await page.height();
+    for (const name of ["insights", "activity"]) {
+      const selector = `#footer button[data-page="${name}"]`;
+      assert.equal(await page.eval(`document.querySelectorAll(${JSON.stringify(selector)}).length`), 1, `no ${name} button in the overview footer`);
+      assert.ok((await box(page, selector)).height >= 16, "hit area under 16 px");
+      assert.equal(await page.eval(`document.querySelector(${JSON.stringify(selector)}).tabIndex`), -1, "a footer button is a Tab stop before the first Tab");
+      await click(page, selector);
+      assert.equal(await page.eval("state.page"), name);
+      await page.press("Escape");
+      assert.equal(await page.eval("state.page"), null);
+      assert.equal(await page.height(), height);
+    }
+    // After the first Tab the buttons join the Tab order, and Enter on a focused one opens its page.
+    await page.tabTo('#footer button[data-page="insights"]');
+    assert.equal(await page.eval(`document.activeElement.matches(":focus-visible")`), true);
+    await page.press("Enter");
+    assert.equal(await page.eval("state.page"), "insights", "Enter on the focused hint did not open the page");
+    // The other pages keep plain hints: no dead buttons.
+    assert.equal(await page.eval(`document.querySelectorAll("#footer button").length`), 0);
+  } finally {
+    await page.close();
+  }
+});
