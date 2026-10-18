@@ -149,13 +149,11 @@ test("nothing moves: no transitions or animations", () => {
 });
 
 // DESIGN.md §8: the one exception, the card's height on a page change. motion.test.mjs holds its behaviour.
-test("the one motion is the card's height, 160 ms strong ease-out, from script, pointer only", () => {
+test("the one motion is the card's height, 220 ms on the iOS sheet curve, from script", () => {
   const script = html.slice(html.indexOf("</style>"));
   assert.deepEqual(script.match(/\.animate\(/g), [".animate("], "one Web Animations call");
   assert.match(script, /card\.animate\(\[\{ height: `\$\{from\}px` \}, \{ height: `\$\{to\}px` \}\], \{ duration: MOTION\.duration, easing: MOTION\.easing \}\)/);
-  assert.match(script, /const MOTION = \{ duration: 160, easing: "cubic-bezier\(0\.23, 1, 0\.32, 1\)", hostWait: 100 \};/);
-  // Keyboard page changes never move: only a real pointer click (detail >= 1) starts moveCard().
-  assert.match(script, /lastInput === "pointer" && !reducedMotion\.matches\) moveCard\(from\)/);
+  assert.match(script, /const MOTION = \{ duration: 220, easing: "cubic-bezier\(0\.32, 0\.72, 0, 1\)", hostWait: 100 \};/);
   assert.doesNotMatch(script, /requestAnimationFrame|behavior: "smooth"|\.style\.transition/);
 });
 

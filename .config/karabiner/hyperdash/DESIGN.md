@@ -395,15 +395,15 @@ Layer.
 - No `title` attributes or SVG `<title>`; native tooltips clip at the card
   edge. Use `aria-label` and visible text.
 - No transitions, animations or keyframes, with one exception. When the user
-  changes page (Overview, a layer, Activity, Insights) with the pointer, the
-  card's height moves from where it is to the new page's height: 160 ms,
-  strong ease-out `cubic-bezier(0.23, 1, 0.32, 1)`, one Web Animations call
-  in `moveCard()`. The rules for it:
-  - A page change made from the keyboard is instant, Enter or Space on a
-    focused button included (its click has `detail` 0). Keys are pressed many
-    times a day, and motion on them reads as lag.
-  - Ease-out, not ease-in-out: the edge starts moving on the first frame, so
-    the change reads as an immediate answer, and the slow end is the settle.
+  changes page (Overview, a layer, Activity, Insights), by key or click, the
+  card's height moves from where it is to the new page's height: 220 ms on
+  the iOS sheet curve `cubic-bezier(0.32, 0.72, 0, 1)`, one Web Animations
+  call in `moveCard()`. The rules for it:
+  - Keys animate too, by the user's choice: the panel is driven by keys, and
+    with motion on clicks only it was never seen. A key mid-motion acts at
+    once and the card retargets, so fast typing never waits.
+  - The sheet curve moves quickly off the mark and settles slowly; at 160 ms
+    on a strong ease-out a 56 px change finished before it could be seen.
   - Content is laid out at the new size at once and never scales; the card
     clips it at its moving bottom edge. Width, type, corners and shadow do
     not change.

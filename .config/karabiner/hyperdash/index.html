@@ -2208,15 +2208,10 @@ function post(message) {
 // page is usable from the first frame. The window must hold the card all the way: before growing, the page
 // asks the host for the taller window and waits for hostReady(id); after shrinking, it reports the smaller
 // height. The latest page wins: a new page change starts from the card's current height.
-// Only a page change made with the pointer moves: a key press is repeated many times a day, and motion on it
-// reads as lag, so a keyboard page change is instant. Strong ease-out: the edge moves at once and settles.
-const MOTION = { duration: 160, easing: "cubic-bezier(0.23, 1, 0.32, 1)", hostWait: 100 };
+// Keys and clicks both move it. 220 ms on the iOS sheet curve: the card resizes like a sheet, quick off
+// the mark and long enough on a 56 px change to be seen, still under the 300 ms ceiling for UI motion.
+const MOTION = { duration: 220, easing: "cubic-bezier(0.32, 0.72, 0, 1)", hostWait: 100 };
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-// The input that caused the next render: "pointer" for a real click (detail ≥ 1), "key" otherwise. Enter or
-// Space on a focused button also fires a click, with detail 0, so it counts as a key.
-let lastInput = "key";
-document.addEventListener("keydown", () => { lastInput = "key"; }, true);
-document.addEventListener("click", (event) => { lastInput = event.detail > 0 ? "pointer" : "key"; }, true);
 let shownPage = null; // "overview", "layer", "insights", "activity" or "problem"
 let windowHeight = 0; // the window height last given to the host
 let motion = null; // { id, animation, timer, envelope, waiting } while the card moves
@@ -2463,11 +2458,10 @@ function render(announce = true) {
   renderFooter();
 
   refreshFades();
-  // Only a page change the user made with the pointer moves the card; keys, data updates, a theme and open()
-  // change it at once.
+  // Only a page change the user made moves the card; data updates, a theme and open() change it at once.
   const shown = broken ? "problem" : page || (inLayer ? "layer" : "overview");
   if (shown !== shownPage) {
-    if (announce && shownPage !== null && lastInput === "pointer" && !reducedMotion.matches) moveCard(from);
+    if (announce && shownPage !== null && !reducedMotion.matches) moveCard(from);
     else settleMotion();
     shownPage = shown;
   }
