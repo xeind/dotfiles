@@ -23,6 +23,7 @@ const CONTROLS = {
   ".appchip": { button: true, clipped: true, states: ["hover", "focus", "pressed", "selected"], selected: '[aria-pressed="true"]' },
   ".footer button": { button: true, states: ["hover", "focus", "pressed"] },
   ".groupclear": { button: true, clipped: true, states: ["hover", "focus", "pressed"] },
+  ".panel-back": { button: true, clipped: true, states: ["hover", "focus", "pressed"] },
   ".time-chip": { button: true, states: ["hover", "focus", "pressed"] },
   "button.insight": { button: true, clipped: true, states: ["hover", "focus"] },
   ".evidence-back": { button: true, clipped: true, states: ["hover", "focus", "pressed"] },

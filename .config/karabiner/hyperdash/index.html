@@ -983,7 +983,12 @@
   .panel-body::-webkit-scrollbar { width: 4px; }
   .panel-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
   .panel-head { display: flex; justify-content: space-between; gap: var(--space-md); height: 12px; font: var(--mono-label) var(--mono); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-  .panel-head span:last-child { color: var(--faint); text-align: right; }
+  .panel-head span:last-child, .panel-back { color: var(--faint); text-align: right; }
+  /* The way back to the sequences: 12 px of text, 16 px to hit (4 px below it, into the gap above the body). */
+  .panel-back { height: var(--control-xs); padding: 0 0 var(--space-xs) var(--space-xs); letter-spacing: 0.04em; text-transform: uppercase; border-radius: var(--radius-sm); }
+  .panel-back:hover { color: var(--soft); }
+  .panel-back:active { color: var(--text); }
+  .panel-back:focus-visible { outline-offset: -2px; }
   .panel-note { margin-top: var(--space-xs); height: 16px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: var(--mono-caption) var(--mono); letter-spacing: 0.02em; color: var(--faint); }
 
   .cmd {
@@ -3241,7 +3246,8 @@ function renderPanel(m) {
     const bin = state.interval;
     const rows = M.commandsIn(day.events, bin);
     const head = element("div", "panel-head");
-    head.append(element("span", "", `${M.binTime(bin)}–${M.binTime(bin + 1)} · ${rows.length} ${rows.length === 1 ? "command" : "commands"}`), element("span", "", "esc · sequences"));
+    head.append(element("span", "", `${M.binTime(bin)}–${M.binTime(bin + 1)} · ${rows.length} ${rows.length === 1 ? "command" : "commands"}`), element("button", "panel-back tabstop", "esc · sequences"));
+    head.lastChild.tabIndex = tabStops ? 0 : -1;
     const list = element("div", "cmds panel-body fade");
     list.append(...rows.map((event) => commandRow(event, state.focusSec)));
     root.replaceChildren(head, list, element("p", "panel-note", withApp ? "App = front app before that second (1 s resolution)" : ""));
@@ -3636,6 +3642,7 @@ const rebuiltControl = (node) => node.dataset.action ? [`.seg[data-action="${nod
   : node.dataset.evidence ? [`[data-evidence="${CSS.escape(node.dataset.evidence)}"]`, ".evidence-back"]
   : node.id === "theme-button" ? ["#theme-button"]
   : node.dataset.group ? [`#groupbar button[data-group="${node.dataset.group}"]`]
+  : node.classList.contains("panel-back") ? [".time-chip", `.bin[data-bin="${state.interval}"]`]
   : node.classList.contains("time-chip") ? [`.time-chip[data-sec="${node.dataset.sec}"]`, ".bin.selected"] : null;
 
 // Focuses the first selector that matches, when the rebuild left focus on the body.
@@ -3689,7 +3696,10 @@ $("activity").addEventListener("click", (event) => {
   const chip = target.closest?.(".appchip");
   const time = target.closest?.(".time-chip");
   const bin = target.closest?.(".bin");
-  if (button) {
+  if (target.closest?.(".panel-back")) {
+    Object.assign(state, { interval: null, focusSec: null });
+    render();
+  } else if (button) {
     const action = button.dataset.action;
     if (action === "today") setDay(today());
     else if (action === "yesterday") setDay(HyperdashModel.addDays(today(), -1));

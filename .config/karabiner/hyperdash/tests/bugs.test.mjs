@@ -663,3 +663,30 @@ test("pointer 2: a group filter with nothing this month clears with a click on i
     await page.close();
   }
 });
+
+test("pointer 3: the interval's panel head returns to the sequences with a click", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    await load(page, { now: "2026-10-17T12:00:00", bindings: BINDINGS, presses: SEQUENCE });
+    await page.press("a");
+    const height = await page.height();
+    assert.equal(await page.eval(`document.querySelectorAll(".panel-head button").length`), 0, "a back button on the sequences list");
+    await click(page, '.time-chip[data-sec="36600"]');
+    assert.notEqual(await page.eval("state.interval"), null);
+    assert.equal(await page.eval(`document.querySelector(".panel-head button").textContent`), "esc · sequences");
+    assert.ok((await box(page, ".panel-head button")).height >= 16, "hit area under 16 px");
+    assert.equal(await page.eval(`document.querySelector(".panel-head").getBoundingClientRect().height`), 12, "the head grew");
+    assert.equal(await page.height(), height);
+    await click(page, ".panel-head button");
+    assert.equal(await page.eval("state.interval"), null, "the click did not return to the sequences");
+    assert.equal(await page.eval(`document.querySelectorAll(".seq .time-chip").length`), 4, "the other timestamps did not return");
+    // The same route by keyboard: Tab to the button, Enter.
+    await click(page, '.time-chip[data-sec="36600"]');
+    await page.tabTo(".panel-head button");
+    await page.press("Enter");
+    assert.equal(await page.eval("state.interval"), null);
+    assert.equal(await page.height(), height);
+  } finally {
+    await page.close();
+  }
+});
