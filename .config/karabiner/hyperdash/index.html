@@ -1361,6 +1361,30 @@ var HyperdashModel = (() => {
     return parts.join(" · ");
   }
 
+  // Retention summary (docs/RETENTION.md, manifest version 1, its second line): what the bytes before the host's
+  // cut held. Returns it when the store can use it, or null when anything is off; the host then sends the whole log.
+  const COMBO = /^[a-z0-9_]+ [a-z0-9_]+$/;
+  function validateArchive(usage) {
+    if (!usage || typeof usage !== "object" || !isValidTimestamp(usage.tailStart) || !usage.tailStart.endsWith("-01T00:00:00")
+      || !isCount(usage.count) || !isCount(usage.rejected)
+      || !(usage.firstEvent === null || isValidTimestamp(usage.firstEvent)) || !(usage.lastEvent === null || isValidTimestamp(usage.lastEvent))
+      || !usage.lastUsed || typeof usage.lastUsed !== "object" || !usage.days || typeof usage.days !== "object") return null;
+    for (const [id, time] of Object.entries(usage.lastUsed)) if (!COMBO.test(id) || !isValidTimestamp(time)) return null;
+    let total = 0;
+    for (const [date, combos] of Object.entries(usage.days)) {
+      if (!isValidDate(date) || !combos || typeof combos !== "object") return null;
+      for (const [id, pairs] of Object.entries(combos)) {
+        if (!COMBO.test(id) || !Array.isArray(pairs) || pairs.length === 0 || pairs.length % 2) return null;
+        for (let i = 0; i < pairs.length; i += 2) {
+          if (!Number.isInteger(pairs[i]) || pairs[i] < (i ? pairs[i - 2] + 1 : 0) || pairs[i] > 47 || !Number.isInteger(pairs[i + 1]) || pairs[i + 1] < 1) return null;
+          total += pairs[i + 1];
+        }
+      }
+    }
+    if (total !== usage.count) return null;
+    return usage;
+  }
+
   // Incremental log store. The host delivers complete newline-terminated lines; the store keeps
   // aggregates so that selecting a key, opening the info panel or switching pages never rescans history:
   //  - counts by month and combo ("layer key");
@@ -1373,12 +1397,15 @@ var HyperdashModel = (() => {
 
   function createStore() {
     const minuteCache = new Map();
-    let counts, bins, days, lastUsed, layerSet, pending, count, rejected, firstEvent, lastEvent;
+    let counts, bins, days, lastUsed, layerSet, pending, count, rejected, firstEvent, lastEvent, tailDate, archivedDays;
 
     function clear() {
       counts = {};
       bins = {};
       days = {};
+      // Days before the retention tail: per-combo half-hour counts only (archive()).
+      tailDate = null;
+      archivedDays = {};
       lastUsed = {};
       layerSet = Object.create(null);
       pending = [];
@@ -1461,6 +1488,43 @@ var HyperdashModel = (() => {
       }
     }
 
+    // Adds a summary from validateArchive. Every archived press is dated before the tail start, so no
+    // event of a day on or after it is archived; days before it have counts but no event list.
+    function archive(summary) {
+      tailDate = summary.tailStart.slice(0, 10);
+      for (const [date, combos] of Object.entries(summary.days)) {
+        const month = date.slice(0, 7);
+        const monthCounts = counts[month] || (counts[month] = {});
+        const monthBins = bins[month] || (bins[month] = Object.create(null));
+        const dayBins = archivedDays[date] = Object.create(null);
+        for (const [id, pairs] of Object.entries(combos)) {
+          const row = dayBins[id] = new Array(48).fill(0);
+          const comboBins = monthBins[id] || (monthBins[id] = new Array(48).fill(0));
+          for (let i = 0; i < pairs.length; i += 2) {
+            row[pairs[i]] = pairs[i + 1];
+            comboBins[pairs[i]] += pairs[i + 1];
+            monthCounts[id] = (monthCounts[id] || 0) + pairs[i + 1];
+          }
+          layerSet[id.slice(0, id.indexOf(" "))] = true;
+        }
+      }
+      for (const [id, time] of Object.entries(summary.lastUsed)) if (!(id in lastUsed) || time > lastUsed[id]) lastUsed[id] = time;
+      count += summary.count;
+      rejected += summary.rejected;
+      if (summary.firstEvent !== null && (firstEvent === null || summary.firstEvent < firstEvent)) firstEvent = summary.firstEvent;
+      if (summary.lastEvent !== null && (lastEvent === null || summary.lastEvent > lastEvent)) lastEvent = summary.lastEvent;
+    }
+
+    const isArchived = (date) => tailDate !== null && date < tailDate;
+
+    // Half-hour counts by combo for one day: the archived counts plus any raw event of that day.
+    function dayBinsOf(date) {
+      const result = {};
+      for (const [id, row] of Object.entries(archivedDays[date] || EMPTY)) result[id] = row.slice();
+      for (const event of dayEvents(date)) (result[event.combo] || (result[event.combo] = new Array(48).fill(0)))[Math.floor(event.sec / 1800)] += 1;
+      return result;
+    }
+
     // Promote future-dated events whose time has come.
     function tick(now) {
       if (pending.length === 0) return 0;
@@ -1514,7 +1578,7 @@ var HyperdashModel = (() => {
       const dayCopy = {};
       for (const date of Object.keys(days).sort()) dayCopy[date] = dayEvents(date).map((e) => `${e.sec} ${e.combo}`).sort();
       return JSON.parse(JSON.stringify({
-        count, rejected, firstEvent, lastEvent,
+        count, rejected, firstEvent, lastEvent, tailDate,
         pending: pending.map((p) => `${p.time} ${p.layer} ${p.key}`).sort(),
         counts: Object.fromEntries(Object.keys(counts).sort().map((m) => [m, sorted(counts[m])])),
         bins: binCopy,
@@ -1525,7 +1589,8 @@ var HyperdashModel = (() => {
     }
 
     return {
-      reset: (text, now) => { clear(); ingest(text, now); },
+      // `summary` (from validateArchive) stands for the bytes before `text`; null without a cut.
+      reset: (text, now, summary = null) => { clear(); if (summary) archive(summary); ingest(text, now); },
       append: ingest,
       tick,
       months,
@@ -1533,7 +1598,9 @@ var HyperdashModel = (() => {
       countsOf: (month) => counts[month] || EMPTY,
       binsOf: (month) => bins[month] || EMPTY,
       dayEvents,
-      dayList: () => Object.keys(days).sort(),
+      dayList: () => [...new Set([...Object.keys(days), ...Object.keys(archivedDays)])].sort(),
+      isArchived,
+      dayBinsOf,
       lastUsedOf: (id) => lastUsed[id] || null,
       layerList: () => Object.keys(layerSet),
       summary: () => ({ count, rejected, pending: pending.length, firstEvent, lastEvent }),
@@ -1552,15 +1619,17 @@ var HyperdashModel = (() => {
       get generation() { return generation; },
       get offset() { return offset; },
 
-      // Complete lines for bytes 0 to `offset`. Discards every earlier event.
+      // Complete lines up to byte `offset`. Discards every earlier event. With `archive` (the summary line of the
+      // host's retention manifest), `text` starts at the cut and the summary stands for the bytes before it.
       reset(data, now) {
-        if (!data || !isText(data.text)) {
+        const summary = data?.archive == null ? null : validateArchive(data.archive);
+        if (!data || !isText(data.text) || (data.archive != null && !summary)) {
           store.reset("", now);
           generation = null;
           offset = 0;
-          return { ok: false, reason: "invalid", offset };
+          return { ok: false, reason: data && isText(data.text) ? "archive" : "invalid", offset };
         }
-        store.reset(data.text, now);
+        store.reset(data.text, now, summary);
         generation = data.generation;
         offset = Number.isFinite(data.offset) ? data.offset : data.text.length;
         return { ok: true, generation, offset };
@@ -1967,6 +2036,13 @@ var HyperdashModel = (() => {
 
   // Everything the day view shows for one date.
   function buildDay({ usage, context, date, now, appFilter, highlight, classify, capacity }) {
+    // A day before the retention tail has counts only: no command list, app split, sequences or strip.
+    if (usage.isArchived?.(date)) {
+      return {
+        date, archived: true, events: [], apps: [], sequences: [], segments: null,
+        activity: buildActivityFromCombos(usage.dayBinsOf(date), classify, highlight, capacity),
+      };
+    }
     const all = attribute(usage.dayEvents(date), date, context, now);
     const apps = new Map();
     for (const event of all) if (event.app !== null) apps.set(event.app, (apps.get(event.app) || 0) + 1);
@@ -2113,7 +2189,7 @@ var HyperdashModel = (() => {
     isValidDate, dateOf, addDays, dayLabel, windowLabel, evidenceFacts, clampDay, INSIGHT_ICONS, insightIcon, moreShortcuts, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
     localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
     monthOf, previousMonth, isMonthComplete, compareMonths,
-    sumCounts, buildRows, buildActivityFromCombos, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, compactCount, coverageNote, describeBin,
+    sumCounts, buildRows, buildActivityFromCombos, validateArchive, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, compactCount, coverageNote, describeBin,
     formatWhen, describeHealth, aboutLines, routeKey,
   };
 })();
@@ -3142,7 +3218,7 @@ function renderChart(m) {
       if (kinds.has("locked")) key.append(swatch(null, "LOCKED", null, "cov-locked"));
       if (kinds.has("asleep")) key.append(swatch(null, "ASLEEP", null, "cov-asleep"));
       if (kinds.has("none")) key.append(swatch(null, "NO APP CONTEXT", null, "cov-none"));
-    } else key.append(element("span", "zero", "APP CONTEXT OFF"));
+    } else key.append(element("span", "zero", m.day.archived ? "ARCHIVED · COUNTS ONLY" : "APP CONTEXT OFF"));
   }
   legend.append(key);
   root.append(legend);
@@ -3202,9 +3278,13 @@ function renderAppbar(m) {
   if (m.mode !== "day") { root.replaceChildren(); appbarSignature = null; return; }
   const status = health?.context?.status;
   const on = contextOn();
-  const signature = `${on}|${status}|${state.appFilter}|${m.day.apps.map((x) => `${x.app}${x.count}`).join(",")}|${iconVersion}|${appNamesVersion}`;
+  const signature = `${on}|${status}|${state.appFilter}|${m.day.archived}|${m.day.apps.map((x) => `${x.app}${x.count}`).join(",")}|${iconVersion}|${appNamesVersion}`;
   if (signature === appbarSignature) return;
   appbarSignature = signature;
+  if (m.day.archived) {
+    root.replaceChildren(element("span", "", "App detail is archived for this day"));
+    return;
+  }
   if (!on) {
     root.replaceChildren(element("span", "", status === "disabled" || status === undefined ? "App context off" : `App context ${status}`));
     return;
@@ -3264,6 +3344,17 @@ function renderPanel(m) {
   }
   const day = m.day;
   const withApp = contextOn();
+  if (day.archived) {
+    const signature = `archived|${state.day}`;
+    if (signature === panelSignature) return;
+    panelSignature = signature;
+    const head = element("div", "panel-head");
+    head.append(element("span", "", "Archived day"), element("span", "", "counts only"));
+    const body = element("div", "panel-body fade");
+    body.append(element("p", "panel-note", "Commands and sequences: last 1–2 months only"));
+    root.replaceChildren(head, body, element("p", "panel-note"));
+    return;
+  }
   const signature = [state.day, state.interval, state.focusSec, state.appFilter, day.events.length, day.events.length ? day.events[day.events.length - 1].sec : "",
     day.sequences.map((s) => `${s.from}>${s.to}${s.count}`).join(","), withApp, context.version(), appNamesVersion, iconVersion].join("|");
   if (signature === panelSignature) return;
@@ -3510,7 +3601,8 @@ function finish(extra) {
 }
 
 const hyperdash = {
-  // Full load for startup and recovery: discards all event state and parses `text` (bytes 0 to `offset`).
+  // Full load for startup and recovery: discards all event state and parses `text` (bytes up to `offset`, from
+  // the retention cut when `archive` carries the summary of the bytes before it).
   reset(data) {
     const now = begin(data);
     if (data?.stream === "context") {

@@ -432,6 +432,10 @@ Layer.
   - No other motion: no CSS transitions or keyframes, no smooth scrolling,
     no `requestAnimationFrame`.
 - Only `open()` resets navigation; `tick`, `append` and data updates never do.
+- A day before the retention tail (`docs/RETENTION.md`) has counts only. Its
+  chart and legend are exact; the strip key reads `ARCHIVED · COUNTS ONLY`,
+  and the app bar and panel say the detail is archived, at a normal day's
+  height.
 - A rebuilt control keeps keyboard focus.
 - A button focused from the keyboard keeps Enter and Space; the footer names
   what Enter and the arrows do for the focused control.
