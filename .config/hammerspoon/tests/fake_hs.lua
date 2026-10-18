@@ -18,7 +18,8 @@ function sandbox.new(options)
     watchers = {}, -- path watchers
     appWatchers = {},
     sleepWatchers = {},
-    tasks = {},
+    tasks = {}, -- insights runs
+    compactTasks = {}, -- retention runs (`--compact`), apart so the insights counts stay as they were
     js = {}, -- every evaluateJavaScript call: { code, callback }
     webviews = {},
     shown = 0,
@@ -186,7 +187,8 @@ function sandbox.new(options)
     end
     if method == "reset" then
       if page.mode.rejectReset then return { ok = false, reason = "generation", offset = page.offset } end
-      page.generation, page.offset, page.text = a.generation, a.offset, a.text
+      if page.mode.rejectArchive and a.archive then return { ok = false, reason = "archive", offset = page.offset } end
+      page.generation, page.offset, page.text, page.archive = a.generation, a.offset, a.text, a.archive
       page.bindings, page.insights, page.health = a.bindings, a.insights, a.health
       return { ok = true, generation = a.generation, offset = a.offset, height = 600 }
     elseif method == "append" then
@@ -314,7 +316,8 @@ function sandbox.new(options)
         function task:start()
           if env.taskStartFails then return nil end
           self.running = true
-          env.tasks[#env.tasks + 1] = self
+          local list = self.args[1] == "--compact" and env.compactTasks or env.tasks
+          list[#list + 1] = self
           return self
         end
         function task:isRunning() return self.running end

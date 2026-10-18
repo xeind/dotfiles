@@ -11,6 +11,10 @@
 -- A second stream, the context log, goes through the same calls with
 -- stream = "context" and its own generation and offset. Hammerspoon writes
 -- that log itself, but only when RECORD_CONTEXT is true.
+--
+-- Retention (docs/RETENTION.md): the insights tool writes a manifest that
+-- names a cut in each log and summarises the bytes before it. A reset then
+-- sends that summary and the tail from the cut. The logs are never changed.
 
 local reader = require("hyperdash_core") -- pure helpers; see that file
 
@@ -25,6 +29,8 @@ local INSIGHTS_TOOL = HOME .. "/.local/bin/hyperdash-insights" -- `yarn build:in
 local INSIGHTS_MAX_AGE = 3600 -- seconds; older insights are recomputed on open
 local INSIGHTS_CONTEXT_MIN_AGE = 300 -- seconds; a newer context log reruns a report older than this
 local INSIGHTS_TIMEOUT = 120 -- seconds; a run still going after this is stopped and counts as failed
+local RETENTION = HOME .. "/.local/state/karabiner/retention.json" -- written by `hyperdash-insights --compact`
+local COMPACT_TIMEOUT = 300 -- seconds; a compaction still going after this is stopped
 -- Context recording is OFF until the user approves it. When true, this module
 -- appends the frontmost app (bundle ID only) and lock, unlock, sleep and wake
 -- events to CONTEXT_LOG. No window titles, URLs or keys are recorded.
@@ -92,6 +98,9 @@ local insightsAttempt = nil -- identifies the run whose callback may act
 local insightsTimer = nil -- stops a run that outlives INSIGHTS_TIMEOUT
 
 local insightsCache = { key = false, raw = nil, message = nil } -- raw: valid version 2 report
+-- summary: the manifest's second line, sent to the page as it is; usage and
+-- context: the cuts from its first line; tailStart.
+local retentionCache = { key = false, summary = nil, usage = nil, context = nil, tailStart = nil }
 local bindingsCache = { key = false, list = {}, json = "[]", status = "missing", invalid = 0 }
 
 -- Raw JSON of a valid version 2 report. Returns nil when the file is
@@ -117,6 +126,28 @@ local function refreshInsightsCache()
     insightsCache.raw = raw
     insightsCache.message = raw and nil or message or ("cannot read " .. INSIGHTS)
   end
+end
+
+-- A manifest that is missing, corrupt or of another version leaves summary
+-- nil: both logs are then read whole. The clock is checked on every call.
+-- Only the short first line is decoded: hs.json.decode took about 75 s on a
+-- 2.5 MB summary, and the page parses the summary itself.
+local function refreshRetentionCache()
+  local key = statKey(RETENTION)
+  if key ~= retentionCache.key then
+    retentionCache.key = key
+    retentionCache.summary, retentionCache.usage, retentionCache.context, retentionCache.tailStart = nil, nil, nil, nil
+    local raw = key and readFile(RETENTION)
+    local header, summary = (raw or ""):match("^([^\n]*)\n({[^\n]*})\n?$")
+    local ok, decoded = false, nil
+    if header then ok, decoded = pcall(hs.json.decode, header) end
+    if ok and reader.checkRetention(decoded, "9999-12-31T23:59:59") then
+      retentionCache.summary, retentionCache.usage, retentionCache.context = summary, decoded.usage, decoded.context
+      retentionCache.tailStart = decoded.tailStart
+    end
+  end
+  if retentionCache.summary and nowIso() < retentionCache.tailStart then return nil end
+  return retentionCache.summary and retentionCache or nil
 end
 
 -- A missing or corrupt file gives an empty list and status "missing" |
@@ -422,9 +453,9 @@ local function resetCode(action, which)
   end
   local health = encodeHealth()
   return string.format(
-    "window.hyperdash.reset({\"generation\":%d,\"bindings\":%s,\"text\":%s,\"offset\":%d,\"insights\":%s,\"health\":%s})",
+    "window.hyperdash.reset({\"generation\":%d,\"bindings\":%s,\"text\":%s,\"offset\":%d,\"archive\":%s,\"insights\":%s,\"health\":%s})",
     action.generation, bindingsCache.json, jsonString(action.text), action.offset,
-    insightsCache.raw or "null", health
+    action.archive or "null", insightsCache.raw or "null", health
   ), health
 end
 
@@ -437,12 +468,18 @@ local function appendCode(action, which)
 end
 
 local MAX_LOG_PASSES = 6
+-- The manifest the page's usage generation was built from. The context cut is
+-- used only with it: the context tail then covers every press the page holds raw.
+local heldRetention = nil
+local refusedRetention = nil -- summary text the page refused; not offered again
 
 -- Bring the page up to date: log first, then bindings, insights and health.
 -- `forceHealth` sends health even for a hidden panel (used when opening).
 local function runSync(forceHealth, done)
   refreshBindingsCache()
   refreshInsightsCache()
+  -- One manifest for the whole pass, so both streams agree on it.
+  local retention = refreshRetentionCache()
 
   local function metadata()
     local function afterCall(result)
@@ -484,7 +521,13 @@ local function runSync(forceHealth, done)
     local function pass()
       passes = passes + 1
       local state = which == "usage" and logState or ctxState
-      local action = reader.plan(state, fsEnv, path)
+      local base
+      if which == "usage" and retention and retention.summary ~= refusedRetention then
+        base = { cut = retention.usage, archive = retention.summary }
+      elseif which == "context" and heldRetention and heldRetention.context then
+        base = { cut = heldRetention.context }
+      end
+      local action = reader.plan(state, fsEnv, path, base)
       if action.kind == "retry" and passes < MAX_LOG_PASSES then return pass() end
       -- A context log that never existed has nothing to send.
       if which == "context" and action.kind == "reset" and action.status == "missing" and state.generation == 0 then
@@ -513,6 +556,7 @@ local function runSync(forceHealth, done)
         if good then
           reader.commit(state, action)
           if action.kind == "reset" and which == "usage" then
+            heldRetention = action.archive and retention or nil
             -- The reset carried bindings, insights and health with it.
             sent.bindings, sent.insights = bindingsCache.json, insightsCache.raw or false
             sent.health = healthSent
@@ -521,6 +565,10 @@ local function runSync(forceHealth, done)
         else
           -- Rejected, lost or unanswered: the page state is unknown.
           reader.fail(state)
+          if action.archive and type(result) == "table" and result.reason == "archive" then
+            print("hyperdash: the page refused the retention summary; reading the whole log")
+            refusedRetention = action.archive
+          end
         end
         if passes < MAX_LOG_PASSES then return pass() end
         return after()
@@ -615,6 +663,83 @@ function recoverPage(onDone)
 end
 
 ---------------------------------------------------------------------------
+-- Retention (docs/RETENTION.md)
+--
+-- Once a month the insights tool rebuilds the manifest from the logs, which
+-- it only reads. It runs while the panel is closed and nothing else reads the
+-- logs here, at most once a day. Afterwards both streams reset, while the
+-- panel is closed, so the page drops the history it now gets as a summary.
+---------------------------------------------------------------------------
+
+local compactTask = nil
+local compactTimer = nil -- stops a run that outlives COMPACT_TIMEOUT
+local compactDay = nil -- the day of the last attempt
+local retentionChanged = false -- a new manifest the page has not reset to yet
+
+local function applyRetention()
+  if not retentionChanged or open or showing then return end
+  retentionChanged = false
+  logState.needReset, ctxState.needReset = true, true
+  requestSync()
+end
+
+local function compactLogs()
+  if open or showing or syncing then return end
+  if insightsTask and insightsTask:isRunning() then return end
+  if compactTask and compactTask:isRunning() then return end
+  if not hs.fs.attributes(INSIGHTS_TOOL) or not hs.fs.attributes(USAGE_LOG) then return end
+  local today = os.date("%Y-%m-%d", os.time())
+  if compactDay == today then return end
+  -- Due when the manifest is missing, its tail start has passed, or its cut no longer fits the log.
+  local current = refreshRetentionCache()
+  if current and current.tailStart >= reader.retentionTailStart(os.date("*t", os.time()))
+    and reader.cutOffset(current.usage, fsEnv, USAGE_LOG, hs.fs.attributes(USAGE_LOG)) > 0 then return end
+  compactDay = today
+
+  local before = statKey(RETENTION)
+  local arguments = { "--compact", "--log", USAGE_LOG, "--retention", RETENTION }
+  if hs.fs.attributes(CONTEXT_LOG) then
+    arguments[#arguments + 1] = "--context"
+    arguments[#arguments + 1] = CONTEXT_LOG
+  end
+  local task
+  task = hs.task.new(INSIGHTS_TOOL, function(exitCode, _, stderr)
+    if compactTask ~= task then return end
+    if compactTimer then compactTimer:stop(); compactTimer = nil end
+    if exitCode ~= 0 then
+      print("hyperdash: compaction failed: " .. ((stderr or ""):gsub("%s+$", ""):sub(1, 200)))
+      return
+    end
+    if statKey(RETENTION) ~= before then
+      retentionChanged = true
+      applyRetention()
+    end
+  end, arguments)
+  compactTask = task
+  local ok, started = pcall(function() return task:start() end)
+  if not ok or not started then
+    compactTask = nil
+    print("hyperdash: could not start compaction" .. (ok and "" or (": " .. tostring(started))))
+    return
+  end
+  compactTimer = hs.timer.doAfter(COMPACT_TIMEOUT, function()
+    compactTimer = nil
+    if compactTask == task and task:isRunning() then task:terminate() end
+  end)
+end
+
+-- After a close, once the hide has settled. Held so it is not collected.
+local compactSoon = nil
+local function scheduleCompaction()
+  if compactSoon then return end
+  compactSoon = hs.timer.doAfter(1, function()
+    compactSoon = nil
+    applyRetention()
+    compactLogs()
+  end)
+end
+
+---------------------------------------------------------------------------
 -- Background insights
 ---------------------------------------------------------------------------
 
@@ -625,6 +750,11 @@ local function insightsArguments()
   if RECORD_CONTEXT and hs.fs.attributes(CONTEXT_LOG) then
     arguments[#arguments + 1] = "--context"
     arguments[#arguments + 1] = CONTEXT_LOG
+  end
+  -- Only a tool that wrote the manifest is given it.
+  if hs.fs.attributes(RETENTION) then
+    arguments[#arguments + 1] = "--retention"
+    arguments[#arguments + 1] = RETENTION
   end
   return arguments
 end
@@ -679,6 +809,7 @@ local function refreshInsights()
       lastRunFailure, insightsFailures, insightsRetryAt = nil, 0, nil
     end
     requestSync()
+    if not open then scheduleCompaction() end
   end, insightsArguments())
 
   -- start() may raise, return nil, or return a task that is not running.
@@ -721,6 +852,7 @@ local function hide(restoreFocus)
   appWatcher:stop()
   if restoreFocus and previousWindow then previousWindow:focus() end
   previousWindow = nil
+  scheduleCompaction()
 end
 
 local function show()
@@ -813,6 +945,7 @@ local function create()
       -- A fresh page holds nothing: send names and icons again, and the
       -- first sync of each stream is a reset.
       sentApps.names, sentApps.icons = nil, nil
+      heldRetention = nil
       -- A fresh page shows the default theme: apply the saved one first, after
       -- a reload too.
       send("window.hyperdash.setTheme(" .. jsonString(savedTheme()) .. ")")

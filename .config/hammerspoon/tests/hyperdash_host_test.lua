@@ -1125,6 +1125,220 @@ do
   end
 end
 
+---------------------------------------------------------------------------
+-- Retention: resets from the manifest's cuts, and when compaction runs
+---------------------------------------------------------------------------
+local OCT17 = os.time({ year = 2026, month = 10, day = 17, hour = 12 })
+local OLD = "2026-08-30T10:00:00\tw\tu\nbad line\n2026-08-31T23:59:59\to\tt\n"
+local NEW = "2026-09-01T00:00:00\tw\tu\n2026-09-02T00:00:00\tw\tv\n"
+local function retentionPath(home) return home .. "/.local/state/karabiner/retention.json" end
+-- The manifest file: the header line, then the summary line the page gets.
+local SUMMARY = '{"count":2,"days":{"2026-08-30":{"w u":[20,1]},"2026-08-31":{"o t":[47,1]}},"firstEvent":"2026-08-30T10:00:00",'
+  .. '"lastEvent":"2026-08-31T23:59:59","lastUsed":{"o t":"2026-08-31T23:59:59","w u":"2026-08-30T10:00:00"},"rejected":1,"tailStart":"2026-09-01T00:00:00"}'
+local function writeManifestFile(home, manifest)
+  write(retentionPath(home), hs.json.encode(manifest) .. "\n" .. SUMMARY .. "\n")
+end
+-- A manifest whose usage cut sits after OLD; `change` edits its header fields.
+local function writeManifest(home, logPath, change)
+  local a = hs.fs.attributes(logPath)
+  local manifest = {
+    version = 1, created = "2026-10-17T12:00:00", tailStart = "2026-09-01T00:00:00",
+    usage = { dev = a.dev, ino = a.ino, offset = #OLD, lastLine = "2026-08-31T23:59:59\to\tt" },
+  }
+  for k, v in pairs(change or {}) do manifest[k] = v end
+  writeManifestFile(home, manifest)
+  return manifest
+end
+local function usageResets(env)
+  local list = {}
+  for _, call in ipairs(env.page.calls) do
+    if call.method == "reset" and call.args[1].stream ~= "context" then list[#list + 1] = call.args[1] end
+  end
+  return list
+end
+local function finishInsights(env)
+  for _, task in ipairs(env.tasks) do if task.running and task.args[1] == "--log" then task:finish(0, "", "") end end
+  env.flush()
+end
+local function compactTasks(env) return env.compactTasks end
+
+do
+  local home, p = baseHome("retention_reset")
+  write(p.log, OLD .. NEW)
+  writeManifest(home, p.log)
+  local env = startPanel(home, OCT17)
+  local data = usageResets(env)[1]
+  check("retention: the reset carries the summary line", data and type(data.archive) == "table" and data.archive.count == 2 and data.archive.tailStart == "2026-09-01T00:00:00")
+  check("retention: the reset text is the tail", data and data.text == NEW, data and data.text)
+  check("retention: the offset is absolute", data and data.offset == #OLD + #NEW, data and data.offset)
+  write(p.log, "2026-09-03T00:00:00\tw\tu\n", "ab")
+  toggle(env)
+  local last = env.page.calls[#env.page.calls]
+  local append
+  for _, call in ipairs(env.page.calls) do if call.method == "append" then append = call.args[1] end end
+  check("retention: new lines arrive as an append after the tail", append and append.from == #OLD + #NEW, append and append.from)
+  check("retention: the page text is the tail plus the append", env.page.text == NEW .. "2026-09-03T00:00:00\tw\tu\n", env.page.text)
+  check("retention: open still answered", last ~= nil)
+end
+
+do
+  local home, p = baseHome("retention_mismatch")
+  write(p.log, OLD .. NEW)
+  local m = writeManifest(home, p.log)
+  m.usage.ino = m.usage.ino + 1
+  writeManifestFile(home, m)
+  local data = usageResets(startPanel(home, OCT17))[1]
+  check("retention, other inode: the whole log, no summary", data and data.text == OLD .. NEW and data.archive == nil, data and data.text)
+
+  writeManifest(home, p.log, { version = 2 })
+  data = usageResets(startPanel(home, OCT17))[1]
+  check("retention, other version: the whole log, no summary", data and data.text == OLD .. NEW and data.archive == nil)
+
+  write(retentionPath(home), "{not json")
+  data = usageResets(startPanel(home, OCT17))[1]
+  check("retention, corrupt manifest: the whole log, no summary", data and data.text == OLD .. NEW and data.archive == nil)
+  local m1 = writeManifest(home, p.log)
+  write(retentionPath(home), hs.json.encode(m1) .. "\n")
+  data = usageResets(startPanel(home, OCT17))[1]
+  check("retention, header without a summary line: the whole log", data and data.text == OLD .. NEW and data.archive == nil)
+
+  writeManifest(home, p.log)
+  data = usageResets(startPanel(home, os.time({ year = 2026, month = 8, day = 31, hour = 12 })))[1]
+  check("retention, clock before the tail start: the whole log", data and data.text == OLD .. NEW and data.archive == nil)
+end
+
+do
+  local home, p = baseHome("retention_refused")
+  write(p.log, OLD .. NEW)
+  writeManifest(home, p.log)
+  local env = sandbox.new({ moduleDir = MODULE_DIR, home = home, startTime = OCT17 })
+  env.page.mode.rejectArchive = true
+  env.webview.navigation("didFinishNavigation")
+  env.flush()
+  local resets = usageResets(env)
+  check("retention refused: the next reset reads the whole log", #resets == 2 and resets[2].text == OLD .. NEW and resets[2].archive == nil, #resets)
+  check("retention refused: the page holds the whole log", env.page.text == OLD .. NEW and env.page.offset == #OLD + #NEW)
+  env.page.mode.rejectArchive = false
+  env.page.mode.rejectAppendOnce = "gap"
+  write(p.log, "2026-09-03T00:00:00\tw\tu\n", "ab")
+  toggle(env)
+  local after = usageResets(env)
+  check("retention refused: not offered again", after[#after].archive == nil, #after)
+end
+
+do
+  -- The context cut goes only with the usage cut it was made with.
+  local home, p = baseHome("retention_context")
+  write(p.log, OLD .. NEW)
+  os.execute("mkdir -p " .. home .. "/.local/state/hyperdash")
+  local ctxOld = "2026-08-30T09:00:00.000\tstart\t-\n"
+  local ctxNew = "2026-08-31T08:00:00.000\tstart\t-\n2026-09-01T09:00:00.000\tapp\tcom.apple.finder\n"
+  write(contextPath(home), ctxOld .. ctxNew)
+  local c = hs.fs.attributes(contextPath(home))
+  local contextCut = { dev = c.dev, ino = c.ino, offset = #ctxOld, lastLine = "2026-08-30T09:00:00.000\tstart\t-" }
+  writeManifest(home, p.log, { context = contextCut })
+  local env = startPanel(home, OCT17)
+  check("retention context: the context reset starts at its cut", env.page.ctx.text == ctxNew and env.page.ctx.offset == #ctxOld + #ctxNew, env.page.ctx.text)
+
+  local m = writeManifest(home, p.log, { context = contextCut })
+  m.usage.lastLine = "nope"
+  writeManifestFile(home, m)
+  env = startPanel(home, OCT17)
+  check("retention context: without the usage cut the context is read whole", env.page.ctx.text == ctxOld .. ctxNew, env.page.ctx.text)
+end
+
+do
+  -- Compaction runs after a close, at most once a day, never while the panel is open or insights run.
+  local home, p = baseHome("retention_compact")
+  write(p.log, OLD .. NEW)
+  write(p.tool, "#!/bin/sh\n")
+  os.execute("chmod 755 " .. p.tool)
+  local env = startPanel(home, OCT17)
+  check("compact: nothing runs at load", #compactTasks(env) == 0)
+  toggle(env)
+  env.advance(2)
+  check("compact: nothing runs while the panel is open", #compactTasks(env) == 0)
+  for _, task in ipairs(env.tasks) do if task.running then task:finish(0, "", "") end end
+  env.flush()
+  check("compact: nothing runs when insights finish under an open panel", #compactTasks(env) == 0)
+  toggle(env)
+  env.advance(2)
+  local tasks = compactTasks(env)
+  check("compact: one run after the close", #tasks == 1, #tasks)
+  local args = tasks[1] and table.concat(tasks[1].args, " ") or ""
+  check("compact: the tool gets --compact, the log and the manifest path",
+    args == "--compact --log " .. p.log .. " --retention " .. retentionPath(home), args)
+  toggle(env)
+  local beforeFinish = #usageResets(env)
+  writeManifest(home, p.log)
+  tasks[1]:finish(0, "", "")
+  env.flush()
+  check("compact: a new manifest while open waits for the close", #usageResets(env) == beforeFinish, #usageResets(env) - beforeFinish)
+  toggle(env)
+  env.advance(2)
+  env.flush()
+  local resets = usageResets(env)
+  check("compact: after the close both streams reset to the manifest", #resets == beforeFinish + 1 and resets[#resets].archive ~= nil and resets[#resets].text == NEW, #resets - beforeFinish)
+  toggle(env)
+  finishInsights(env)
+  toggle(env)
+  env.advance(2)
+  check("compact: no second run the same day", #compactTasks(env) == 1, #compactTasks(env))
+  env.clock = env.clock + 86400 -- a day later; no timer needs to run
+  toggle(env)
+  finishInsights(env)
+  toggle(env)
+  env.advance(2)
+  check("compact: not due while the manifest's tail start is current", #compactTasks(env) == 1, #compactTasks(env))
+  env.clock = env.clock + 31 * 86400
+  toggle(env)
+  finishInsights(env)
+  toggle(env)
+  env.advance(2)
+  check("compact: due again in a later month", #compactTasks(env) == 2, #compactTasks(env))
+  local before = #usageResets(env)
+  if compactTasks(env)[2] then compactTasks(env)[2]:finish(1, "", "hyperdash-insights: cannot compact: disk full") end
+  env.advance(2)
+  env.flush()
+  check("compact: a failed run changes nothing", #usageResets(env) == before, #usageResets(env) - before)
+  check("compact: a failed run is logged", env.log[#env.log]:find("compaction failed", 1, true) ~= nil, env.log[#env.log])
+end
+
+do
+  -- A manifest whose cut no longer fits the log (a replaced log) makes compaction due at once.
+  local home, p = baseHome("retention_stale_cut")
+  write(p.log, OLD .. NEW)
+  write(p.tool, "#!/bin/sh\n")
+  os.execute("chmod 755 " .. p.tool)
+  local m = writeManifest(home, p.log)
+  m.usage.ino = m.usage.ino + 1
+  writeManifestFile(home, m)
+  local env = startPanel(home, OCT17)
+  toggle(env)
+  finishInsights(env)
+  toggle(env)
+  env.advance(2)
+  check("compact: due when the cut no longer fits the log", #compactTasks(env) == 1, #compactTasks(env))
+end
+
+do
+  local home, p = baseHome("retention_insights_args")
+  write(p.log, OLD .. NEW)
+  write(p.tool, "#!/bin/sh\n")
+  os.execute("chmod 755 " .. p.tool)
+  os.execute("rm -f " .. p.insights)
+  writeManifest(home, p.log)
+  local env = startPanel(home, OCT17)
+  toggle(env)
+  local insights
+  for _, task in ipairs(env.tasks) do if task.args[1] == "--log" then insights = task end end
+  local args = insights and table.concat(insights.args, " ") or ""
+  check("insights args: the manifest goes to the tool", args:sub(-#("--retention " .. retentionPath(home))) == "--retention " .. retentionPath(home), args)
+  toggle(env)
+  env.advance(2)
+  check("compact: not while an insights run is in flight", #compactTasks(env) == 0, #compactTasks(env))
+end
+
 os.execute("rm -rf " .. SCRATCH)
 report[#report + 1] = string.format("passed=%d failed=%d", passed, failed)
 return table.concat(report, "\n")
