@@ -690,3 +690,35 @@ test("pointer 3: the interval's panel head returns to the sequences with a click
     await page.close();
   }
 });
+
+test("pointer 4: the overview list keeps its scroll when a layer closes", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    // 26 combos in layer v: the list is longer than its box.
+    const letters = "abcdefghijklmnopqrstuvwxyz".split("");
+    const bindings = letters.map((key) => binding("v", key, `Command ${key}`, "text-navigation"));
+    const presses = [["2026-09-10T09:00:00", "v", "a"], ...letters.map((key, i) => [`2026-10-17T09:${String(i).padStart(2, "0")}:00`, "v", key])];
+    await load(page, { now: "2026-10-17T12:00:00", bindings, presses });
+    const top = () => page.eval(`$("list").scrollTop`);
+    await page.eval(`$("list").scrollTop = 60`);
+    assert.equal(await top(), 60);
+    await click(page, ".item");
+    assert.equal(await page.eval("state.layer"), "v");
+    // A clicked row also selects its key: the first Escape clears it, the second leaves the layer.
+    await page.press("Escape");
+    await page.press("Escape");
+    assert.equal(await page.eval("state.layer"), null);
+    assert.equal(await top(), 60, "the overview list went back to the top");
+    // Another month is another list: it starts at the top.
+    await page.eval(`$("list").scrollTop = 60`);
+    await page.press("ArrowLeft");
+    assert.equal(await page.eval(`$("month-label").textContent`), "SEPTEMBER");
+    await page.press("ArrowRight");
+    assert.equal(await top(), 0, "a month change kept the old scroll");
+    // A reopen starts at the top.
+    await page.eval(`hyperdash.open({ now: "2026-10-17T12:00:00" })`);
+    assert.equal(await top(), 0);
+  } finally {
+    await page.close();
+  }
+});

@@ -2198,6 +2198,8 @@ let listScope = null;
 let listSignature = null;
 let listSelected = null;
 let footerSignature = null;
+// The overview list's scroll by month, kept while a layer shows; a reopen or another month starts at the top.
+let overviewScrolls = new Map();
 let headerMode = null;
 let bindings = [];
 let months = [];
@@ -2616,7 +2618,12 @@ function renderList(inLayer) {
   if (signature === listSignature) return;
   listSignature = signature;
 
-  const scrollTop = scope === listScope ? list.scrollTop : 0;
+  // The overview's scroll survives a visit to a layer; any other change of scope starts at the top.
+  const away = listScope !== null && listScope !== scope && listScope.startsWith("null|") && !scope.startsWith("null|");
+  const kept = overviewScrolls.get(scope);
+  if (scope.startsWith("null|")) overviewScrolls.clear();
+  if (away) overviewScrolls.set(listScope, list.scrollTop);
+  const scrollTop = scope === listScope ? list.scrollTop : kept ?? 0;
   listScope = scope;
   const active = document.activeElement;
   const focusedId = active?.classList?.contains("item") ? `${active.dataset.layer} ${active.dataset.key}` : null;
@@ -3572,6 +3579,7 @@ const hyperdash = {
     });
     insightsReturn = null;
     listScope = null;
+    overviewScrolls.clear();
     listSignature = null;
     groupHover = null;
     controlsSignature = chartSignature = appbarSignature = panelSignature = groupSignature = null;

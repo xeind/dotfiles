@@ -387,6 +387,8 @@ Layer.
   always.
 - Scroll areas have fixed heights (list 240, insights 328, panel body 132) and
   carry `data-fade`, a 26 px mask on the edge where content continues.
+- The overview list keeps its scroll while a layer shows; another month or a
+  reopen starts it at the top.
 - Overlays (the about panel) sit over the card and never change its height.
 - Stack order per page: header 28 → totals → page body → status (two lines)
   → footer.
