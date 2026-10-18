@@ -395,10 +395,15 @@ Layer.
 - No `title` attributes or SVG `<title>`; native tooltips clip at the card
   edge. Use `aria-label` and visible text.
 - No transitions, animations or keyframes, with one exception. When the user
-  changes page (Overview, a layer, Activity, Insights), the card's height
-  moves from where it is to the new page's height: 180 ms,
-  `cubic-bezier(0.455, 0.03, 0.515, 0.955)`, one Web Animations call in
-  `moveCard()`. The rules for it:
+  changes page (Overview, a layer, Activity, Insights) with the pointer, the
+  card's height moves from where it is to the new page's height: 160 ms,
+  strong ease-out `cubic-bezier(0.23, 1, 0.32, 1)`, one Web Animations call
+  in `moveCard()`. The rules for it:
+  - A page change made from the keyboard is instant, Enter or Space on a
+    focused button included (its click has `detail` 0). Keys are pressed many
+    times a day, and motion on them reads as lag.
+  - Ease-out, not ease-in-out: the edge starts moving on the first frame, so
+    the change reads as an immediate answer, and the slow end is the settle.
   - Content is laid out at the new size at once and never scales; the card
     clips it at its moving bottom edge. Width, type, corners and shadow do
     not change.
