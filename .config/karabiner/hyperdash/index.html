@@ -2878,9 +2878,14 @@ function renderInsights() {
     list.append(card);
   }
   if (list.childElementCount) root.append(list);
-  if (quiet.length) {
+  // One plain line for the rules still waiting on history. Rules that found nothing, or were outranked, say
+  // nothing here: the report keeps every reason, but on the page they were rule jargon about cards nobody sees.
+  const waiting = quiet.filter((rule) => rule.status === "not-ready").length;
+  if (waiting) {
     const notes = element("div", "insight-notes");
-    notes.append(element("p", "insight-heading", "NOT SHOWN"), ...quiet.map((rule) => element("p", "insight-note", rule.reason)));
+    notes.append(element("p", "insight-note", waiting === 1
+      ? "1 more insight appears once more days are recorded."
+      : `${waiting} more insights appear once more days are recorded.`));
     root.append(notes);
   }
   root.append(disclosure);
