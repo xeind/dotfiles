@@ -124,7 +124,8 @@ end
 -- there, the tail starts at the offset. A cut is used only when the file has
 -- the cut's (dev, ino), holds at least `offset` bytes, and the line
 -- `lastLine` ends exactly at `offset`; otherwise the log is read from 0.
-R.RETENTION_VERSION = 1
+-- Version 2 adds a third line, the day index; version 1 is still read, without it.
+R.RETENTION_VERSION = 2
 
 local function isCut(cut)
   return type(cut) == "table" and type(cut.dev) == "number" and type(cut.ino) == "number"
@@ -136,8 +137,8 @@ end
 -- false and a message.
 function R.checkRetention(decoded, now)
   if type(decoded) ~= "table" then return false, "retention manifest is not a JSON object" end
-  if decoded.version ~= R.RETENTION_VERSION then
-    return false, "retention manifest is version " .. tostring(decoded.version) .. ", expected " .. R.RETENTION_VERSION
+  if decoded.version ~= 1 and decoded.version ~= R.RETENTION_VERSION then
+    return false, "retention manifest is version " .. tostring(decoded.version) .. ", expected 1 or " .. R.RETENTION_VERSION
   end
   if type(decoded.tailStart) ~= "string" or not decoded.tailStart:match("^%d%d%d%d%-%d%d%-01T00:00:00$") then
     return false, "retention manifest has no tail start"
@@ -167,6 +168,74 @@ function R.cutOffset(cut, env, path, stat)
   if not raw or raw:sub(-#expected) ~= expected then return 0 end
   if lineStart > 0 and raw:byte(1) ~= 10 then return 0 end
   return cut.offset
+end
+
+-- An archived day read back (docs/RETENTION.md, day index). The index line maps
+-- each day before the tail start to [usageFrom, usageTo, contextFrom, contextTo]:
+-- the spans of whole lines that hold the day's archived presses and the context
+-- that sets its sessions and apps. contextTo -1 reads to the last complete line.
+R.DAY_READ_LIMIT = 4 * 1024 * 1024 -- bytes; a larger day stays counts only
+
+-- The four offsets of `date` in the index line, or nil. The line is never decoded.
+function R.dayEntry(index, date)
+  if type(index) ~= "string" or type(date) ~= "string" or not date:match("^%d%d%d%d%-%d%d%-%d%d$") then return nil end
+  local key = '"' .. date .. '":['
+  local at = index:find(key, 1, true)
+  if not at then return nil end
+  local a, b, c, d = index:match("^(%d+),(%d+),(%d+),(%-?%d+)%]", at + #key)
+  if not a then return nil end
+  a, b, c, d = math.tointeger(tonumber(a)), math.tointeger(tonumber(b)), math.tointeger(tonumber(c)), math.tointeger(tonumber(d))
+  if not (a and b and c and d) or a > b or (d ~= -1 and c > d) then return nil end
+  return a, b, c, d
+end
+
+-- Whole lines [from, to) of a file of `size` bytes: `from` must start a line and
+-- `to` end one; to = -1 reads to the last complete line.
+local function readLines(env, path, size, from, to)
+  local last = to == -1 and size or to
+  if from > last or last > size then return nil, "span past the end of " .. path end
+  if from == last then return "" end
+  local raw, err = readRange(env, path, math.max(from - 1, 0), last)
+  if not raw then return nil, err end
+  if from > 0 and raw:byte(1) ~= 10 then return nil, path .. " changed under the index" end
+  raw = from > 0 and raw:sub(2) or raw
+  if to == -1 then return raw:sub(1, lastNewline(raw)) end
+  if raw:byte(#raw) ~= 10 then return nil, path .. " changed under the index" end
+  return raw
+end
+
+-- Reads `date` for the page. `held` = { index, usage, context } is the manifest
+-- the page's usage generation was built from. `contextFrom` is the offset the
+-- page's context generation starts at: 0 or nil means the page holds the whole
+-- context log, and only the usage lines are read. Returns { usage, context }
+-- (context nil: the page's own), or nil and a message.
+function R.readArchivedDay(env, held, date, usagePath, contextPath, contextFrom)
+  local u0, u1, c0, c1 = R.dayEntry(held and held.index, date)
+  if not u0 then return nil, "no day index entry" end
+  local stat = env.stat(usagePath)
+  if R.cutOffset(held.usage, env, usagePath, stat) ~= held.usage.offset or u1 > held.usage.offset then
+    return nil, "the usage log changed"
+  end
+  local size, cstat = u1 - u0, nil
+  local wantContext = (contextFrom or 0) > 0
+  if wantContext then
+    cstat = env.stat(contextPath)
+    if not held.context or R.cutOffset(held.context, env, contextPath, cstat) ~= held.context.offset then
+      return nil, "the context log changed"
+    end
+    size = size + (c1 == -1 and cstat.size or c1) - c0
+  end
+  if size > R.DAY_READ_LIMIT then return nil, "the day spans " .. size .. " bytes" end
+  local usage, err = readLines(env, usagePath, stat.size, u0, u1)
+  if not usage then return nil, err end
+  local context = nil
+  if wantContext then
+    context, err = readLines(env, contextPath, cstat.size, c0, c1)
+    if not context then return nil, err end
+    if not sameIdentity(cstat, env.stat(contextPath)) then return nil, "the context log changed" end
+  end
+  if not sameIdentity(stat, env.stat(usagePath)) then return nil, "the usage log changed" end
+  return { usage = usage, context = context }
 end
 
 -- A fresh reset action: complete lines of bytes [from, size), where `from` is

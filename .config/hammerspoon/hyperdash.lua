@@ -15,6 +15,8 @@
 -- Retention (docs/RETENTION.md): the insights tool writes a manifest that
 -- names a cut in each log and summarises the bytes before it. A reset then
 -- sends that summary and the tail from the cut. The logs are never changed.
+-- An archived day the page asks for goes back to it with hyperdash.loadDay(),
+-- read from the spans the manifest's day index names.
 
 local reader = require("hyperdash_core") -- pure helpers; see that file
 
@@ -99,8 +101,8 @@ local insightsTimer = nil -- stops a run that outlives INSIGHTS_TIMEOUT
 
 local insightsCache = { key = false, raw = nil, message = nil } -- raw: valid version 2 report
 -- summary: the manifest's second line, sent to the page as it is; usage and
--- context: the cuts from its first line; tailStart.
-local retentionCache = { key = false, summary = nil, usage = nil, context = nil, tailStart = nil }
+-- context: the cuts from its first line; tailStart; index: the third line (version 2).
+local retentionCache = { key = false, summary = nil, usage = nil, context = nil, tailStart = nil, index = nil }
 local bindingsCache = { key = false, list = {}, json = "[]", status = "missing", invalid = 0 }
 
 -- Raw JSON of a valid version 2 report. Returns nil when the file is
@@ -131,19 +133,23 @@ end
 -- A manifest that is missing, corrupt or of another version leaves summary
 -- nil: both logs are then read whole. The clock is checked on every call.
 -- Only the short first line is decoded: hs.json.decode took about 75 s on a
--- 2.5 MB summary, and the page parses the summary itself.
+-- 2.5 MB summary, and the page parses the summary itself. The day index is
+-- searched as text when the page asks for a day (reader.dayEntry).
 local function refreshRetentionCache()
   local key = statKey(RETENTION)
   if key ~= retentionCache.key then
     retentionCache.key = key
     retentionCache.summary, retentionCache.usage, retentionCache.context, retentionCache.tailStart = nil, nil, nil, nil
-    local raw = key and readFile(RETENTION)
-    local header, summary = (raw or ""):match("^([^\n]*)\n({[^\n]*})\n?$")
+    retentionCache.index = nil
+    local raw = key and readFile(RETENTION) or ""
+    local header, summary, index = raw:match("^([^\n]*)\n({[^\n]*})\n({[^\n]*})\n?$")
+    if not header then header, summary = raw:match("^([^\n]*)\n({[^\n]*})\n?$") end
     local ok, decoded = false, nil
     if header then ok, decoded = pcall(hs.json.decode, header) end
-    if ok and reader.checkRetention(decoded, "9999-12-31T23:59:59") then
+    -- Version 1 has two lines, version 2 three.
+    if ok and reader.checkRetention(decoded, "9999-12-31T23:59:59") and (decoded.version == 1) == (index == nil) then
       retentionCache.summary, retentionCache.usage, retentionCache.context = summary, decoded.usage, decoded.context
-      retentionCache.tailStart = decoded.tailStart
+      retentionCache.tailStart, retentionCache.index = decoded.tailStart, index
     end
   end
   if retentionCache.summary and nowIso() < retentionCache.tailStart then return nil end
@@ -472,6 +478,10 @@ local MAX_LOG_PASSES = 6
 -- used only with it: the context tail then covers every press the page holds raw.
 local heldRetention = nil
 local refusedRetention = nil -- summary text the page refused; not offered again
+-- For archived days read back: the day index and cuts of the manifest the page's
+-- usage generation was built from, and the offset its context generation starts at.
+local heldIndex = nil
+local heldContextFrom = nil
 
 -- Bring the page up to date: log first, then bindings, insights and health.
 -- `forceHealth` sends health even for a hidden panel (used when opening).
@@ -555,8 +565,10 @@ local function runSync(forceHealth, done)
         end
         if good then
           reader.commit(state, action)
+          if action.kind == "reset" and which == "context" then heldContextFrom = action.from end
           if action.kind == "reset" and which == "usage" then
             heldRetention = action.archive and retention or nil
+            heldIndex = action.archive and retention.index and { index = retention.index, usage = retention.usage, context = retention.context } or nil
             -- The reset carried bindings, insights and health with it.
             sent.bindings, sent.insights = bindingsCache.json, insightsCache.raw or false
             sent.health = healthSent
@@ -690,9 +702,10 @@ local function compactLogs()
   if not hs.fs.attributes(INSIGHTS_TOOL) or not hs.fs.attributes(USAGE_LOG) then return end
   local today = os.date("%Y-%m-%d", os.time())
   if compactDay == today then return end
-  -- Due when the manifest is missing, its tail start has passed, or its cut no longer fits the log.
+  -- Due when the manifest is missing, has no day index (version 1), its tail
+  -- start has passed, or its cut no longer fits the log.
   local current = refreshRetentionCache()
-  if current and current.tailStart >= reader.retentionTailStart(os.date("*t", os.time()))
+  if current and current.index and current.tailStart >= reader.retentionTailStart(os.date("*t", os.time()))
     and reader.cutOffset(current.usage, fsEnv, USAGE_LOG, hs.fs.attributes(USAGE_LOG)) > 0 then return end
   compactDay = today
 
@@ -736,6 +749,23 @@ local function scheduleCompaction()
     compactSoon = nil
     applyRetention()
     compactLogs()
+  end)
+end
+
+-- The page asks for the lines of one archived day ({ action = "day", date, id }).
+-- The read is a few seeks and at most reader.DAY_READ_LIMIT bytes. It waits for
+-- the calls already queued, so a reset in flight has set the manifest the page
+-- holds; the answer then goes after it, and the page ignores an answer to an
+-- older request. Any failure answers usage = null, and the day stays counts only.
+local function answerDay(date, id)
+  if type(date) ~= "string" or type(id) ~= "number" or id < 1 or id >= 2 ^ 31 or id % 1 ~= 0 then return end
+  afterQueued(function()
+    local day, message = reader.readArchivedDay(fsEnv, heldIndex, date, USAGE_LOG, CONTEXT_LOG, heldContextFrom)
+    if not day then print("hyperdash: archived day " .. date:sub(1, 10) .. ": " .. message) end
+    send(string.format(
+      "window.hyperdash.loadDay({\"id\":%d,\"date\":%s,\"usage\":%s,\"context\":%s})",
+      id, jsonString(date), day and jsonString(day.usage) or "null", day and day.context and jsonString(day.context) or "null"
+    ), adoptHeight)
   end)
 end
 
@@ -921,6 +951,8 @@ local function create()
       -- The page has already applied it; save a valid name and say nothing back.
       local name = message.body.theme
       if type(name) == "string" and THEMES[name] then hs.settings.set(THEME_KEY, name) end
+    elseif message.body.action == "day" then
+      answerDay(message.body.date, message.body.id)
     elseif message.body.action == "resize" then
       height = message.body.height
       if open then place() end
@@ -952,7 +984,7 @@ local function create()
       -- A fresh page holds nothing: send names and icons again, and the
       -- first sync of each stream is a reset.
       sentApps.names, sentApps.icons = nil, nil
-      heldRetention = nil
+      heldRetention, heldIndex, heldContextFrom = nil, nil, nil
       -- A fresh page shows the default theme: apply the saved one first, after
       -- a reload too.
       send("window.hyperdash.setTheme(" .. jsonString(savedTheme()) .. ")")

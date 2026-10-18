@@ -636,13 +636,16 @@ end
 do
   local good = { version = 1, tailStart = "2026-09-01T00:00:00", usage = { dev = 1, ino = 2, offset = 24, lastLine = "x" } }
   check("retention: a good manifest passes", R.checkRetention(good, "2026-10-17T18:00:00") == true)
+  good.version = 2
+  check("retention: a version 2 manifest passes", R.checkRetention(good, "2026-10-17T18:00:00") == true)
+  good.version = 1
   local function bad(name, change, now)
     local copy = { version = good.version, tailStart = good.tailStart, usage = good.usage }
     for k, v in pairs(change) do copy[k] = v end
     local ok, message = R.checkRetention(copy, now or "2026-10-17T18:00:00")
     check("retention: " .. name .. " is refused with a message", ok == false and type(message) == "string", message)
   end
-  bad("another version", { version = 2 })
+  bad("another version", { version = 3 })
   bad("a tail start that is not a month start", { tailStart = "2026-09-02T00:00:00" })
   bad("a missing usage cut", { usage = false })
   bad("a fractional offset", { usage = { dev = 1, ino = 2, offset = 2.5, lastLine = "x" } })
@@ -735,6 +738,114 @@ do
   write(LOG, old:sub(1, 10))
   local short = R.plan(R.newState(), e, LOG, { cut = { dev = hs.fs.attributes(LOG).dev, ino = hs.fs.attributes(LOG).ino, offset = #old, lastLine = cut.lastLine }, archive = "{}" })
   check("truncated log: reads from 0", short.kind == "reset" and short.from == 0 and short.archive == nil)
+end
+
+---------------------------------------------------------------------------
+-- Retention: archived days read back through the day index, on the shared
+-- fixture (karabiner/hyperdash/tests/retention_cases, written by the insights tool)
+---------------------------------------------------------------------------
+do
+  local CASES = DIR .. "/../karabiner/hyperdash/tests/retention_cases"
+  local usageBytes, contextBytes = read(CASES .. "/usage.log"), read(CASES .. "/context.log")
+  local manifest = read(CASES .. "/retention.json")
+  local headerLine, indexLine = manifest:match("^([^\n]*)\n[^\n]*\n([^\n]*)\n?$")
+  local header = hs.json.decode(headerLine)
+  local CTX = SCRATCH .. "/context.log"
+  -- The fixture's cuts carry dev = ino = 0; give them the copies' identity.
+  local function copies()
+    write(LOG, usageBytes)
+    write(CTX, contextBytes)
+    local u, c = hs.fs.attributes(LOG), hs.fs.attributes(CTX)
+    return {
+      index = indexLine,
+      usage = { dev = u.dev, ino = u.ino, offset = header.usage.offset, lastLine = header.usage.lastLine },
+      context = { dev = c.dev, ino = c.ino, offset = header.context.offset, lastLine = header.context.lastLine },
+    }
+  end
+  local held = copies()
+  local e = env(4096)
+  local function span(bytes, from, to) return bytes:sub(from + 1, to == -1 and #completeLines(bytes) or to) end
+  local function readDay(date, contextFrom) return R.readArchivedDay(e, held, date, LOG, CTX, contextFrom == nil and header.context.offset or contextFrom) end
+
+  check("day index: entry for the first day", select(1, R.dayEntry(indexLine, "2026-07-20")) == 0)
+  check("day index: no entry after the tail start", R.dayEntry(indexLine, "2026-09-01") == nil)
+  check("day index: no entry for a date that is not one", R.dayEntry(indexLine, "2026-07-2.") == nil and R.dayEntry(indexLine, nil) == nil)
+  check("day index: no entry without an index", R.dayEntry(nil, "2026-07-20") == nil)
+  check("day index: a backwards span is refused", R.dayEntry('{"days":{"2026-07-20":[9,3,0,1]}}', "2026-07-20") == nil)
+  local a, b, c, d = R.dayEntry('{"days":{"2026-07-20":[0,0,5,-1]}}', "2026-07-20")
+  check("day index: contextTo -1 is kept", a == 0 and b == 0 and c == 5 and d == -1)
+
+  -- Each case: the date, then what the read must hold.
+  local cases = {
+    { "2026-07-20", "the first day of the log" },
+    { "2026-07-21", "a day inside the session of the day before" },
+    { "2026-08-13", "a day with no presses" },
+    { "2026-08-25", "the day at the cut" },
+    { "2026-08-28", "a day whose session starts at the context cut" },
+  }
+  for _, case in ipairs(cases) do
+    local date, name = case[1], case[2]
+    local u0, u1, c0, c1 = R.dayEntry(indexLine, date)
+    local day, message = readDay(date)
+    check("day read: " .. name .. " reads", day ~= nil, message)
+    if day then
+      check("day read: " .. name .. ": the usage span", day.usage == span(usageBytes, u0, u1), #day.usage)
+      check("day read: " .. name .. ": the context span", day.context == span(contextBytes, c0, c1), day.context and #day.context)
+      -- Whole lines that start with the session's start line or the log's first line.
+      check("day read: " .. name .. ": context starts a session", day.context:match("^[^\n]*\tstart\t%-\n") ~= nil, day.context:sub(1, 40))
+      local pressed = 0
+      for line in day.usage:gmatch("[^\n]+") do if line:sub(1, 10) == date then pressed = pressed + 1 end end
+      -- 08-13 has none; the presses of 08-28 all sit after the cut, in the page's own tail.
+      check("day read: " .. name .. ": presses of the day", (date == "2026-08-13" or date == "2026-08-28") == (pressed == 0), pressed)
+    end
+  end
+  check("day read: the day at the cut ends there", select(2, R.dayEntry(indexLine, "2026-08-25")) == header.usage.offset)
+  check("day read: a day starting inside the session of the day before reads from its start", select(3, R.dayEntry(indexLine, "2026-07-21")) == 0)
+  check("day read: from 08-28 the context starts at its cut", select(3, R.dayEntry(indexLine, "2026-08-28")) == header.context.offset)
+
+  local own = readDay("2026-07-21", 0)
+  check("day read: a page that holds the whole context gets no context", own and own.context == nil and own.usage ~= "")
+  local none = R.readArchivedDay(e, held, "2026-07-21", LOG, CTX, nil)
+  check("day read: no context stream either", none and none.context == nil)
+
+  local noIndex = { usage = held.usage, context = held.context }
+  check("day read: a version 1 manifest has no days", R.readArchivedDay(e, noIndex, "2026-07-21", LOG, CTX, 1) == nil)
+  check("day read: no manifest", R.readArchivedDay(e, nil, "2026-07-21", LOG, CTX, 1) == nil)
+  check("day read: a day after the tail start", readDay("2026-09-02") == nil)
+
+  -- To the end of the file when no line follows the day yet.
+  local tail = R.readArchivedDay(e, { index = '{"days":{"2026-08-31":[0,0,' .. header.context.offset .. ',-1]}}', usage = held.usage, context = held.context }, "2026-08-31", LOG, CTX, 1)
+  check("day read: contextTo -1 reads the complete lines to the end", tail and tail.context == span(contextBytes, header.context.offset, -1))
+  write(CTX, "2026-10-17T18:00:00.000\tapp\tcom.a", "ab")
+  tail = R.readArchivedDay(e, { index = '{"days":{"2026-08-31":[0,0,' .. header.context.offset .. ',-1]}}', usage = held.usage, context = held.context }, "2026-08-31", LOG, CTX, 1)
+  check("day read: a partial last line is left out", tail and tail.context == span(contextBytes, header.context.offset, -1))
+
+  -- Every failure answers nil and a message.
+  local function refused(name, prepare)
+    held = copies()
+    prepare()
+    local day, message = readDay("2026-07-21")
+    check("day read refused: " .. name, day == nil and type(message) == "string", message)
+  end
+  refused("the usage log rewritten under its cut", function() write(LOG, (usageBytes:gsub("2026%-08%-25T12:20:32", "2026-08-25T12:20:33"))) end)
+  refused("the usage log replaced", function()
+    write(LOG .. ".new", usageBytes)
+    os.rename(LOG .. ".new", LOG)
+  end)
+  refused("the usage log truncated", function() write(LOG, usageBytes:sub(1, 100)) end)
+  refused("the context log replaced", function()
+    write(CTX .. ".new", contextBytes)
+    os.rename(CTX .. ".new", CTX)
+  end)
+  refused("a span that does not start a line", function() held.index = '{"days":{"2026-07-21":[1,144,0,254]}}' end)
+  refused("a span that does not end a line", function() held.index = '{"days":{"2026-07-21":[0,143,0,254]}}' end)
+  refused("a usage span past the cut", function() held.index = '{"days":{"2026-07-21":[0,' .. (header.usage.offset + 24) .. ',0,254]}}' end)
+  refused("a context span past the end", function() held.index = '{"days":{"2026-07-21":[0,144,0,' .. (#contextBytes + 10) .. ']}}' end)
+  refused("a day larger than the limit", function() R.DAY_READ_LIMIT = 100 end)
+  R.DAY_READ_LIMIT = 4 * 1024 * 1024
+  refused("a missing context cut", function() held.context = nil end)
+  refused("a usage log that cannot be opened", function() e = env(4096, { open = function() return nil end }) end)
+  e = env(4096)
 end
 
 os.execute("rm -rf " .. SCRATCH)

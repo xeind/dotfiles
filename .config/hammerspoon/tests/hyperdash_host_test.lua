@@ -1202,14 +1202,16 @@ local function retentionPath(home) return home .. "/.local/state/karabiner/reten
 -- The manifest file: the header line, then the summary line the page gets.
 local SUMMARY = '{"count":2,"days":{"2026-08-30":{"w u":[20,1]},"2026-08-31":{"o t":[47,1]}},"firstEvent":"2026-08-30T10:00:00",'
   .. '"lastEvent":"2026-08-31T23:59:59","lastUsed":{"o t":"2026-08-31T23:59:59","w u":"2026-08-30T10:00:00"},"rejected":1,"tailStart":"2026-09-01T00:00:00"}'
+-- Version 2 adds the day index: the spans of OLD's two days, no context.
+local INDEX = '{"days":{"2026-08-30":[0,24,0,0],"2026-08-31":[33,57,0,0]}}'
 local function writeManifestFile(home, manifest)
-  write(retentionPath(home), hs.json.encode(manifest) .. "\n" .. SUMMARY .. "\n")
+  write(retentionPath(home), hs.json.encode(manifest) .. "\n" .. SUMMARY .. "\n" .. (manifest.version == 2 and INDEX .. "\n" or ""))
 end
 -- A manifest whose usage cut sits after OLD; `change` edits its header fields.
 local function writeManifest(home, logPath, change)
   local a = hs.fs.attributes(logPath)
   local manifest = {
-    version = 1, created = "2026-10-17T12:00:00", tailStart = "2026-09-01T00:00:00",
+    version = 2, created = "2026-10-17T12:00:00", tailStart = "2026-09-01T00:00:00",
     usage = { dev = a.dev, ino = a.ino, offset = #OLD, lastLine = "2026-08-31T23:59:59\to\tt" },
   }
   for k, v in pairs(change or {}) do manifest[k] = v end
@@ -1257,9 +1259,17 @@ do
   local data = usageResets(startPanel(home, OCT17))[1]
   check("retention, other inode: the whole log, no summary", data and data.text == OLD .. NEW and data.archive == nil, data and data.text)
 
-  writeManifest(home, p.log, { version = 2 })
+  writeManifest(home, p.log, { version = 3 })
   data = usageResets(startPanel(home, OCT17))[1]
   check("retention, other version: the whole log, no summary", data and data.text == OLD .. NEW and data.archive == nil)
+
+  writeManifest(home, p.log, { version = 1 })
+  data = usageResets(startPanel(home, OCT17))[1]
+  check("retention, version 1: still read, from the cut", data and data.text == NEW and data.archive ~= nil)
+  local m2 = writeManifest(home, p.log)
+  write(retentionPath(home), hs.json.encode(m2) .. "\n" .. SUMMARY .. "\n")
+  data = usageResets(startPanel(home, OCT17))[1]
+  check("retention, version 2 without its index line: the whole log", data and data.text == OLD .. NEW and data.archive == nil)
 
   write(retentionPath(home), "{not json")
   data = usageResets(startPanel(home, OCT17))[1]
@@ -1404,6 +1414,113 @@ do
   toggle(env)
   env.advance(2)
   check("compact: not while an insights run is in flight", #compactTasks(env) == 0, #compactTasks(env))
+end
+
+do
+  -- A version 1 manifest has no day index: compaction is due at once to write one.
+  local home, p = baseHome("retention_version1")
+  write(p.log, OLD .. NEW)
+  write(p.tool, "#!/bin/sh\n")
+  os.execute("chmod 755 " .. p.tool)
+  writeManifest(home, p.log, { version = 1 })
+  local env = startPanel(home, OCT17)
+  toggle(env)
+  finishInsights(env)
+  toggle(env)
+  env.advance(2)
+  check("compact: due when the manifest has no day index", #compactTasks(env) == 1, #compactTasks(env))
+end
+
+---------------------------------------------------------------------------
+-- Archived days read back: the page asks, the host answers with loadDay
+---------------------------------------------------------------------------
+local function dayCalls(env)
+  local list = {}
+  for _, call in ipairs(env.page.calls) do if call.method == "loadDay" then list[#list + 1] = call.args[1] end end
+  return list
+end
+local function askDay(env, date, id)
+  env.controller.callback({ body = { action = "day", date = date, id = id } })
+  env.flush()
+  return dayCalls(env)[#dayCalls(env)]
+end
+
+do
+  local home, p = baseHome("retention_day")
+  write(p.log, OLD .. NEW)
+  os.execute("mkdir -p " .. home .. "/.local/state/hyperdash")
+  local ctxOld = "2026-08-30T09:00:00.000\tstart\t-\n"
+  local ctxNew = "2026-08-31T08:00:00.000\tstart\t-\n2026-09-01T09:00:00.000\tapp\tcom.apple.finder\n"
+  write(contextPath(home), ctxOld .. ctxNew)
+  local c = hs.fs.attributes(contextPath(home))
+  local contextCut = { dev = c.dev, ino = c.ino, offset = #ctxOld, lastLine = "2026-08-30T09:00:00.000\tstart\t-" }
+  local index = '{"days":{"2026-08-30":[0,24,0,64],"2026-08-31":[33,57,32,-1]}}'
+  local function manifestWith(change, indexLine)
+    local m = writeManifest(home, p.log, change)
+    write(retentionPath(home), hs.json.encode(m) .. "\n" .. SUMMARY .. "\n" .. (indexLine and indexLine .. "\n" or ""))
+  end
+  manifestWith({ context = contextCut }, index)
+  local env = startPanel(home, OCT17)
+  check("day: the page holds the context from its cut", env.page.ctx.text == ctxNew)
+
+  local day = askDay(env, "2026-08-30", 1)
+  check("day: answered with loadDay", day and day.id == 1 and day.date == "2026-08-30", day and day.id)
+  check("day: the usage span", day and day.usage == OLD:sub(1, 24), day and day.usage)
+  check("day: the context span, past the cut", day and day.context == ctxOld .. ctxNew:sub(1, 32), day and day.context)
+  day = askDay(env, "2026-08-31", 2)
+  check("day: a usage span after a rejected line", day and day.usage == OLD:sub(34, 57), day and day.usage)
+  check("day: contextTo -1 reads to the last complete line", day and day.context == ctxNew, day and day.context)
+
+  day = askDay(env, "2026-09-02", 3)
+  check("day: a day without an entry answers usage null", day and day.id == 3 and day.usage == nil and day.context == nil)
+  local before = #dayCalls(env)
+  for _, id in ipairs({ 0, 1.5, -1, 2 ^ 31 }) do askDay(env, "2026-08-30", id) end
+  askDay(env, 20260830, 4)
+  check("day: a bad id or date gets no answer", #dayCalls(env) == before, #dayCalls(env) - before)
+
+  -- The log rewritten in place under its cut, same size: the day is not read.
+  write(p.log, (OLD:gsub("23:59:59", "23:59:58")) .. NEW)
+  day = askDay(env, "2026-08-30", 5)
+  check("day: a changed log answers usage null", day and day.id == 5 and day.usage == nil)
+  check("day: a changed log is logged", env.log[#env.log]:find("archived day 2026-08-30", 1, true) ~= nil, env.log[#env.log])
+  write(p.log, OLD .. NEW)
+
+  -- A manifest without the context cut: the page reads the context whole and needs only the usage lines.
+  manifestWith({}, index)
+  env = startPanel(home, OCT17)
+  day = askDay(env, "2026-08-30", 1)
+  check("day: with the whole context at the page, no context is sent", day and day.usage == OLD:sub(1, 24) and day.context == nil, day and day.context)
+
+  -- A version 1 manifest: the reset uses its cut, a day has no entry.
+  manifestWith({ version = 1, context = contextCut }, nil)
+  env = startPanel(home, OCT17)
+  check("day, version 1: the reset still starts at the cut", usageResets(env)[1].text == NEW)
+  day = askDay(env, "2026-08-30", 1)
+  check("day, version 1: usage null", day and day.usage == nil)
+
+  -- A newer manifest on disk does not change the one the page's generation came from.
+  manifestWith({ context = contextCut }, index)
+  env = startPanel(home, OCT17)
+  manifestWith({ context = contextCut, created = "2026-10-17T13:00:00" }, '{"days":{}}')
+  toggle(env)
+  day = askDay(env, "2026-08-30", 1)
+  check("day: the held manifest's index, not the newer one", day and day.usage == OLD:sub(1, 24), day and tostring(day.usage))
+  toggle(env)
+
+  -- A request that arrives while a reset to a new manifest is in flight is read with that manifest.
+  manifestWith({ context = contextCut }, '{"days":{}}')
+  env = startPanel(home, OCT17)
+  write(p.log .. ".new", OLD .. NEW)
+  os.rename(p.log .. ".new", p.log)
+  manifestWith({ context = contextCut }, index)
+  env.page.mode.silent = true
+  env.module.toggle()
+  env.advance(0)
+  env.controller.callback({ body = { action = "day", date = "2026-08-30", id = 9 } })
+  env.page.mode.silent = false
+  env.flush()
+  day = dayCalls(env)[#dayCalls(env)]
+  check("day: a request during a reset reads the manifest of that reset", day and day.id == 9 and day.usage == OLD:sub(1, 24), day and tostring(day.usage))
 end
 
 os.execute("rm -rf " .. SCRATCH)
