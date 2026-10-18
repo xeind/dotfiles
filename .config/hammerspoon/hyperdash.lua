@@ -811,8 +811,7 @@ local function create()
       refreshBindingsCache()
       pageReady = true
       -- A fresh page holds nothing: send names and icons again, and the
-      -- first sync of each stream is a reset. setApps and setIcons are plain
-      -- page functions, not window.hyperdash methods.
+      -- first sync of each stream is a reset.
       sentApps.names, sentApps.icons = nil, nil
       -- A fresh page shows the default theme: apply the saved one first, after
       -- a reload too.
