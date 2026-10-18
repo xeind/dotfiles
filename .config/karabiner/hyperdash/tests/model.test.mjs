@@ -1291,36 +1291,122 @@ test("fadeState: an edge fades only where content continues past it", () => {
   assert.equal(M.fadeState({ scrollTop: 0, clientHeight: 0, scrollHeight: 0 }), "none", "a hidden area");
 });
 
+// Context lines in the store's order: by stamp, and in arrival order within one stamp.
+const byStamp = (lines) => lines.map((text, index) => [text, index]).sort((a, b) => (a[0].slice(0, 23) < b[0].slice(0, 23) ? -1 : a[0].slice(0, 23) > b[0].slice(0, 23) ? 1 : a[1] - b[1])).map((pair) => pair[0]);
+
 test("context store: sessions after random appends equal a fresh store's, in order or not", () => {
   let seed = 20261018;
   const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32; };
-  const stamp = (second) => `2026-10-17T${String(Math.floor(second / 3600)).padStart(2, "0")}:${String(Math.floor(second / 60) % 60).padStart(2, "0")}:${String(second % 60).padStart(2, "0")}.${random() < 0.5 ? "000" : "500"}`;
+  const stamp = (second) => `2026-10-17T${String(Math.floor(second / 3600)).padStart(2, "0")}:${String(Math.floor(second / 60) % 60).padStart(2, "0")}:${String(second % 60).padStart(2, "0")}.${["000", "500", "999"][Math.floor(random() * 3)]}`;
   const kinds = ["start", "app", "app", "lock", "unlock", "sleep", "wake"];
   const nows = ["2026-10-17T03:00:00", "2026-10-17T12:00:00", "2026-10-17T23:59:59"];
+  const presses = ["2026-10-17T01:00:00", "2026-10-17T06:00:00", "2026-10-17T10:00:00", "2026-10-17T16:00:00", "2026-10-17T22:00:00"];
   const spansOf = (store, now) => plain(store.sessions(now).map((span) => [span.start, span.end]));
-  for (let round = 0; round < 40; round++) {
-    const inOrder = round % 4 !== 3; // every fourth round appends older lines too
+  for (let round = 0; round < 48; round++) {
+    // Rounds 0-2 of every 4 are in time order. Round 3 adds random older lines and runs of late lines,
+    // as after the clock steps back; every eighth round also appends one batch of 60 shuffled older lines.
+    const inOrder = round % 4 !== 3;
     const live = M.createContextStore();
     const lines = [];
     let second = 0;
+    let previous = null;
     for (let step = 0; step < 30; step++) {
       const batch = [];
-      for (let n = 1 + Math.floor(random() * 3); n > 0; n--) {
-        second = inOrder || random() < 0.8 ? second + Math.floor(random() * (random() < 0.2 ? 400 : 90)) : Math.floor(random() * second);
+      const count = round % 8 === 7 && step === 20 ? 60 : 1 + Math.floor(random() * 3);
+      for (let n = count; n > 0; n--) {
+        const roll = random();
+        if (count === 60) second = Math.floor(random() * second);
+        else if (inOrder || roll < 0.6) second += Math.floor(random() * (random() < 0.2 ? 400 : 90));
+        else if (roll < 0.8) second = Math.max(0, second - Math.floor(random() * 3600)); // a step back; later lines run on from here
+        else second = Math.floor(random() * second);
         const kind = kinds[Math.floor(random() * kinds.length)];
-        batch.push(ctxLine(stamp(Math.min(second, 86399)), kind, kind === "app" ? `com.app${Math.floor(random() * 3)}` : "-"));
+        // One in six lines repeats the stamp of the line before it to the millisecond.
+        const at = previous && random() < 1 / 6 ? previous : stamp(Math.min(second, 86399));
+        previous = at;
+        batch.push(ctxLine(at, kind, kind === "app" ? `com.app${Math.floor(random() * 3)}` : "-"));
       }
       lines.push(...batch);
       live.append(batch.join("\n") + "\n");
+      if (count === 60) {
+        // Sorted again by a read, with the sessions still stale: a late line now goes in without a repair.
+        live.summary();
+        lines.push(ctxLine(stamp(Math.floor(random() * second)), "start"));
+        live.append(lines[lines.length - 1] + "\n");
+      }
       const fresh = contextFrom(lines);
-      const events = lines.map((text) => { const [t, kind] = text.split("\t"); return { t, kind }; });
+      const ordered = contextFrom(byStamp(lines));
+      const events = lines.map((text) => { const [t, kind, value] = text.split("\t"); return { t, kind, value }; });
       for (const now of nows) {
         const expected = R.sessionSpansNaive(events, M.absSeconds(now)).map((span) => [span.start, span.end]);
         assert.deepEqual(spansOf(live, now), expected, `round ${round} step ${step} now ${now}`);
         assert.deepEqual(spansOf(fresh, now), expected, `fresh, round ${round} step ${step} now ${now}`);
       }
-      assert.equal(live.appAt("2026-10-17T10:00:00", nows[2]), fresh.appAt("2026-10-17T10:00:00", nows[2]), `appAt, round ${round} step ${step}`);
-      assert.deepEqual(plain(live.segments("2026-10-17", nows[1])), plain(fresh.segments("2026-10-17", nows[1])), `segments, round ${round} step ${step}`);
+      for (const at of presses) {
+        const expected = R.appAtNaive(events, at, M.absSeconds(nows[2]));
+        assert.equal(live.appAt(at, nows[2]), expected, `appAt ${at}, round ${round} step ${step}`);
+        assert.equal(fresh.appAt(at, nows[2]), expected, `fresh appAt ${at}, round ${round} step ${step}`);
+      }
+      assert.deepEqual(plain(live.segments("2026-10-17", nows[1])), plain(ordered.segments("2026-10-17", nows[1])), `segments, round ${round} step ${step}`);
+      assert.deepEqual(plain(fresh.segments("2026-10-17", nows[1])), plain(ordered.segments("2026-10-17", nows[1])), `fresh segments, round ${round} step ${step}`);
+      assert.deepEqual(plain(live.snapshot()), plain(ordered.snapshot()), `events, round ${round} step ${step}`);
     }
   }
+});
+
+test("context store: two app lines in the same millisecond, the second arriving late", () => {
+  const live = contextFrom([ctxLine("2026-10-17T09:00:00.000", "start"), ctxLine("2026-10-17T09:00:05.250", "app", "com.first"), ctxLine("2026-10-17T09:00:07.000", "lock")]);
+  live.append(ctxLine("2026-10-17T09:00:05.250", "app", "com.second") + "\n");
+  assert.equal(live.appAt("2026-10-17T09:00:06", "2026-10-17T10:00:00"), "com.second", "equal stamps keep arrival order");
+  live.append(ctxLine("2026-10-17T09:00:05.250", "start") + "\n");
+  assert.equal(live.appAt("2026-10-17T09:00:06", "2026-10-17T10:00:00"), null, "a later start in the same millisecond clears the app");
+  assert.deepEqual(plain(live.sessions("2026-10-17T10:00:00")), [{ start: M.absSeconds("2026-10-17T09:00:00.000"), end: M.absSeconds("2026-10-17T10:00:00") }]);
+});
+
+test("context store: late appends to a 500,000-line log need no full re-sort and match a fresh store", () => {
+  let seed = 509;
+  const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2 ** 32; };
+  const base = M.absSeconds("2026-09-18T00:00:00");
+  const stamp = (at) => {
+    const date = new Date(Math.round(at * 1000));
+    return `${date.toISOString().slice(0, 19)}.${String(date.getUTCMilliseconds()).padStart(3, "0")}`;
+  };
+  const kindAt = () => { const roll = random(); return roll < 0.0001 ? "start" : roll < 0.9 ? "app" : ["lock", "unlock", "sleep", "wake"][Math.floor(random() * 4)]; };
+  const lineAt = (at, kind) => ctxLine(stamp(at), kind, kind === "app" ? `com.app${Math.floor(random() * 40)}` : "-");
+  const lines = [ctxLine(stamp(base), "start")];
+  let at = base;
+  while (lines.length < 500000) { at += random() * 10; lines.push(lineAt(at, kindAt())); }
+  const live = contextFrom(lines);
+  const now = stamp(at + 3600).slice(0, 19);
+  const date = now.slice(0, 10);
+  live.sessions(now); live.appAt(`${date}T12:00:00`, now); live.segments(date, now);
+  // Count sorts of anything as long as the log: only a full re-sort is that long.
+  const prototype = vm.runInContext("Array.prototype", context);
+  const sort = prototype.sort;
+  let fullSorts = 0;
+  prototype.sort = function (...args) { if (this.length >= 100000) fullSorts += 1; return sort.apply(this, args); };
+  try {
+    let previous = lines[lines.length - 1];
+    for (let step = 0; step < 300; step++) {
+      const roll = random();
+      // In order; a run back by up to an hour; a random older line; or the last stamp again to the millisecond.
+      if (roll < 0.4) at += random() * 10;
+      else if (roll < 0.7) at -= random() * 3600;
+      const text = roll < 0.9 ? lineAt(roll < 0.8 ? at : base + random() * (at - base), step % 25 === 0 ? "start" : kindAt()) : previous.slice(0, 24) + "app\tcom.tie";
+      previous = text;
+      lines.push(text);
+      live.append(text + "\n");
+      live.sessions(now); live.appAt(`${date}T12:00:00`, now); live.segments(date, now);
+    }
+  } finally { prototype.sort = sort; }
+  assert.equal(fullSorts, 0, "a late line is inserted in place");
+  const ordered = contextFrom(byStamp(lines));
+  const events = lines.map((text) => { const [t, kind] = text.split("\t"); return { t, kind }; });
+  assert.deepEqual(plain(live.sessions(now)), plain(R.sessionSpansNaive(events, M.absSeconds(now))));
+  assert.deepEqual(plain(live.sessions(now)), plain(ordered.sessions(now)));
+  for (let hour = 0; hour < 24; hour += 3) {
+    const press = `${date}T${String(hour).padStart(2, "0")}:00:00`;
+    assert.equal(live.appAt(press, now), ordered.appAt(press, now), press);
+  }
+  for (const day of [date, M.addDays(date, -1), M.addDays(date, -15)]) assert.deepEqual(plain(live.segments(day, now)), plain(ordered.segments(day, now)), day);
+  assert.deepEqual(plain(live.snapshot()), plain(ordered.snapshot()));
 });

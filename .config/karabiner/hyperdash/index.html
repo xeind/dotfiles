@@ -1844,6 +1844,7 @@ var HyperdashModel = (() => {
     clear();
 
     function ingest(text) {
+      let late = 0; // older lines inserted in place by this call
       for (const line of text.split("\n")) {
         const clean = line.endsWith("\r") ? line.slice(0, -1) : line;
         if (clean === "") continue;
@@ -1855,17 +1856,54 @@ var HyperdashModel = (() => {
         let ok = minuteCache.get(minute);
         if (ok === undefined) { ok = isValidTimestamp(`${minute}:00`); minuteCache.set(minute, ok); }
         if (!ok || Number(match[1].slice(17, 19)) > 59) { rejected += 1; continue; }
-        if (events.length && fields[0] < events[events.length - 1].t) sorted = false;
         const event = { t: fields[0], kind, value, abs: absSeconds(fields[0]) };
-        // An append in time order extends the session list and app list in place. An older line makes
-        // both stale, and the next read rebuilds them from the sorted events.
+        version += 1;
+        // An append in time order extends the session list and app list in place. The first 32 older
+        // lines of a call go in after the events with an equal or earlier stamp, as the stable sort puts
+        // them, and repair the sessions around them. More make both stale, and the next read re-sorts.
+        if (sorted && events.length && fields[0] < events[events.length - 1].t) {
+          if (late < 32) { late += 1; insertLate(event); continue; }
+          sorted = false;
+        }
         if (!sorted) { spansStale = true; appList = null; }
         else {
           if (!spansStale) markStart(events, events.length, event);
           if (appList !== null && (kind === "app" || kind === "start")) appList.push(event);
         }
         events.push(event);
-        version += 1;
+      }
+    }
+
+    // The first index in list whose key is greater than key: binary search on a sorted list.
+    function after(list, key, keyOf) {
+      let low = 0;
+      let high = list.length;
+      while (low < high) {
+        const mid = (low + high) >> 1;
+        if (keyOf(list[mid]) <= key) low = mid + 1; else high = mid;
+      }
+      return low;
+    }
+    const stampOf = (event) => event.t;
+
+    function insertLate(event) {
+      events.splice(after(events, event.t, stampOf), 0, event);
+      if (appList !== null && (event.kind === "app" || event.kind === "start")) appList.splice(after(appList, event.t, stampOf), 0, event);
+      if (spansStale) return;
+      const next = after(starts, event.abs, (value) => value); // the first session that starts after the line
+      if (event.kind !== "start") {
+        // Only the session closed by that start can end later: at the new line, if it is the latest before it.
+        if (next > 0 && next < starts.length) ends[next - 1] = Math.max(ends[next - 1], event.abs);
+        return;
+      }
+      starts.splice(next, 0, event.abs);
+      if (starts.length > 1) ends.splice(next, 0, 0); // one more session to close; both ends around it are set below
+      for (const index of [next - 1, next]) {
+        if (index < 0 || index + 1 >= starts.length) continue;
+        // As markStart: the last event strictly before the next start, never before its own start.
+        let back = after(events, starts[index + 1], (item) => item.abs) - 1;
+        while (back >= 0 && events[back].abs >= starts[index + 1]) back -= 1;
+        ends[index] = Math.max(starts[index], back >= 0 ? events[back].abs : -Infinity);
       }
     }
 
