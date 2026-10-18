@@ -613,8 +613,9 @@
     mask-image: linear-gradient(to bottom, transparent 0, black 26px, black calc(100% - 26px), transparent 100%);
   }
 
-  .list::-webkit-scrollbar { width: 4px; }
-  .list::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+  /* One scrollbar for every scroll area: the list, Insights and the "i" panel (the Activity panel below). */
+  .list::-webkit-scrollbar, #insights::-webkit-scrollbar, .about::-webkit-scrollbar { width: 4px; }
+  .list::-webkit-scrollbar-thumb, #insights::-webkit-scrollbar-thumb, .about::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
 
   .item {
     display: grid;

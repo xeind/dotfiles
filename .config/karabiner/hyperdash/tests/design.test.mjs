@@ -36,7 +36,7 @@ const EXCEPTIONS = {
   ".appchip .icon img | border-radius | 3.5px": "app icon at 14 px: a quarter of the size",
   ".appchip .icon.mono | border-radius | 3.5px": "letter placeholder for a 14 px app icon: a quarter of the size",
   ":root | --mono-monogram | 8px": "letter inside a 14 px icon placeholder: the 18 px slot's 10 px letter scaled by 14 / 18 = 7.8",
-  ".list::-webkit-scrollbar-thumb | border-radius | 4px": "4 px scrollbar: fully round",
+  ".list::-webkit-scrollbar-thumb, #insights::-webkit-scrollbar-thumb, .about::-webkit-scrollbar-thumb | border-radius | 4px": "4 px scrollbar: fully round",
   ".panel-body::-webkit-scrollbar-thumb | border-radius | 4px": "4 px scrollbar: fully round",
 };
 
