@@ -785,6 +785,11 @@ local function create()
     elseif message.body.action == "resize" then
       height = message.body.height
       if open then place() end
+      -- A growing card waits for the taller window before it moves (DESIGN.md §8).
+      local id = message.body.transition
+      if type(id) == "number" and id >= 1 and id < 2 ^ 31 and id % 1 == 0 then
+        send(string.format("window.hyperdash.hostReady(%d)", id))
+      end
     end
   end)
 

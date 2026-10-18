@@ -1100,6 +1100,31 @@ do
   check("asked during a hanging first load: alert after the timeout", #env.alerts == 1, #env.alerts)
 end
 
+-- Page-size motion (DESIGN.md §8): a resize that carries a transition id is
+-- answered with hostReady(id) after the window has its new height.
+do
+  local home = baseHome("motion")
+  local env = startPanel(home)
+  toggle(env)
+  local from = #env.page.calls
+  env.controller.callback({ body = { action = "resize", height = 720, transition = 7 } })
+  local frameAtAnswer = env.webview.frameSet and env.webview.frameSet.h
+  env.flush()
+  local call = env.page.calls[from + 1]
+  check("motion: the window takes the envelope", frameAtAnswer == 720, frameAtAnswer)
+  check("motion: hostReady answers with the same id", call and call.method == "hostReady" and call.args[1] == 7, methods(env, from + 1))
+  check("motion: one answer", #env.page.calls == from + 1, methods(env, from + 1))
+
+  -- A plain resize, or an id that is not a whole number, gets no answer.
+  for label, id in pairs({ none = nil, text = "7", fraction = 7.5, negative = -1, huge = 2 ^ 40, nan = 0 / 0 }) do
+    local before = #env.page.calls
+    env.controller.callback({ body = { action = "resize", height = 500, transition = id } })
+    env.flush()
+    check("motion: no answer for transition " .. label, #env.page.calls == before, methods(env, before + 1))
+    check("motion: the window still resizes for " .. label, env.webview.frameSet.h == 500, env.webview.frameSet.h)
+  end
+end
+
 os.execute("rm -rf " .. SCRATCH)
 report[#report + 1] = string.format("passed=%d failed=%d", passed, failed)
 return table.concat(report, "\n")

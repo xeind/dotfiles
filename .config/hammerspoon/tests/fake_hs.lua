@@ -137,7 +137,7 @@ function sandbox.new(options)
   -- is a ReferenceError or TypeError in the page, which evaluateJavaScript
   -- reports as WKErrorDomain code 4.
   local PAGE_METHODS = { reset = true, append = true, setBindings = true, setApps = true,
-                         setInsights = true, setHealth = true, open = true, tick = true, setTheme = true }
+                         setInsights = true, setHealth = true, open = true, tick = true, setTheme = true, hostReady = true }
   local JS_ERROR = { code = 4, domain = "WKErrorDomain" }
   -- Returns the page's answer and, for a script error, the error table.
   function env.respond(code)
@@ -220,6 +220,8 @@ function sandbox.new(options)
     elseif method == "open" then
       page.opens = (page.opens or 0) + 1
       return { height = page.openHeight or 600 }
+    elseif method == "hostReady" then
+      return { ok = true }
     end
     return nil -- setIcons and anything else: no answer value
   end
