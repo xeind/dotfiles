@@ -22,7 +22,7 @@ dated on or after the tail start. The context cut is the last `start` line
 dated before the tail start that is later than every valid line before it.
 From the tail start on, sessions and app attribution match the whole log.
 
-**Manifest, version 1.** Two lines of JSON. The header holds `version`,
+**Manifest, version 2.** Three lines of JSON. The header holds `version`,
 `created`, `tailStart`, and the `usage` and `context` cuts (`context` is
 absent when there is no usable cut). Each cut holds `dev`, `ino`, `offset`
 and `lastLine`, the line that ends at the offset. The summary holds
@@ -30,15 +30,41 @@ and `lastLine`, the line that ends at the offset. The summary holds
 `lastUsed` per combo, and `days`: date, then combo, then pairs of
 half-hour bin and count. The host decodes only the header; the page gets
 the summary line as it is. Decoding a 2.5 MB summary with `hs.json.decode`
-held Hammerspoon for about 75 s.
+held Hammerspoon for about 75 s. Version 1 had only the first two lines;
+readers still accept it, without the day index.
+
+**Day index.** The third line, `{"days": {date: [usageFrom, usageTo,
+contextFrom, contextTo]}}`, has an entry for every day from the first
+archived day to the day before the tail start. The offsets are absolute and
+start or end whole lines:
+
+- Usage: from the first to the end of the last archived line dated that
+  day, in file order; `0, 0` when there is none. Lines of other days inside
+  the span are skipped by the page.
+- Context, with the lines in time order: from the last `start` before the
+  day (or the first line), which sets the session and the app at 00:00, to
+  the first line after the day and any line in its millisecond. A session's
+  end is the last line before the next `start`, so only a line after the day
+  shows whether the day's last session ran past midnight. The span covers
+  each of those lines wherever it sits in the file. `contextTo` is -1 when
+  no line follows the day yet: the reader reads to the last complete line.
+
+The index costs nothing to build: compaction already reads every line. A
+search of the file by timestamp would not do: neither log is in time order
+(the fixture holds a July press written in October and an August context
+line written weeks late), and the `start` that opens a day's session can lie
+weeks back, which a search would find only by scanning backwards inside
+Hammerspoon. The host reads one day's entry from the line as text and never
+decodes it.
 
 **Who and when.** `hyperdash-insights --compact` builds the manifest from
 the logs, which it only reads, using the same line parser as the insights
 run. It writes the file under a temporary name, flushes it, then renames
 it over the old one. hyperdash.lua runs it after the panel closes, when no
 sync or insights run is in flight, once a day at most, and only when the
-manifest is missing, its tail start has passed, or its cut no longer fits
-the log. Afterwards both streams reset while the panel is closed.
+manifest is missing, has no day index (version 1), its tail start has
+passed, or its cut no longer fits the log. Afterwards both streams reset
+while the panel is closed.
 
 ## Readers
 
@@ -53,10 +79,20 @@ on it.
 - **Page:** the usage reset carries `archive` (the summary) and the tail
   from the cut; `offset` stays absolute, so appends work as before. Totals,
   bins, last use, first and last press and rejected lines come out the
-  same as from the whole log. A day before the tail start shows its chart
-  from the archived counts. Its command list, sequences, app split and
-  coverage strip are not kept. The archived bytes stay in the logs, so a
-  later version can read one such day on demand without a format change.
+  same as from the whole log. A day before the tail start first shows its
+  chart from the archived counts, keyed `ARCHIVED · COUNTS ONLY`.
+- **Archived day:** opening such a day posts `{ action: "day", date, id }`.
+  The host reads that day's spans from the index of the manifest the page's
+  usage generation came from, after the cut checks above on the usage log,
+  and on the context log when the page holds the context from its cut (a
+  page that read the context whole gets only the usage lines). It answers
+  `hyperdash.loadDay({ id, date, usage, context })` through the call queue,
+  at most 4 MB. The page builds the day from those lines, its own raw lines
+  of that day and that context, which gives the command list, sequences,
+  app chips and coverage strip of the whole-log view, at the same fixed
+  height. It ignores an answer whose `id` is not the open request, holds one
+  day at a time, and drops it on `open()`, on a reset of either log and on
+  its own close.
 - **Insights tool:** `--retention <path>` reads both tails. `unbound` and
   `recordingSince` take the archive's per-combo day counts and first press.
 
@@ -69,7 +105,13 @@ on it.
 | Reader during compaction | It sees the old or the new manifest; both give the same numbers. |
 | Log replaced, truncated or rewritten | The cut fails its checks; the log is read whole; compaction is due. |
 | Page refuses the summary | The host resends the whole log and does not offer that manifest again. |
+| Archived day: no index (version 1), a log changed under its cut, a span off a line boundary or past the end, a read error, over 4 MB | The host answers `usage: null`; the day stays counts only until the next open or reset. |
+| Archived day: no answer in 5 s, or lines that do not add up to the archived counts | The page keeps the day counts only until the next open or reset; a late answer is ignored. |
 
 Tests: `tests/retention.test.mjs` (page) and `RetentionTests.swift` (tool)
-share `tests/retention_cases/`. The host and core tests in
-`hammerspoon/tests` cover cuts, scheduling and fallback.
+share `tests/retention_cases/`. The page test reads every archived day of
+the fixture back through its index and compares it with the whole-log day
+for each highlight and app filter; `tests/archive.test.mjs` drives the
+request, the answer and each fallback in the real page. The host and core
+tests in `hammerspoon/tests` cover cuts, scheduling, fallback and the day
+read, on the same fixture.

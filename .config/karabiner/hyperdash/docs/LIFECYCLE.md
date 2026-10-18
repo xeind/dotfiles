@@ -24,7 +24,8 @@ fixed.
   starts a new generation and a full resend. See `RECOVERY.md`.
 - The page keeps every line after the retention cut in memory, with
   aggregates by month, combo and half hour, and per-day lists for the day
-  view. Before the cut it holds the manifest's counts (`RETENTION.md`).
+  view. Before the cut it holds the manifest's counts (`RETENTION.md`), and
+  the lines of one archived day at a time, read back on demand.
 - `hyperdash-insights` reads each log from its retention cut on every run, or
   in full without a manifest. A run starts when `insights.json` is missing or
   an hour old, or, with recording on, when the context log is newer and the
