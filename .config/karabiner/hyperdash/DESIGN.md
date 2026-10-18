@@ -414,6 +414,10 @@ Layer.
     once and the card retargets, so fast typing never waits.
   - The sheet curve moves quickly off the mark and settles slowly; at 160 ms
     on a strong ease-out a 56 px change finished before it could be seen.
+  - Measured in Hammerspoon's own WebKit (a throwaway page with the probe
+    fixture, 2026-10-18): a change moves on 13 frames, median frame 16–17 ms,
+    longest 21 ms; growth starts one frame after `hostReady`; an `i` then
+    `Esc` 90 ms later turns around and settles with no animation left.
   - Content is laid out at the new size at once and never scales; the card
     clips it at its moving bottom edge. Width, type, corners and shadow do
     not change.
