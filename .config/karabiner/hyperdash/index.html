@@ -372,6 +372,8 @@
       inset 0 1px 0 var(--edge-soft),
       0 18px 40px -12px var(--shadow);
   }
+  /* While the card moves between page heights it clips the new page's content at its bottom edge. */
+  .card.resizing { overflow: hidden; }
 
   /* Header */
 
@@ -2200,6 +2202,72 @@ function post(message) {
   window.webkit?.messageHandlers?.dashboard?.postMessage(message);
 }
 
+// Page-size motion (DESIGN.md §8), the panel's one animation. A page change moves the card's bottom edge
+// from its current height to the new page's height. Content is laid out at the new size at once, so the
+// page is usable from the first frame. The window must hold the card all the way: before growing, the page
+// asks the host for the taller window and waits for hostReady(id); after shrinking, it reports the smaller
+// height. The latest page wins: a new page change starts from the card's current height.
+const MOTION = { duration: 180, easing: "cubic-bezier(0.455, 0.03, 0.515, 0.955)", hostWait: 100 };
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+let shownPage = null; // "overview", "layer", "insights", "activity" or "problem"
+let windowHeight = 0; // the window height last given to the host
+let motion = null; // { id, animation, timer, envelope, waiting } while the card moves
+let motionId = 0;
+
+// The settled window height: the card at its page's height, plus the shadow margin above and below. The
+// footer is the card's last box; its offset does not depend on the card's own height, so this holds in motion.
+function stableHeight() {
+  const card = $("card");
+  const footer = $("footer");
+  const below = parseFloat(getComputedStyle(card).paddingBottom) + 2 * card.clientTop;
+  return footer.offsetTop + footer.offsetHeight + below + 2 * parseFloat(getComputedStyle(document.body).paddingTop);
+}
+
+// The height the window needs now, for every report to the host: the motion's envelope while the card moves.
+function hostHeight() {
+  windowHeight = motion ? motion.envelope : stableHeight();
+  return windowHeight;
+}
+
+// Stops the motion; the card takes its stable height. `report` tells the host when the window can shrink.
+function settleMotion(report = true) {
+  if (!motion) return;
+  clearTimeout(motion.timer);
+  motion.animation.cancel();
+  motion = null;
+  $("card").classList.remove("resizing");
+  if (report && windowHeight !== stableHeight()) post({ action: "resize", height: hostHeight() });
+}
+
+// Moves the card from `from` px to its stable height. The window never shrinks while the card moves.
+function moveCard(from) {
+  const card = $("card");
+  settleMotion(false);
+  const margin = 2 * parseFloat(getComputedStyle(document.body).paddingTop);
+  const to = stableHeight() - margin;
+  if (from === to) return settleMotion();
+  const id = ++motionId;
+  const animation = card.animate([{ height: `${from}px` }, { height: `${to}px` }], { duration: MOTION.duration, easing: MOTION.easing });
+  animation.onfinish = () => { if (motion?.id === id) settleMotion(); };
+  card.classList.add("resizing");
+  // Growth past the window waits for the host to resize it. The wait is bounded: no answer settles at once.
+  const waiting = Math.max(from, to) + margin > windowHeight;
+  motion = { id, animation, envelope: Math.max(windowHeight, from + margin, to + margin), waiting, timer: 0 };
+  if (waiting) animation.pause();
+  motion.timer = setTimeout(settleMotion, (waiting ? 0 : MOTION.duration) + MOTION.hostWait);
+}
+
+// The host answers a resize that carried `transition`: the window now holds the envelope.
+function resumeMotion(id) {
+  if (motion?.id !== id || !motion.waiting) return;
+  motion.waiting = false;
+  clearTimeout(motion.timer);
+  motion.animation.play();
+  motion.timer = setTimeout(settleMotion, MOTION.duration + MOTION.hostWait);
+}
+
+reducedMotion.addEventListener("change", () => settleMotion());
+
 function element(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -2291,6 +2359,7 @@ function render(announce = true) {
   const am = !broken && page === "activity" ? activityModel() : null;
   const activity = am ? am.a : null;
   const refocus = keyboardFocused(document.activeElement) ? rebuiltControl(document.activeElement) : null;
+  const from = $("card").getBoundingClientRect().height;
 
   // Swap the header icon only when the mode changes, so a focused Back button keeps focus.
   const mode = inLayer || page ? "back" : "home";
@@ -2386,7 +2455,14 @@ function render(announce = true) {
   renderFooter();
 
   refreshFades();
-  if (announce) post({ action: "resize", height: document.body.scrollHeight });
+  // Only a page change the user made moves the card; data updates, a theme and open() change it at once.
+  const shown = broken ? "problem" : page || (inLayer ? "layer" : "overview");
+  if (shown !== shownPage) {
+    if (announce && shownPage !== null && !reducedMotion.matches) moveCard(from);
+    else settleMotion();
+    shownPage = shown;
+  }
+  if (announce) post({ action: "resize", height: hostHeight(), ...(motion?.waiting ? { transition: motion.id } : {}) });
 }
 
 // The status line and the "i" panel: what the counts mean and how fresh the data is.
@@ -3363,7 +3439,7 @@ function reconcile(now) {
 function finish(extra) {
   render(false);
   renderNow = null;
-  return { ...extra, height: document.body.scrollHeight };
+  return { ...extra, height: hostHeight() };
 }
 
 const hyperdash = {
@@ -3441,11 +3517,12 @@ const hyperdash = {
     restoreFocus(refocus);
     refreshFades();
     renderNow = null;
-    return { ok: true, height: document.body.scrollHeight };
+    return { ok: true, height: hostHeight() };
   },
 
   // Each panel open, after any pending reset or append: the only call that resets navigation.
   open(data) {
+    settleMotion(false);
     const now = begin(data);
     store.tick(now);
     reconcile(now);
@@ -3466,6 +3543,12 @@ const hyperdash = {
     document.activeElement?.blur();
     $("list").scrollTop = 0;
     return finish();
+  },
+
+  // The window now holds a growing card: see moveCard().
+  hostReady(id) {
+    resumeMotion(id);
+    return { ok: true };
   },
 
   // Date change, wake and open: promotes future-dated events whose time has come and refreshes the month list.
