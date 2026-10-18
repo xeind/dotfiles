@@ -114,6 +114,63 @@ test("retention: an archived day with a raw event counts both", () => {
   assert.deepEqual(chart(cut), chart(full));
 });
 
+// The manifest's third line (version 2): per archived day, [usageFrom, usageTo, contextFrom, contextTo].
+const index = JSON.parse(fixture("retention.json").toString("utf8").trim().split("\n")[2]).days;
+
+// What the host reads for one day: the two spans, and to the last complete line when contextTo is -1.
+function readDay(date) {
+  const [u0, u1, c0, c1] = index[date];
+  const end = c1 === -1 ? contextLog.lastIndexOf(10) + 1 : c1;
+  return { usageText: usage.subarray(u0, u1).toString("utf8"), contextText: contextLog.subarray(c0, end).toString("utf8") };
+}
+const APPS = [null, "com.mitchellh.ghostty", "com.google.Chrome", "com.apple.finder"];
+
+test("retention: every archived day read back through the index equals the whole-log day", () => {
+  const dates = [];
+  for (let date = full.store.dayList()[0]; date < tailDate; date = M.addDays(date, 1)) dates.push(date);
+  assert.deepEqual(Object.keys(index).sort(), dates, "the index has every archived day");
+  for (const date of dates) {
+    const loaded = M.loadArchivedDay({ store: cut.store, context: cut.context, date, ...readDay(date), now: NOW });
+    assert.ok(loaded, date);
+    for (const highlight of [null, "w", "o"]) {
+      for (const app of APPS) {
+        const build = (usage, context) => plain(M.buildDay({ usage, context, date, now: NOW, appFilter: app, highlight, classify, capacity: CAPACITY }));
+        assert.deepEqual(build(loaded.usage, loaded.context), build(full.store, full.context), `${date} ${highlight} ${app}`);
+      }
+    }
+  }
+  // The days the comparison must cover, each with something to compare.
+  const day = (date) => plain(M.buildDay({ usage: full.store, context: full.context, date, now: NOW, appFilter: null, highlight: null, classify, capacity: CAPACITY }));
+  assert.ok(day("2026-07-20").events.length > 0 && dates[0] === "2026-07-20", "the first day of the log");
+  assert.ok(day("2026-08-25").events.length > 0 && index["2026-08-25"][1] === manifest.usage.offset, "the day at the cut");
+  assert.ok(day("2026-08-13").events.length === 0 && day("2026-08-13").segments.some((s) => s.state === "recorded"), "a day with no presses");
+  assert.ok(day("2026-07-21").segments[0].state !== "unknown" && index["2026-07-21"][2] === 0, "a day that starts inside the session of the day before");
+  assert.ok(day("2026-08-27").segments.some((s) => s.state === "unknown"), "a day whose session ends before a later start");
+  // The recorder stops at 23:00 and starts again the next morning: the last hour is unknown, which only the
+  // lines after the day can show.
+  assert.equal(day("2026-08-18").segments.at(-1).state, "unknown", "a day whose last session ends before midnight");
+  assert.ok(index["2026-08-28"][2] === manifest.context.offset && index["2026-08-26"][0] === 0 && day("2026-08-26").events.length > 0, "days whose presses sit after the cut");
+  assert.ok(day("2026-07-25").apps.length > 0 && day("2026-07-25").sequences.length >= 0);
+});
+
+test("retention: a day read back keeps the raw line of the tail and uses the page's own whole context", () => {
+  // 2026-07-25 has archived lines and one line written in October, after the cut.
+  const loaded = M.loadArchivedDay({ store: cut.store, context: cut.context, date: "2026-07-25", ...readDay("2026-07-25"), now: NOW });
+  assert.equal(loaded.usage.dayEvents("2026-07-25").length, full.store.dayEvents("2026-07-25").length);
+  // With contextText null the day takes the context the page holds; here the whole log.
+  const own = M.loadArchivedDay({ store: cut.store, context: full.context, date: "2026-07-25", usageText: readDay("2026-07-25").usageText, contextText: null, now: NOW });
+  const build = (s) => plain(M.buildDay({ usage: s.usage, context: s.context, date: "2026-07-25", now: NOW, appFilter: null, highlight: null, classify, capacity: CAPACITY }));
+  assert.deepEqual(build(own), build({ usage: full.store, context: full.context }));
+});
+
+test("retention: lines that do not add up to the archived counts are refused", () => {
+  const { usageText, contextText } = readDay("2026-08-24");
+  const short = usageText.slice(usageText.indexOf("\n") + 1);
+  assert.equal(M.loadArchivedDay({ store: cut.store, context: cut.context, date: "2026-08-24", usageText: short, contextText, now: NOW }), null, "one line missing");
+  assert.equal(M.loadArchivedDay({ store: cut.store, context: cut.context, date: "2026-08-24", usageText: readDay("2026-08-23").usageText, contextText, now: NOW }), null, "another day's lines");
+  assert.equal(M.loadArchivedDay({ store: cut.store, context: cut.context, date: "2026-08-24", usageText: usageText + usageText, contextText, now: NOW }), null, "lines twice");
+});
+
 test("retention: the about lines and a later tick agree", () => {
   const about = (s) => plain(M.aboutLines({ health: null, insights: null, summary: s.store.summary(), now: NOW, statusText: "" }));
   assert.deepEqual(about(cut), about(full));

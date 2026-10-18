@@ -432,10 +432,13 @@ Layer.
   - No other motion: no CSS transitions or keyframes, no smooth scrolling,
     no `requestAnimationFrame`.
 - Only `open()` resets navigation; `tick`, `append` and data updates never do.
-- A day before the retention tail (`docs/RETENTION.md`) has counts only. Its
-  chart and legend are exact; the strip key reads `ARCHIVED · COUNTS ONLY`,
-  and the app bar and panel say the detail is archived, at a normal day's
-  height.
+- A day before the retention tail (`docs/RETENTION.md`) opens with counts
+  only. Its chart and legend are exact; the strip key reads
+  `ARCHIVED · COUNTS ONLY`, and the app bar and panel say the detail is
+  archived, at a normal day's height. The page asks the host for the day's
+  lines; when they come it shows like any other day, at the same height.
+  If they do not come within 5 s, or do not add up to the counts, the day
+  stays counts only until the next open.
 - A rebuilt control keeps keyboard focus.
 - A button focused from the keyboard keeps Enter and Space; the footer names
   what Enter and the arrows do for the focused control.

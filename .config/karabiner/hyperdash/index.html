@@ -1600,6 +1600,7 @@ var HyperdashModel = (() => {
       dayEvents,
       dayList: () => [...new Set([...Object.keys(days), ...Object.keys(archivedDays)])].sort(),
       isArchived,
+      archivedBinsOf: (date) => archivedDays[date] || EMPTY,
       dayBinsOf,
       lastUsedOf: (id) => lastUsed[id] || null,
       layerList: () => Object.keys(layerSet),
@@ -2097,6 +2098,29 @@ var HyperdashModel = (() => {
     };
   }
 
+  // An archived day read back from the logs (docs/RETENTION.md, day index). `usageText` holds the day's archived
+  // lines, among which lines of other days are skipped; `contextText` the context lines that set its sessions and
+  // apps, or null when the page's own context holds them. Returns the usage and context buildDay takes, or null
+  // when the lines do not add up to the archived counts.
+  function loadArchivedDay({ store, context, date, usageText, contextText, now }) {
+    const read = createStore();
+    read.reset(usageText, now);
+    const archived = store.archivedBinsOf(date);
+    const bins = read.dayBinsOf(date);
+    const same = (a, b) => Object.keys(a).every((id) => b[id] && a[id].every((n, bin) => n === b[id][bin]));
+    if (!same(bins, archived) || !same(archived, bins)) return null;
+    // The raw lines of the day the store holds follow the archived ones in the file, so they come later within a
+    // second. They are merged on each read: an append may add one.
+    const archivedEvents = read.dayEvents(date);
+    const dayEvents = (d) => (d === date ? [...archivedEvents, ...store.dayEvents(date)].sort((a, b) => a.sec - b.sec) : []);
+    let dayContext = context;
+    if (contextText !== null) {
+      dayContext = createContextStore();
+      dayContext.reset(contextText);
+    }
+    return { usage: { dayEvents }, context: dayContext };
+  }
+
   // Data state
 
   function formatWhen(stamp, now) {
@@ -2224,7 +2248,7 @@ var HyperdashModel = (() => {
   return {
     THEMES, normalizeTheme, nextTheme, fadeState,
     GROUPS, GROUP_LABELS, CATEGORIES, CATEGORY_LABELS, CATEGORY_GROUP, groupOf, groupOfLayer, classifier,
-    isValidDate, dateOf, addDays, dayLabel, windowLabel, evidenceFacts, clampDay, INSIGHT_ICONS, insightIcon, moreShortcuts, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, clock,
+    isValidDate, dateOf, addDays, dayLabel, windowLabel, evidenceFacts, clampDay, INSIGHT_ICONS, insightIcon, moreShortcuts, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, loadArchivedDay, clock,
     localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
     monthOf, previousMonth, isMonthComplete, compareMonths,
     sumCounts, buildRows, buildActivityFromCombos, validateArchive, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, compactCount, coverageNote, describeBin,
@@ -3073,12 +3097,44 @@ function firstDay() {
   return days.length ? days[0] : today();
 }
 
+// A day before the retention tail start (docs/RETENTION.md) shows its archived counts until the host has read its
+// lines back from the logs; then it shows like any other day. One day is held at a time. open() and every reset
+// drop it; a failed or unanswered read leaves the day counts only until the next open.
+const DAY_TIMEOUT = 5000; // ms
+let archivedDay = null; // { date, usage, context, version } as loadDay() built it
+let dayRequest = null; // { id, date, timer } while the host reads
+let dayRequestId = 0;
+let dayRefused = new Set(); // dates whose read failed since the last open or reset
+let archivedDayVersion = 0;
+
+function requestArchivedDay(date) {
+  if (dayRequest?.date === date || dayRefused.has(date)) return;
+  if (dayRequest) clearTimeout(dayRequest.timer);
+  const id = ++dayRequestId;
+  const timer = setTimeout(() => {
+    if (dayRequest?.id !== id) return;
+    dayRequest = null;
+    dayRefused.add(date);
+    render();
+  }, DAY_TIMEOUT);
+  dayRequest = { id, date, timer };
+  post({ action: "day", date, id });
+}
+
+function dropArchivedDay() {
+  if (dayRequest) clearTimeout(dayRequest.timer);
+  archivedDay = dayRequest = null;
+  dayRefused = new Set();
+}
+
 function activityModel() {
   const M = HyperdashModel;
   const capacity = Math.floor(CHART.plot / CHART.step);
   if (state.activityMode === "day") {
+    const loaded = archivedDay?.date === state.day ? archivedDay : null;
+    if (!loaded && store.isArchived(state.day)) requestArchivedDay(state.day);
     const day = M.buildDay({
-      usage: store, context: contextOn() ? context : null, date: state.day, now: currentNow(),
+      usage: loaded ? loaded.usage : store, context: contextOn() ? (loaded ? loaded.context : context) : null, date: state.day, now: currentNow(),
       appFilter: contextOn() ? state.appFilter : null, highlight: state.highlight, classify, capacity,
     });
     return { mode: "day", day, a: day.activity };
@@ -3394,7 +3450,8 @@ function renderPanel(m) {
     return;
   }
   const signature = [state.day, state.interval, state.focusSec, state.appFilter, day.events.length, day.events.length ? day.events[day.events.length - 1].sec : "",
-    day.sequences.map((s) => `${s.from}>${s.to}${s.count}`).join(","), withApp, context.version(), appNamesVersion, iconVersion].join("|");
+    day.sequences.map((s) => `${s.from}>${s.to}${s.count}`).join(","), withApp, context.version(), archivedDay?.date === state.day ? archivedDay.version : 0,
+    appNamesVersion, iconVersion].join("|");
   if (signature === panelSignature) return;
   panelSignature = signature;
   const scrollTop = root.querySelector(".cmds")?.scrollTop ?? 0;
@@ -3643,6 +3700,7 @@ const hyperdash = {
   // the retention cut when `archive` carries the summary of the bytes before it).
   reset(data) {
     const now = begin(data);
+    dropArchivedDay();
     if (data?.stream === "context") {
       const result = contextSession.reset(data, now);
       reconcile(now);
@@ -3722,6 +3780,7 @@ const hyperdash = {
     settleMotion(false);
     const now = begin(data);
     store.tick(now);
+    dropArchivedDay();
     reconcile(now);
     Object.assign(state, {
       layer: null, selected: null, page: null, highlight: null, aboutOpen: false, monthId: months[months.length - 1],
@@ -3741,6 +3800,25 @@ const hyperdash = {
     document.activeElement?.blur();
     $("list").scrollTop = 0;
     return finish();
+  },
+
+  // The lines of the archived day the page asked for: { id, date, usage, context }. usage null: the host could not
+  // read them, and the day stays counts only. context null: the page's own context covers the day. An answer to
+  // any other request is ignored.
+  loadDay(data) {
+    const now = begin(data);
+    if (!dayRequest || data?.id !== dayRequest.id || data.date !== dayRequest.date) {
+      renderNow = null;
+      return { ok: false, reason: "stale" };
+    }
+    const { date, timer } = dayRequest;
+    clearTimeout(timer);
+    dayRequest = null;
+    const readable = typeof data.usage === "string" && (data.context === null || typeof data.context === "string") && store.isArchived(date);
+    const loaded = readable ? HyperdashModel.loadArchivedDay({ store, context, date, usageText: data.usage, contextText: data.context, now }) : null;
+    if (loaded) archivedDay = { date, ...loaded, version: ++archivedDayVersion };
+    else dayRefused.add(date);
+    return finish(loaded ? { ok: true } : { ok: false, reason: "day" });
   },
 
   // The window now holds a growing card: see moveCard().
@@ -3769,7 +3847,7 @@ function setIcons(data) {
 
 function run(action) {
   switch (action.type) {
-    case "close": post({ action: "close" }); break;
+    case "close": dropArchivedDay(); post({ action: "close" }); break;
     case "closeAbout": toggleAbout(false); break;
     case "toggleAbout": toggleAbout(); break;
     case "cycleTheme": cycleTheme(); break;
