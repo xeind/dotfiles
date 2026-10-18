@@ -1,6 +1,6 @@
 // Run with: node --test karabiner/hyperdash/tests/design.test.mjs
 // Holds the page's CSS to the scales in DESIGN.md: type sizes, weights, tracking, leading, radii and spacing, colour
-// only through tokens, and no motion. A value off the scale needs an EXCEPTIONS line with the arithmetic behind it.
+// only through tokens, and no motion but the page change. A value off the scale needs an EXCEPTIONS line with the arithmetic behind it.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -148,12 +148,16 @@ test("nothing moves: no transitions or animations", () => {
   assert.doesNotMatch(css, /scroll-behavior\s*:\s*smooth/);
 });
 
-// DESIGN.md §8: the one exception, the card's height on a page change. motion.test.mjs holds its behaviour.
-test("the one motion is the card's height, 220 ms on the iOS sheet curve, from script", () => {
+// DESIGN.md §8: the one exception, a page change: the card's height, and the new page's content fading in.
+// motion.test.mjs holds its behaviour.
+test("the one motion is the page change, on the iOS sheet curve, from script", () => {
   const script = html.slice(html.indexOf("</style>"));
-  assert.deepEqual(script.match(/\.animate\(/g), [".animate("], "one Web Animations call");
+  assert.deepEqual(script.match(/\.animate\(/g), [".animate(", ".animate("], "two Web Animations calls");
   assert.match(script, /card\.animate\(\[\{ height: `\$\{from\}px` \}, \{ height: `\$\{to\}px` \}\], \{ duration: MOTION\.duration, easing: MOTION\.easing \}\)/);
-  assert.match(script, /const MOTION = \{ duration: 220, easing: "cubic-bezier\(0\.32, 0\.72, 0, 1\)", hostWait: 100 \};/);
+  assert.match(script, /node\.animate\(frames, \{ duration: MOTION\.fade, easing: MOTION\.easing \}\)/);
+  assert.match(script, /\? \[\{ opacity: MOTION\.from \}, \{ opacity: 1 \}\]\n\s+: \[\{ opacity: MOTION\.from, transform: `translateY\(\$\{MOTION\.rise\}px\)` \}, \{ opacity: 1, transform: "none" \}\];/,
+    "the fade: opacity, and a rise only without reduced motion");
+  assert.match(script, /const MOTION = \{ duration: 220, easing: "cubic-bezier\(0\.32, 0\.72, 0, 1\)", hostWait: 100, fade: 150, from: 0\.4, rise: 2 \};/);
   assert.doesNotMatch(script, /requestAnimationFrame|behavior: "smooth"|\.style\.transition/);
 });
 

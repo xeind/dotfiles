@@ -19,7 +19,7 @@ before these rules (v1, 2026-10-17) and where each one went.
 | A rule for every state of every control | `tests/states.test.mjs` |
 | Keyboard and pointer do the same thing; footer hints | `tests/interaction.test.mjs` |
 | One height per page, fades, tooltips | `tests/height.test.mjs` with `height_probe.js` |
-| The page-size motion and its host handshake, in WebKit | `tests/motion.test.mjs`; the host side in `hammerspoon/tests/hyperdash_host_test.lua` |
+| The page-change motion and its host handshake, in WebKit | `tests/motion.test.mjs`; the host side in `hammerspoon/tests/hyperdash_host_test.lua` |
 | Token parity across themes | `tests/model.test.mjs` ("every theme defines every colour token") |
 | What each insight claims, what fails and recovers, how the data ages | [`docs/`](docs/): `CLAIMS.md`, `RECOVERY.md`, `LIFECYCLE.md` |
 
@@ -27,8 +27,8 @@ The site's design system is the parent. The panel departs from it in two
 places, on purpose: rounded corners (a floating panel, which the user asked
 for) and a soft shadow on the card and the about overlay (they float over
 other windows). Everything else follows the site: Geist and Geist Mono with
-one job each, tokens only, no motion but the one the user asked for: the
-card's height on a page change (§8).
+one job each, tokens only, no motion but the one the user asked for: a page
+change moves the card's height and fades the new content in (§8).
 
 ## 1. The look
 
@@ -36,7 +36,8 @@ A dark rounded card, 368 px wide, floating over whatever is on screen. One
 large numeral, a keyboard drawn as a heatmap, and dense rows of mono labels
 and keycap chips. Quantity reads as brightness, groups as hue. Within a page
 nothing moves and nothing changes size: the panel is a fixed instrument, not
-a page. Between pages only the card's bottom edge moves (§8).
+a page. Between pages the card's bottom edge moves and the content under the
+header fades in (§8).
 
 ## 2. Themes
 
@@ -408,7 +409,10 @@ Layer.
   changes page (Overview, a layer, Activity, Insights), by key or click, the
   card's height moves from where it is to the new page's height: 220 ms on
   the iOS sheet curve `cubic-bezier(0.32, 0.72, 0, 1)`, one Web Animations
-  call in `moveCard()`. The rules for it:
+  call in `moveCard()`. With it the new page's content fades in: every
+  shown block under the header, the footer included, from opacity 0.4 and
+  2 px low (`--space-2xs`) to rest, 150 ms on the same curve, one Web
+  Animations call in `fadeContent()`. The rules for it:
   - Keys animate too, by the user's choice: the panel is driven by keys, and
     with motion on clicks only it was never seen. A key mid-motion acts at
     once and the card retargets, so fast typing never waits.
@@ -418,12 +422,25 @@ Layer.
     fixture, 2026-10-18): a change moves on 13 frames, median frame 16–17 ms,
     longest 21 ms; growth starts one frame after `hostReady`; an `i` then
     `Esc` 90 ms later turns around and settles with no animation left.
+    With the fade (same check): median frame 17 ms, longest 22 ms, on the
+    first frame after a key, as before; opacity is above 0.84 on the third
+    frame and the content is at rest by the tenth.
   - Content is laid out at the new size at once and never scales; the card
     clips it at its moving bottom edge. Width, type, corners and shadow do
     not change.
+  - The fade starts at 0.4, not 0, so the new page reads from its first
+    frame. It covers the swap, which was a hard cut; there is no crossfade,
+    since the old page is gone on the first frame. No blur: nothing overlaps
+    for it to bridge, and it slows reading. No stagger: the panel is one
+    instrument, and blocks arriving in turn would read as parts assembling.
+    The header (title, date box, close) does not fade; it is the anchor, and
+    the about overlay keeps its place too. The rise is 2 px because the
+    keyboard and totals keep their place from Overview to a layer.
   - Keys and clicks act on the new page at once. Escape and close keep their
     meaning. A new page change starts from the card's current height; the
-    latest page wins and nothing queues.
+    latest page wins and nothing queues. A page change while the last one
+    still moves or fades shows its content at once, at full opacity: fast
+    typing never sees a dimmed frame.
   - The window holds the card all the way. Before growing, the page asks the
     host for the taller window (`resize` with `transition: id`) and waits for
     `hostReady(id)`, at most 100 ms, then settles at once. While the card
@@ -431,8 +448,10 @@ Layer.
   - Every height the page reports (resize, protocol results) is the window
     height, never the card's passing height.
   - Data updates, theme changes, `open()` and every in-page interaction
-    change at once. Under `prefers-reduced-motion: reduce` page changes do
-    too, and turning it on mid-motion settles at once.
+    change at once. Under `prefers-reduced-motion: reduce` the height
+    changes at once and the content fades without the rise: opacity moves
+    nothing, and it still marks the swap. Turning it on mid-motion settles
+    at once.
   - No other motion: no CSS transitions or keyframes, no smooth scrolling,
     no `requestAnimationFrame`.
 - Only `open()` resets navigation; `tick`, `append` and data updates never do.

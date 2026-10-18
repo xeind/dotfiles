@@ -2379,19 +2379,23 @@ function post(message) {
   window.webkit?.messageHandlers?.dashboard?.postMessage(message);
 }
 
-// Page-size motion (DESIGN.md §8), the panel's one animation. A page change moves the card's bottom edge
+// Page-change motion (DESIGN.md §8), the panel's only animation. A page change moves the card's bottom edge
 // from its current height to the new page's height. Content is laid out at the new size at once, so the
 // page is usable from the first frame. The window must hold the card all the way: before growing, the page
 // asks the host for the taller window and waits for hostReady(id); after shrinking, it reports the smaller
 // height. The latest page wins: a new page change starts from the card's current height.
 // Keys and clicks both move it. 220 ms on the iOS sheet curve: the card resizes like a sheet, quick off
 // the mark and long enough on a 56 px change to be seen, still under the 300 ms ceiling for UI motion.
-const MOTION = { duration: 220, easing: "cubic-bezier(0.32, 0.72, 0, 1)", hostWait: 100 };
+// With it the new page's content fades in from 0.4 and rises 2 px (--space-2xs), 150 ms on the same curve:
+// past 0.9 by 50 ms, so it reads at once, and done before the edge settles. The header stays: it is the anchor.
+// The rise is small because the keyboard and totals keep their place from Overview to a layer.
+const MOTION = { duration: 220, easing: "cubic-bezier(0.32, 0.72, 0, 1)", hostWait: 100, fade: 150, from: 0.4, rise: 2 };
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 let shownPage = null; // "overview", "layer", "insights", "activity" or "problem"
 let windowHeight = 0; // the window height last given to the host
 let motion = null; // { id, animation, timer, envelope, waiting } while the card moves
 let motionId = 0;
+let fades = []; // the content's animations while the new page fades in
 
 // The settled window height: the card at its page's height, plus the shadow margin above and below. The
 // footer is the card's last box; its offset does not depend on the card's own height, so this holds in motion.
@@ -2410,6 +2414,8 @@ function hostHeight() {
 
 // Stops the motion; the card takes its stable height. `report` tells the host when the window can shrink.
 function settleMotion(report = true) {
+  for (const fade of fades) fade.cancel();
+  fades = [];
   if (!motion) return;
   clearTimeout(motion.timer);
   motion.animation.cancel();
@@ -2443,6 +2449,18 @@ function resumeMotion(id) {
   clearTimeout(motion.timer);
   motion.animation.play();
   motion.timer = setTimeout(settleMotion, MOTION.duration + MOTION.hostWait);
+}
+
+// Fades the new page's content in under the header; the about overlay did not change, so it stays. Every
+// block moves as one, with the card's edge. Reduced motion keeps the fade and drops the rise.
+function fadeContent() {
+  const frames = reducedMotion.matches
+    ? [{ opacity: MOTION.from }, { opacity: 1 }]
+    : [{ opacity: MOTION.from, transform: `translateY(${MOTION.rise}px)` }, { opacity: 1, transform: "none" }];
+  for (const node of $("card").children) {
+    if (node.hidden || node.matches(".header, #about")) continue;
+    fades.push(node.animate(frames, { duration: MOTION.fade, easing: MOTION.easing }));
+  }
 }
 
 reducedMotion.addEventListener("change", () => settleMotion());
@@ -2637,8 +2655,11 @@ function render(announce = true) {
   // Only a page change the user made moves the card; data updates, a theme and open() change it at once.
   const shown = broken ? "problem" : page || (inLayer ? "layer" : "overview");
   if (shown !== shownPage) {
+    // A page change while the last one still moves lands at once: the latest page at full strength.
+    const interrupted = motion !== null || fades.some((fade) => fade.playState !== "finished");
     if (announce && shownPage !== null && !reducedMotion.matches) moveCard(from);
     else settleMotion();
+    if (announce && shownPage !== null && !interrupted) fadeContent();
     shownPage = shown;
   }
   if (announce) post({ action: "resize", height: hostHeight(), ...(motion?.waiting ? { transition: motion.id } : {}) });
