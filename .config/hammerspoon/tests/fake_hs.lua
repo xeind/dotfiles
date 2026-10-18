@@ -32,6 +32,8 @@ function sandbox.new(options)
     installed = {},
     bundleInfo = {},
     htmlCalls = 0,
+    screenFrame = options.screenFrame or { x = 0, y = 0, w = 1440, h = 900 }, -- the visible frame; tests may change it
+    frames = {}, -- every frame the module gave the webview
   }
 
   -- Garbage-collection tests: hold watchers weakly, so only the module keeps them alive.
@@ -98,7 +100,7 @@ function sandbox.new(options)
     for _, name in ipairs(chain) do wv[name] = function(self) return self end end
     function wv:navigationCallback(fn) self.navigation = fn; return self end
     function wv:html(text) self.page = text; env.htmlCalls = env.htmlCalls + 1; return self end
-    function wv:frame(f) self.frameSet = f; return self end
+    function wv:frame(f) self.frameSet = f; env.frames[#env.frames + 1] = f; return self end
     function wv:isVisible() return self.visible end
     function wv:show() self.visible = true; env.shown = env.shown + 1; return self end
     function wv:hide() self.visible = false; env.hidden = env.hidden + 1; return self end
@@ -307,7 +309,10 @@ function sandbox.new(options)
       },
     },
     window = { focusedWindow = function() return nil end },
-    screen = { mainScreen = function() return { frame = function() return { x = 0, y = 0, w = 1440, h = 900 } end } end },
+    screen = { mainScreen = function()
+      local f = env.screenFrame
+      return { frame = function() return { x = f.x, y = f.y, w = f.w, h = f.h } end }
+    end },
     focus = function() env.focused = env.focused + 1 end,
     image = { iconForFile = function() return { setSize = function(self) return self end, encodeAsURLString = function() return "data:image/png;base64,AAAA" end } end },
     task = {

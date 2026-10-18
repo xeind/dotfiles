@@ -835,11 +835,17 @@ end
 ---------------------------------------------------------------------------
 
 -- Size the window to the card, so the transparent area never blocks clicks.
+-- A page too tall to fit below the usual top raises the top until the window
+-- ends at the bottom of the visible frame, and the top stays there until the
+-- panel closes: a shrink never moves the card down (review Part II §9).
+-- A window taller than the frame starts at the frame's top.
+local top = nil -- the window's top edge while the panel is open
 function place()
   local screen = (previousWindow and previousWindow:screen() or hs.screen.mainScreen()):frame()
+  top = math.max(screen.y, math.min(top or screen.y + screen.h * TOP_FRACTION, screen.y + screen.h - height))
   webview:frame({
     x = screen.x + (screen.w - WIDTH) / 2,
-    y = screen.y + screen.h * TOP_FRACTION,
+    y = top,
     w = WIDTH,
     h = height,
   })
@@ -858,6 +864,7 @@ end
 local function show()
   showing = true
   cancelShow = false
+  top = nil
   previousWindow = hs.window.focusedWindow()
   -- Start the refresh first, so the page opens with insights.status "running".
   refreshInsights()

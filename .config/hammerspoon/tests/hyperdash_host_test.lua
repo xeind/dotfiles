@@ -1125,6 +1125,73 @@ do
   end
 end
 
+-- Screen bounds (review Part II §9): the window stays inside the visible
+-- frame on every page and mid-motion. The resizes below are the ones the page
+-- sends (index.html moveCard): growth asks for the new height with a
+-- transition id; a shrink keeps the window's height, then reports the smaller
+-- one; a page change mid-motion starts again from the window's height.
+do
+  local PAGES = { overview = 660, layer = 716, activity = 720, insights = 500 }
+  local ORDER = { "overview", "layer", "activity", "insights" }
+  local SCREENS = {
+    { name = "15-inch default", frame = { x = 0, y = 40, w = 1800, h = 1129 }, room = true },
+    { name = "13-inch more space, Dock", frame = { x = 0, y = 37, w = 1710, h = 1005 }, room = true },
+    { name = "display below, menu bar", frame = { x = 0, y = 1169, w = 1920, h = 1055 }, room = true },
+    { name = "13-inch default, no Dock", frame = { x = 0, y = 24, w = 1440, h = 876 } },
+    { name = "13-inch default, Dock", frame = { x = 0, y = 24, w = 1440, h = 806 } },
+    { name = "large text, Dock", frame = { x = 0, y = 24, w = 1024, h = 546 } },
+  }
+  for _, screen in ipairs(SCREENS) do
+    local f = screen.frame
+    local preferred = f.y + f.h * 0.18
+    local function inside(frame)
+      if frame.h > f.h then return frame.y == f.y end -- too tall: the top stays at the frame's top
+      return frame.y >= f.y and frame.y + frame.h <= f.y + f.h and frame.x >= f.x and frame.x + frame.w <= f.x + f.w
+    end
+    local env = startPanel((baseHome("bounds")))
+    env.screenFrame = f
+    env.page.openHeight = PAGES.overview
+    toggle(env)
+    local label = screen.name .. ": "
+    check(label .. "open inside the frame", inside(env.webview.frameSet), env.webview.frameSet.y)
+    local window, id, outside, moves, unmoved = PAGES.overview, 0, 0, 0, true
+    local function resize(h, transition)
+      env.controller.callback({ body = { action = "resize", height = h, transition = transition } })
+      env.flush()
+    end
+    -- One page change to `to`; `settle` false is a change interrupted before the shrink settles.
+    local function change(to, settle)
+      local first = #env.frames
+      local y = env.webview.frameSet.y
+      if to > window then id = id + 1; resize(to, id); window = to
+      else resize(window); if settle then resize(to); window = to end end
+      for i = first + 1, #env.frames do
+        local frame = env.frames[i]
+        if not inside(frame) then outside = outside + 1 end
+        -- Only the first resize, sent before the card moves, may move the top.
+        if frame.y ~= y and i > first + 1 then moves = moves + 1 end
+        if frame.y ~= preferred then unmoved = false end
+        y = frame.y
+      end
+    end
+    for _, a in ipairs(ORDER) do
+      for _, b in ipairs(ORDER) do
+        change(PAGES[a], true); change(PAGES[b], true)
+        for _, c in ipairs(ORDER) do change(PAGES[a], true); change(PAGES[b], false); change(PAGES[c], true) end
+      end
+    end
+    check(label .. "every frame inside the visible frame", outside == 0, outside)
+    check(label .. "the top moves once at most per page change, before the card moves", moves == 0, moves)
+    if screen.room then check(label .. "the top never moves when every page fits", unmoved) end
+    -- A reopen starts again near the top, not where a tall page left it.
+    change(PAGES.activity, true)
+    toggle(env)
+    env.page.openHeight = PAGES.insights
+    toggle(env)
+    check(label .. "a reopen starts at the usual top", env.webview.frameSet.y == math.max(f.y, math.min(preferred, f.y + f.h - PAGES.insights)), env.webview.frameSet.y)
+  end
+end
+
 ---------------------------------------------------------------------------
 -- Retention: resets from the manifest's cuts, and when compaction runs
 ---------------------------------------------------------------------------
