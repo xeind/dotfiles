@@ -3,12 +3,9 @@ theme = nightingale
 # background-opacity = .96
 # background-blur-radius = 22
 
-font-family = TX-02 Condensed
+font-family = DX-02 Condensed
 # font-family = BerkeleyMono Nerd Font
 font-size = 12
-font-feature = -calt
-font-feature = ss01
-font-feature = ss05
 font-thicken = false
 
 window-height = 24
@@ -35,6 +32,7 @@ macos-icon = custom-style
 # nu via login zsh; integration off since "nushell" adds args the wrapper rejects
 command = /Users/xein/.local/bin/terminal_shell
 shell-integration = none
+cursor-style = block
 cursor-style-blink = false
 
 keybind = shift+enter=text:\n

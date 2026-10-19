@@ -116,13 +116,9 @@
     "cursor_shape": "block",
     "option_as_meta": true,
     "dock": "bottom",
-    "font_family": "TX-02 Condensed",
+    "font_family": "DX-02 Condensed",
     "font_size": 12,
     "font_fallbacks": ["BerkeleyMono Nerd Font"],
-    "font_features": {
-      "calt": 0,
-      "aalt": true,
-    },
   },
   "edit_predictions": {
     "mode": "eager",
@@ -134,9 +130,8 @@
   "cursor_blink": false,
   "cursor_shape": "bar",
   "buffer_font_size": 14.0,
-  "buffer_font_family": "TX-02 Condensed",
+  "buffer_font_family": "DX-02 Condensed",
   "buffer_font_fallbacks": ["BerkeleyMono Nerd Font"],
-  "buffer_font_features": { "ss01": true, "calt": 0 },
   "vim_mode": true,
   "command_aliases": {
     "W": "w",
