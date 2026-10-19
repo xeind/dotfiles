@@ -400,9 +400,12 @@ Layer.
 - The date picker (Activity) is a modal dialog, flat on `--raised` with a
   1 px `--line`, 50 px from the card top (14 + the 28 px header + 8). The
   layer under it covers the card only, so it adds no click-blocking area to
-  the window; a click there cancels. It holds a field for `YYYY-MM-DD`, one
-  reserved line for a reason, and six fixed Sunday-first rows of 28 px days,
-  so its height is the same for every month and message. A day in the range
+  the window; a click there cancels. It holds a field for `YYYY-MM-DD`, six
+  fixed Sunday-first rows of 28 px square days, and one line at the bottom
+  that shows the range or the reason a typed date cannot open, so its height
+  is the same for every month and message. The month arrows centre on the
+  Sunday and Saturday tiles. A digit typed on the calendar starts a date in
+  the field. A day in the range
   (first recorded day through today) is a `--hover` tile; a day outside it
   has no tile and `--dim` ink; today has an `--accent-soft` dot; the
   Activity day has the selected set. A reason is Geist 12 in `--soft`

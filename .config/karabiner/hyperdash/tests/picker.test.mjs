@@ -166,7 +166,17 @@ test("picker: the date box opens a dialog over Activity at the same height; Esca
     assert.equal(await page.eval(`document.querySelector('.picker-day[data-date="2026-10-12"]').getAttribute("aria-selected")`), "true");
     assert.match(await page.eval(`document.querySelector('.picker-day[data-date="2026-10-17"]').getAttribute("aria-label")`), /^Saturday, October 17, 2026, today/);
     assert.equal(await page.eval(`document.querySelector('.picker-day[data-date="2026-10-18"]').disabled`), true, "tomorrow is unavailable");
-    assert.equal(await page.eval(`document.getElementById("picker-range").textContent`), "AVAILABLE JUL 20, 2026 – OCT 17, 2026");
+    assert.equal(shown.help, "AVAILABLE JUL 20, 2026 – OCT 17, 2026", "the bottom line shows the range until there is a reason");
+
+    // One reserved line, at the bottom: the field sits one section gap (12) above the month row.
+    const gap = await page.eval(`document.querySelector(".picker-month").getBoundingClientRect().top - document.querySelector(".picker-entry").getBoundingClientRect().bottom`);
+    assert.equal(gap, 12, "an empty line still sits between the field and the calendar");
+    // The month arrows centre on the Sunday and Saturday tiles.
+    const centre = (selector) => page.eval(`(() => { const r = document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect(); return r.left + r.width / 2; })()`);
+    const sunday = await centre(".picker-row:nth-child(2) .picker-day:first-child");
+    const saturday = await centre(".picker-row:nth-child(2) .picker-day:last-child");
+    assert.ok(Math.abs((await centre("#picker-previous")) - sunday) < 0.5, "the previous-month arrow is off the Sunday column");
+    assert.ok(Math.abs((await centre("#picker-next")) - saturday) < 0.5, "the next-month arrow is off the Saturday column");
 
     // Browse and edit, then cancel: nothing behind it moved.
     await page.key("ArrowLeft");
@@ -241,7 +251,7 @@ test("picker: a typed date opens; bad text stays with its reason; Enter in the f
     await page.eval(`document.getElementById("picker-input").select()`);
     await page.type("2026-09-14");
     assert.equal((await page.picker()).open, true);
-    assert.equal((await page.picker()).help, "", "a new edit clears the old reason");
+    assert.match((await page.picker()).help, /^AVAILABLE /, "a new edit clears the old reason");
     await page.key("Enter");
     shown = await page.picker();
     assert.equal(shown.open, false);
@@ -355,6 +365,18 @@ test("picker: Tab stays inside it, the footer names its keys, and keys never rea
     await page.key("Tab", { shift: true });
     assert.equal((await page.picker()).inside, true);
 
+    // A digit on the calendar starts a typed date: focus moves to the field, which holds just that digit.
+    await page.click("#picker-close");
+    await page.click("#date-trigger");
+    await page.key("2");
+    let typed = await page.picker();
+    assert.equal(typed.focus, "picker-input", "a digit on the calendar did not reach the field");
+    assert.equal(typed.text, "2");
+    await page.type("026-10-05");
+    await page.key("Enter");
+    assert.equal((await page.activity()).day, "2026-10-05");
+    await page.click("#date-trigger");
+
     // In the field: the arrows, Home, letters and ? are text editing, not page keys.
     await page.click("#picker-input");
     assert.match(await page.footer(), /↵open.*esccancel/);
@@ -362,7 +384,7 @@ test("picker: Tab stays inside it, the footer names its keys, and keys never rea
     for (const key of ["ArrowLeft", "Home", "End", "w", "?", "Backspace"]) await page.key(key);
     assert.deepEqual(await page.activity(), before);
     assert.equal(await page.eval(`state.aboutOpen`), false);
-    assert.equal(await page.eval(`document.getElementById("picker-input").value`), "2026-10-12w", "the field lost a key (End, w, ?, then Backspace)");
+    assert.equal(await page.eval(`document.getElementById("picker-input").value`), "2026-10-05w", "the field lost a key (End, w, ?, then Backspace)");
     await page.key("Escape");
     assert.equal((await page.picker()).open, false);
   } finally {

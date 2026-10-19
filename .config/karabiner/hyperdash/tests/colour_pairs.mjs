@@ -35,7 +35,8 @@ const RAW = [
   [".picker-input:focus-visible", "focus", "--accent-soft", [["focus", "--raised"]], "ring", 2, 500],
   [".picker-open", "value", "--soft", [["rest", "--hover"], ["hover", "--line"]], "mono", 10, 500],
   [".picker-open:active", "value", "--text", [["active", "--line"]], "mono", 10, 500],
-  [".picker-help", "value", "--soft", [["error", "--raised"]], "sans", 12, 400],
+  [".picker-help", "caption", "--faint", [["rest", "--raised"]], "mono", 10, 400],
+  [".picker-help.reason", "value", "--soft", [["reason", "--raised"]], "sans", 12, 400],
   [".picker-month", "value", "--soft", [["rest", "--raised"]], "mono", 10, 500],
   [".picker-step", "icon", "--muted", [["rest", "--raised"]], "svg", 8, 500],
   [".picker-step:hover:not(:disabled)", "icon", "--text", [["hover", "--hover"]], "svg", 8, 500],
@@ -45,7 +46,6 @@ const RAW = [
   ['.picker-day[aria-selected="true"]', "value", "--accent-soft", [["selected", "--accent-bg"]], "mono", 11, 400],
   [".picker-day:disabled", "absent", "--dim", [["disabled", "--raised"]], "mono", 11, 400],
   [".picker-day.today::after", "dot", "--accent-soft", [["rest", "--hover"], ["selected", "--accent-bg"]], "dot", 4, 500],
-  [".picker-range", "caption", "--faint", [["rest", "--raised"]], "mono", 10, 400],
   ["picker buttons: the shared focus ring", "focus", "--accent-soft", [["focus", "--raised"]], "ring", 2, 500, "button:focus-visible, .list:focus-visible"],
 
   // Total

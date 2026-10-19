@@ -893,6 +893,9 @@
   }
 
   .picker-head, .picker-month { display: flex; align-items: center; justify-content: space-between; height: var(--control-md); }
+  /* A section gap above the calendar; the arrows centre on the Sunday and Saturday tiles: half a column (one
+     seventh of the row less its six 4 px gaps), less half the 20 px arrow. */
+  .picker-month { margin-top: var(--space-lg); padding: 0 calc((100% - 6 * var(--space-xs)) / 14 - var(--control-sm) / 2); }
   .picker-title { font-size: var(--text-content); font-weight: 500; line-height: var(--leading-content); letter-spacing: -0.01em; }
 
   .picker-close {
@@ -944,9 +947,6 @@
   .picker-open:hover { background: var(--line); }
   .picker-open:active { color: var(--text); }
 
-  /* One reserved line, so a reason appearing never moves the calendar. A reason is a sentence: Geist, in --soft,
-     since --down on --raised misses the status floor in Manila and Nightingale; the field's edge carries the red. */
-  .picker-help { display: flex; align-items: center; height: var(--control-sm); margin-top: var(--space-xs); font-size: var(--text-secondary); line-height: var(--leading-secondary); color: var(--soft); }
   .picker-input[aria-invalid="true"] { border-color: var(--down); }
 
   .picker-month { font: 500 var(--mono-label) var(--mono); line-height: var(--leading-note); letter-spacing: 0.04em; color: var(--soft); }
@@ -1006,7 +1006,10 @@
     background: var(--accent-soft);
   }
 
-  .picker-range {
+  /* The one reserved line, at the bottom: the range, or the reason a typed date cannot open. Swapping them never
+     moves anything. A reason is a sentence: Geist, in --soft, since --down on --raised misses the status floor in
+     Manila and Nightingale; the field's edge carries the red. */
+  .picker-help {
     display: flex;
     align-items: flex-end;
     height: var(--control-sm);
@@ -1016,6 +1019,8 @@
     letter-spacing: 0.04em;
     color: var(--faint);
   }
+
+  .picker-help.reason { font: var(--text-secondary) var(--sans); line-height: var(--leading-secondary); letter-spacing: 0; color: var(--soft); }
 
   .status {
     margin-top: var(--space-md);
@@ -1276,7 +1281,6 @@
         <input class="picker-input" id="picker-input" type="text" placeholder="YYYY-MM-DD" autocomplete="off" spellcheck="false" aria-describedby="picker-help">
         <button class="picker-open" id="picker-open">OPEN</button>
       </div>
-      <p class="picker-help" id="picker-help" aria-live="polite"></p>
       <div class="picker-month">
         <button class="picker-step" id="picker-previous" aria-label="Previous month">
           <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>
@@ -1288,7 +1292,7 @@
       </div>
       <div class="picker-weekdays" aria-hidden="true"><span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span></div>
       <div class="picker-grid" id="picker-grid" role="grid" aria-labelledby="picker-month"></div>
-      <p class="picker-range" id="picker-range"></p>
+      <p class="picker-help" id="picker-help" aria-live="polite"></p>
     </div>
   </section>
 
@@ -4010,7 +4014,8 @@ function renderPicker() {
   const { first, last } = pickerBounds();
   picker.focused = M.clampDay(picker.focused, first, last);
   if (picker.month < first.slice(0, 7) || picker.month > last.slice(0, 7)) picker.month = picker.focused.slice(0, 7);
-  $("picker-help").textContent = picker.error || "";
+  $("picker-help").textContent = picker.error || `AVAILABLE ${M.shortDate(first)} – ${M.shortDate(last)}`.toUpperCase();
+  $("picker-help").classList.toggle("reason", Boolean(picker.error));
   if (picker.error) $("picker-input").setAttribute("aria-invalid", "true");
   else $("picker-input").removeAttribute("aria-invalid");
 
@@ -4041,7 +4046,6 @@ function renderPicker() {
     node.append(...cells.slice(row * 7, row * 7 + 7));
     return node;
   }));
-  $("picker-range").textContent = `AVAILABLE ${M.shortDate(first)} – ${M.shortDate(last)}`.toUpperCase();
   if (refocus) focusPickerDay();
 }
 
@@ -4425,6 +4429,15 @@ $("picker").addEventListener("keydown", (event) => {
     return;
   }
   if (!target.classList.contains("picker-day") || event.shiftKey) return;
+  // A digit on the calendar starts a typed date.
+  if (/^[0-9]$/.test(event.key)) {
+    event.preventDefault();
+    event.stopPropagation();
+    $("picker-input").value = event.key;
+    $("picker-input").focus();
+    $("picker-input").dispatchEvent(new Event("input"));
+    return;
+  }
   const { first, last } = pickerBounds();
   const next = HyperdashModel.moveDate(target.dataset.date, event.key, first, last);
   if (next === null) return;
