@@ -431,6 +431,24 @@
   .pill button:active:not(:disabled) { background: var(--line-strong); }
   .pill button:disabled { visibility: hidden; }
 
+  /* On Activity the whole date box is one button that opens the date picker; the arrows give way to it. The icon
+     takes the left arrow's 20 px slot (4 + 12 + 4) and the right slot stays empty, so the label and the box keep
+     the place and size they have on every page. */
+  .pill button.pill-trigger {
+    width: auto;
+    padding: 0 var(--control-sm) 0 var(--space-xs);
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    letter-spacing: 0.04em;
+    color: var(--soft);
+  }
+
+  .pill button.pill-trigger:hover { background: var(--hover); color: var(--text); }
+  .pill button.pill-trigger:active { background: var(--line); color: var(--text); }
+  .pill button.pill-trigger[aria-expanded="true"] { background: var(--accent-bg); color: var(--accent-soft); }
+
   .close {
     margin-left: auto;
     width: var(--control-lg);
@@ -859,6 +877,146 @@
   .themebtn:hover { background: var(--line); }
   .themebtn:active { color: var(--text); }
 
+  /* The date picker: a dialog over Activity, so opening it never changes the height. The layer under the dialog
+     covers the card and nothing outside it; a click there cancels. Flat, like every surface but the card and about. */
+  .picker { position: absolute; inset: 0; z-index: 6; border-radius: inherit; }
+
+  .picker-dialog {
+    position: absolute;
+    left: var(--space-xl);
+    right: var(--space-xl);
+    top: 50px; /* the card's 14 px top inset + the 28 px header + 8 */
+    padding: var(--space-lg);
+    border-radius: var(--radius-inset);
+    background: var(--raised);
+    border: 1px solid var(--line);
+  }
+
+  .picker-head, .picker-month { display: flex; align-items: center; justify-content: space-between; height: var(--control-md); }
+  .picker-title { font-size: var(--text-content); font-weight: 500; line-height: var(--leading-content); letter-spacing: -0.01em; }
+
+  .picker-close {
+    width: var(--control-md);
+    height: var(--control-md);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--hover);
+    color: var(--soft);
+  }
+
+  .picker-close:hover { background: var(--line-strong); }
+  .picker-close:active { color: var(--text); }
+
+  .picker-entry { display: flex; align-items: center; gap: var(--space-sm); height: var(--control-md); margin-top: var(--space-md); }
+  .picker-label { font: 500 var(--mono-label) var(--mono); line-height: var(--leading-note); letter-spacing: 0.04em; color: var(--muted); }
+
+  .picker-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: var(--control-md);
+    padding: 0 var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--line);
+    background: var(--card);
+    font: var(--mono-key) var(--mono);
+    letter-spacing: 0;
+    color: var(--text);
+    -webkit-user-select: text;
+    cursor: text;
+  }
+
+  .picker-input::placeholder { color: var(--faint); }
+  .picker-input:hover { border-color: var(--line-strong); }
+  .picker-input:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 1px; }
+
+  .picker-open {
+    height: var(--control-md);
+    padding: 0 var(--space-md);
+    border-radius: var(--radius-md);
+    background: var(--hover);
+    border: 1px solid var(--line);
+    font: 500 var(--mono-label) var(--mono);
+    letter-spacing: 0.04em;
+    color: var(--soft);
+  }
+
+  .picker-open:hover { background: var(--line); }
+  .picker-open:active { color: var(--text); }
+
+  /* One reserved line, so a reason appearing never moves the calendar. A reason is a sentence: Geist, in --soft,
+     since --down on --raised misses the status floor in Manila and Nightingale; the field's edge carries the red. */
+  .picker-help { display: flex; align-items: center; height: var(--control-sm); margin-top: var(--space-xs); font-size: var(--text-secondary); line-height: var(--leading-secondary); color: var(--soft); }
+  .picker-input[aria-invalid="true"] { border-color: var(--down); }
+
+  .picker-month { font: 500 var(--mono-label) var(--mono); line-height: var(--leading-note); letter-spacing: 0.04em; color: var(--soft); }
+
+  .picker-step {
+    width: var(--control-sm);
+    height: var(--control-sm);
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+  }
+
+  .picker-step:hover:not(:disabled) { background: var(--hover); color: var(--text); }
+  .picker-step:active:not(:disabled) { background: var(--line-strong); }
+  .picker-step:disabled { visibility: hidden; }
+
+  /* Seven columns of six fixed rows, whatever the month's shape. */
+  .picker-weekdays, .picker-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-xs); }
+  .picker-weekdays {
+    align-items: center;
+    height: var(--control-sm);
+    margin-top: var(--space-xs);
+    text-align: center;
+    font: var(--mono-caption) var(--mono);
+    line-height: var(--leading-note);
+    letter-spacing: 0.04em;
+    color: var(--faint);
+  }
+  .picker-grid { display: grid; grid-template-rows: repeat(6, var(--control-lg)); gap: var(--space-xs); margin-top: var(--space-xs); }
+
+  /* An open day is a tile; a day outside the range has none, and dim ink. Today carries a dot under its number. */
+  .picker-day {
+    position: relative;
+    justify-self: center;
+    width: var(--control-lg);
+    height: var(--control-lg);
+    border-radius: var(--radius-lg);
+    background: var(--hover);
+    font: var(--mono-key) var(--mono);
+    line-height: var(--leading-note);
+    color: var(--soft);
+  }
+
+  .picker-day:hover:not(:disabled) { background: var(--line); }
+  .picker-day:active:not(:disabled) { background: var(--line); color: var(--text); }
+  .picker-day[aria-selected="true"] { background: var(--accent-bg); color: var(--accent-soft); border: 1px solid var(--accent-edge); }
+  .picker-day:disabled { background: none; color: var(--dim); cursor: default; }
+  .picker-day.today::after {
+    content: "";
+    position: absolute;
+    left: calc(50% - var(--space-2xs));
+    bottom: var(--space-2xs);
+    width: var(--space-xs);
+    height: var(--space-xs);
+    border-radius: 50%;
+    background: var(--accent-soft);
+  }
+
+  .picker-range {
+    display: flex;
+    align-items: flex-end;
+    height: var(--control-sm);
+    margin-top: var(--space-md);
+    font: var(--mono-caption) var(--mono);
+    line-height: var(--leading-note);
+    letter-spacing: 0.04em;
+    color: var(--faint);
+  }
+
   .status {
     margin-top: var(--space-md);
     font-family: var(--mono);
@@ -1085,6 +1243,10 @@
       <button class="tabstop" id="next-month" aria-label="Next month">
         <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 1.5 7 5 3.5 8.5"/></svg>
       </button>
+      <!-- Activity only: the label moves in here (render), and the box opens the date picker. -->
+      <button class="pill-trigger tabstop" id="date-trigger" aria-haspopup="dialog" aria-expanded="false" aria-controls="picker-dialog" hidden>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+      </button>
     </div>
     <button class="close tabstop" id="close" aria-label="Close">
       <svg width="11" height="11" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l10 10M12 2 2 12"/></svg>
@@ -1099,6 +1261,36 @@
   </section>
 
   <section class="about fade" id="about" hidden></section>
+
+  <!-- Activity: the date picker. Built once; render() fills the calendar and never rewrites the field. -->
+  <section class="picker" id="picker" hidden>
+    <div class="picker-dialog" id="picker-dialog" role="dialog" aria-modal="true" aria-labelledby="picker-title">
+      <div class="picker-head">
+        <h2 class="picker-title" id="picker-title">Choose date</h2>
+        <button class="picker-close" id="picker-close" aria-label="Cancel">
+          <svg width="9" height="9" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 2l10 10M12 2 2 12"/></svg>
+        </button>
+      </div>
+      <div class="picker-entry">
+        <label class="picker-label" for="picker-input">DATE</label>
+        <input class="picker-input" id="picker-input" type="text" placeholder="YYYY-MM-DD" autocomplete="off" spellcheck="false" aria-describedby="picker-help">
+        <button class="picker-open" id="picker-open">OPEN</button>
+      </div>
+      <p class="picker-help" id="picker-help" aria-live="polite"></p>
+      <div class="picker-month">
+        <button class="picker-step" id="picker-previous" aria-label="Previous month">
+          <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 1.5 3 5l3.5 3.5"/></svg>
+        </button>
+        <span id="picker-month" aria-live="polite"></span>
+        <button class="picker-step" id="picker-next" aria-label="Next month">
+          <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 1.5 7 5 3.5 8.5"/></svg>
+        </button>
+      </div>
+      <div class="picker-weekdays" aria-hidden="true"><span>SUN</span><span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span></div>
+      <div class="picker-grid" id="picker-grid" role="grid" aria-labelledby="picker-month"></div>
+      <p class="picker-range" id="picker-range"></p>
+    </div>
+  </section>
 
   <section class="keyboard" id="keyboard"></section>
 
@@ -1823,6 +2015,56 @@ var HyperdashModel = (() => {
     return date > today ? today : date < first ? first : date;
   }
 
+  // Date picker -----------------------------------------------------------------------------------
+  // The days it opens: the first recorded day through today, the range clampDay steps in.
+  const dateBounds = (firstDate, today) => ({ first: firstDate && firstDate < today ? firstDate : today, last: today });
+  const LONG_WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const LONG_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const monthLength = (monthId) => { const [y, m] = monthId.split("-").map(Number); return new Date(Date.UTC(y, m, 0)).getUTCDate(); };
+  const weekday = (date) => new Date(dayNumber(date) * 86400000).getUTCDay();
+  const shortDate = (date) => `${SHORT_MONTHS[Number(date.slice(5, 7)) - 1]} ${Number(date.slice(8, 10))}, ${date.slice(0, 4)}`;
+  const fullDateLabel = (date) => `${LONG_WEEKDAYS[weekday(date)]}, ${LONG_MONTHS[Number(date.slice(5, 7)) - 1]} ${Number(date.slice(8, 10))}, ${date.slice(0, 4)}`;
+
+  // The same day number in another month, or that month's last day when it is shorter.
+  const dayInMonth = (monthId, date) => `${monthId}-${pad(Math.min(Number(date.slice(8, 10)), monthLength(monthId)))}`;
+
+  // Exactly YYYY-MM-DD, a real date (no rolling 31 April into May), inside the range. { date } or { error }.
+  function parseDateEntry(text, firstDate, today) {
+    const value = String(text).trim();
+    if (!DATE.test(value)) return { error: "Use YYYY-MM-DD" };
+    if (!isValidDate(value)) return { error: "That date does not exist" };
+    const { first, last } = dateBounds(firstDate, today);
+    if (value < first || value > last) return { error: first === last ? `Choose ${shortDate(last)}` : `Choose a date from ${shortDate(first)} through ${shortDate(last)}` };
+    return { date: value };
+  }
+
+  // A month as six Sunday-first weeks: 42 cells, each a date or null outside the month.
+  function monthGrid(monthId) {
+    const start = weekday(`${monthId}-01`);
+    const length = monthLength(monthId);
+    return Array.from({ length: 42 }, (_, i) => (i >= start && i < start + length ? `${monthId}-${pad(i - start + 1)}` : null));
+  }
+
+  // The day a grid key moves focus to, inside the range; null for a key the grid does not take.
+  function moveDate(date, key, first, last) {
+    const month = date.slice(0, 7);
+    const shift = (count) => addDays(date, count);
+    const across = (step) => {
+      const [y, m] = month.split("-").map(Number);
+      const next = new Date(Date.UTC(y, m - 1 + step, 1));
+      return dayInMonth(`${pad(next.getUTCFullYear(), 4)}-${pad(next.getUTCMonth() + 1)}`, date);
+    };
+    const row = (end) => {
+      const edge = shift(end ? 6 - weekday(date) : -weekday(date));
+      return edge.slice(0, 7) === month ? edge : end ? `${month}-${pad(monthLength(month))}` : `${month}-01`;
+    };
+    const next = { ArrowLeft: () => shift(-1), ArrowRight: () => shift(1), ArrowUp: () => shift(-7), ArrowDown: () => shift(7),
+      Home: () => row(false), End: () => row(true), PageUp: () => across(-1), PageDown: () => across(1) }[key];
+    if (!next) return null;
+    const to = next();
+    return to < first ? first : to > last ? last : to;
+  }
+
   // Context stream -------------------------------------------------------------------------------
   // Lines are "YYYY-MM-DDTHH:MM:SS.mmm<TAB>kind<TAB>value". Kinds: app (value is a bundle ID), lock,
   // unlock, sleep, wake and start (value "-"). Rules, like the usage log: exactly 3 tab-separated
@@ -2206,6 +2448,9 @@ var HyperdashModel = (() => {
     if (event.metaKey || event.ctrlKey || event.altKey) return null;
     const name = event.key;
 
+    // The date picker takes every key itself; only Escape routes, and it closes the picker before anything else.
+    if (ctx.pickerOpen) return name === "Escape" ? { type: "closePicker" } : null;
+
     // Enter and Space activate a focused control normally.
     if ((name === "Enter" || name === " ") && ctx.controlFocused) return null;
 
@@ -2250,7 +2495,7 @@ var HyperdashModel = (() => {
   return {
     THEMES, normalizeTheme, nextTheme, fadeState,
     GROUPS, GROUP_LABELS, CATEGORIES, CATEGORY_LABELS, CATEGORY_GROUP, groupOf, groupOfLayer, classifier,
-    isValidDate, dateOf, addDays, dayLabel, windowLabel, evidenceFacts, clampDay, INSIGHT_ICONS, insightIcon, moreShortcuts, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, loadArchivedDay, clock,
+    isValidDate, dateOf, addDays, dayLabel, windowLabel, evidenceFacts, clampDay, dateBounds, dayInMonth, parseDateEntry, monthGrid, moveDate, shortDate, fullDateLabel, INSIGHT_ICONS, insightIcon, moreShortcuts, absSeconds, createContextStore, attribute, findSequences, commandsIn, buildDay, loadArchivedDay, clock,
     localStamp, isValidTimestamp, stampOrNull, validatePayload, normalizeBindings, normalizeInsights, normalizeHealth,
     monthOf, previousMonth, isMonthComplete, compareMonths,
     sumCounts, buildRows, buildActivityFromCombos, validateArchive, createStore, createSession, reconcileNavigation, tabStopsAfter, binTime, compactCount, coverageNote, describeBin,
@@ -2585,16 +2830,24 @@ function render(announce = true) {
   $("totals").hidden = insightsPage || broken;
   $("keyboard").hidden = page !== null || broken;
 
-  // The pill walks days in the Activity day view and months everywhere else.
+  // The pill walks days in the Activity day view and months everywhere else. On Activity the whole box is the
+  // date picker's button: its label moves in, and the arrows (still the arrow keys' bounds) hide.
   const dayMode = am?.mode === "day";
+  const trigger = $("date-trigger");
+  trigger.hidden = !am;
+  $("previous-month").hidden = $("next-month").hidden = Boolean(am);
+  if (am && $("month-label").parentNode !== trigger) trigger.append($("month-label"));
+  if (!am && $("month-label").parentNode === trigger) $("month-pill").insertBefore($("month-label"), $("next-month"));
   if (dayMode) {
     $("month-label").textContent = HyperdashModel.dayLabel(state.day, today()).toUpperCase();
     $("previous-month").disabled = state.day <= firstDay();
     $("next-month").disabled = state.day >= today();
+    trigger.setAttribute("aria-label", `Choose activity date, ${HyperdashModel.fullDateLabel(state.day)}`);
   } else {
     $("month-label").textContent = monthLabel(view.month).toUpperCase();
     $("previous-month").disabled = months.indexOf(state.monthId) === 0;
     $("next-month").disabled = months.indexOf(state.monthId) === months.length - 1;
+    trigger.setAttribute("aria-label", `Choose activity date, ${MONTH_NAMES[Number(view.month.slice(5, 7)) - 1]} ${view.month.slice(0, 4)}`);
   }
 
   const shownTotal = activity ? activity.total : view.total;
@@ -2650,6 +2903,8 @@ function render(announce = true) {
   else if (!broken && page === "insights") renderInsights();
   else if (!broken) renderActivity(am);
   renderStatus(broken);
+  if (picker && !am) picker = null; // the picker belongs to Activity; a broken page has none
+  renderPicker();
   restoreFocus(refocus);
   renderFooter();
 
@@ -3525,6 +3780,7 @@ function renderActivity(m) {
 function renderFooter() {
   const hints = dataError !== null ? [["esc", "close"]]
     : state.page === "insights" ? [["esc", "back"]]
+    : picker ? pickerHints()
     : state.page === "activity" ? activityHints()
     : state.layer === null
       ? [["key", "open"], ["I", "insights", "insights"], ["A", "activity", "activity"], ["← →", "month"]]
@@ -3552,6 +3808,13 @@ function activityHints() {
   const enter = bin !== null ? (!day ? "day" : state.interval === bin ? "clear" : "select")
     : keyboardFocused(focused) ? "press" : day ? "month" : "day";
   return [["key", "mark"], ["← →", bin !== null ? "bin" : chip ? "time" : day ? "day" : "month"], ["↵", enter], ["esc", state.highlight || state.interval !== null ? "clear" : "back"]];
+}
+
+// In the date picker: the grid's arrows, the field's Enter, a button's Enter; Escape always cancels.
+function pickerHints() {
+  const focused = document.activeElement;
+  if (focused?.classList?.contains("picker-day")) return [["← →", "day"], ["↑ ↓", "week"], ["↵", "open"], ["esc", "cancel"]];
+  return [["↵", focused?.id === "picker-input" ? "open" : "press"], ["esc", "cancel"]];
 }
 
 // A key press means "open this layer" on the overview, "select" in a layer.
@@ -3671,6 +3934,115 @@ function cycleTheme() {
 function toggleAbout(open) {
   state.aboutOpen = open ?? !state.aboutOpen;
   render();
+}
+
+// Activity's date picker: a draft kept apart from state, so browsing and typing change nothing until a day opens.
+// The field holds the typed text itself and is never rewritten while the picker is open. open() and a page with
+// no Activity drop it.
+let picker = null; // { month, focused, error } while open
+let pickerSignature = null;
+
+function pickerBounds() {
+  return HyperdashModel.dateBounds(firstDay(), today());
+}
+
+function openPicker() {
+  if (picker || state.page !== "activity" || dataError !== null) return;
+  const M = HyperdashModel;
+  const { first, last } = pickerBounds();
+  // The month view opens on its month, on the Activity day's number, as Enter does.
+  const day = state.activityMode === "day" ? state.day : M.clampDay(M.dayInMonth(state.monthId, state.day), first, last);
+  settleMotion();
+  picker = { month: day.slice(0, 7), focused: day, error: null };
+  state.aboutOpen = false; // one overlay at a time
+  $("picker-input").value = day;
+  render();
+  focusPickerDay();
+}
+
+// Cancel: Escape, the dialog's Close, or a click on the card around it. Focus goes back to the date box.
+function closePicker() {
+  if (!picker) return;
+  picker = null;
+  renderPicker();
+  renderFooter();
+  $("date-trigger").focus({ preventScroll: true });
+}
+
+// The one way the picker opens a day: the normal day path, so the archive read and the app filter work as for any day.
+function choosePickerDate(text) {
+  const result = HyperdashModel.parseDateEntry(text, firstDay(), today());
+  if (result.error) {
+    picker.error = result.error;
+    renderPicker();
+    return;
+  }
+  picker = null;
+  if (months.includes(result.date.slice(0, 7))) state.monthId = result.date.slice(0, 7);
+  setDay(result.date);
+  $("date-trigger").focus({ preventScroll: true });
+}
+
+function focusPickerDay() {
+  $("picker-grid").querySelector(`.picker-day[data-date="${picker.focused}"]`)?.focus({ preventScroll: true });
+}
+
+// Shows a month in the calendar; the focused day keeps its number there, inside the range.
+function showPickerMonth(step) {
+  const M = HyperdashModel;
+  const { first, last } = pickerBounds();
+  picker.focused = M.moveDate(picker.focused, step < 0 ? "PageUp" : "PageDown", first, last);
+  picker.month = picker.focused.slice(0, 7);
+  renderPicker();
+  if (document.activeElement?.disabled || document.activeElement === document.body) focusPickerDay();
+}
+
+function renderPicker() {
+  const M = HyperdashModel;
+  const root = $("picker");
+  root.hidden = !picker;
+  $("date-trigger").setAttribute("aria-expanded", String(Boolean(picker)));
+  // Modal: everything else in the card leaves the Tab order and the pointer while it is open.
+  for (const node of $("card").children) if (node !== root) node.inert = Boolean(picker);
+  if (!picker) { pickerSignature = null; return; }
+
+  // A reset or midnight can move the range: the focused day follows it, the typed text does not.
+  const { first, last } = pickerBounds();
+  picker.focused = M.clampDay(picker.focused, first, last);
+  if (picker.month < first.slice(0, 7) || picker.month > last.slice(0, 7)) picker.month = picker.focused.slice(0, 7);
+  $("picker-help").textContent = picker.error || "";
+  if (picker.error) $("picker-input").setAttribute("aria-invalid", "true");
+  else $("picker-input").removeAttribute("aria-invalid");
+
+  const t = today();
+  const selected = state.activityMode === "day" ? state.day : null;
+  const signature = [picker.month, picker.focused, first, last, selected, t].join("|");
+  if (signature === pickerSignature) return;
+  pickerSignature = signature;
+  const refocus = $("picker-grid").contains(document.activeElement);
+  const [year, month] = picker.month.split("-");
+  $("picker-month").textContent = `${MONTH_NAMES[Number(month) - 1]} ${year}`.toUpperCase();
+  $("picker-previous").disabled = picker.month <= first.slice(0, 7);
+  $("picker-next").disabled = picker.month >= last.slice(0, 7);
+  const cells = M.monthGrid(picker.month).map((date) => {
+    const cell = element(date ? "button" : "span", date ? `picker-day${date === t ? " today" : ""}` : "", date ? String(Number(date.slice(8, 10))) : undefined);
+    cell.setAttribute("role", "gridcell");
+    if (!date) return cell;
+    cell.dataset.date = date;
+    cell.setAttribute("aria-selected", String(date === selected));
+    cell.setAttribute("aria-label", `${M.fullDateLabel(date)}${date === t ? ", today" : ""}`);
+    cell.disabled = date < first || date > last;
+    cell.tabIndex = date === picker.focused ? 0 : -1; // one Tab stop for the grid
+    return cell;
+  });
+  $("picker-grid").replaceChildren(...Array.from({ length: 6 }, (_, row) => {
+    const node = element("div", "picker-row");
+    node.setAttribute("role", "row");
+    node.append(...cells.slice(row * 7, row * 7 + 7));
+    return node;
+  }));
+  $("picker-range").textContent = `AVAILABLE ${M.shortDate(first)} – ${M.shortDate(last)}`.toUpperCase();
+  if (refocus) focusPickerDay();
 }
 
 // The header buttons, the "i" button, the group bar and the list are Tab stops only once the user has pressed Tab.
@@ -3811,6 +4183,7 @@ const hyperdash = {
       evidence: null,
     });
     insightsReturn = null;
+    picker = null; // a closed panel keeps no draft
     listScope = null;
     overviewScrolls.clear();
     listSignature = null;
@@ -3872,6 +4245,7 @@ function run(action) {
   switch (action.type) {
     case "close": dropArchivedDay(); post({ action: "close" }); break;
     case "closeAbout": toggleAbout(false); break;
+    case "closePicker": closePicker(); break;
     case "toggleAbout": toggleAbout(); break;
     case "cycleTheme": cycleTheme(); break;
     case "back": closeLayer(); break;
@@ -4020,6 +4394,51 @@ $("close").addEventListener("click", () => post({ action: "close" }));
 $("previous-month").addEventListener("click", () => changeMonth(-1));
 $("next-month").addEventListener("click", () => changeMonth(1));
 $("about-toggle").addEventListener("click", () => toggleAbout());
+$("date-trigger").addEventListener("click", openPicker);
+
+$("picker").addEventListener("click", (event) => {
+  const target = event.target;
+  const day = target.closest?.(".picker-day");
+  if (target === $("picker") || target.closest?.("#picker-close")) closePicker();
+  else if (day) choosePickerDate(day.dataset.date);
+  else if (target.closest?.("#picker-open")) choosePickerDate($("picker-input").value);
+  else if (target.closest?.("#picker-previous")) showPickerMonth(-1);
+  else if (target.closest?.("#picker-next")) showPickerMonth(1);
+});
+
+// The picker's own keys, before the page's: Tab stays inside, the grid walks days, Enter in the field opens it.
+// Every other key but Escape is left to the field and the buttons (routeKey ignores them while the picker is open).
+$("picker").addEventListener("keydown", (event) => {
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  const target = event.target;
+  if (event.key === "Tab") {
+    const stops = [...$("picker").querySelectorAll("button, input")].filter((node) => !node.disabled && node.tabIndex >= 0);
+    const at = stops.indexOf(target);
+    event.preventDefault();
+    stops[(at + (event.shiftKey ? -1 : 1) + stops.length) % stops.length]?.focus();
+    return;
+  }
+  if (target.id === "picker-input" && event.key === "Enter") {
+    event.preventDefault();
+    event.stopPropagation();
+    choosePickerDate(target.value);
+    return;
+  }
+  if (!target.classList.contains("picker-day") || event.shiftKey) return;
+  const { first, last } = pickerBounds();
+  const next = HyperdashModel.moveDate(target.dataset.date, event.key, first, last);
+  if (next === null) return;
+  event.preventDefault();
+  event.stopPropagation();
+  Object.assign(picker, { focused: next, month: next.slice(0, 7) });
+  renderPicker();
+  focusPickerDay();
+});
+
+// A new edit clears the last reason; the text itself is the user's.
+$("picker-input").addEventListener("input", () => {
+  if (picker?.error) { picker.error = null; renderPicker(); }
+});
 $("about").addEventListener("click", (event) => { if (event.target.closest(".themebtn")) cycleTheme(); });
 
 // When the window becomes key, WebKit may focus its first control. Drop that focus unless the user is tabbing.
@@ -4047,6 +4466,7 @@ document.addEventListener("keydown", (event) => {
     selected: state.selected,
     group: state.group,
     aboutOpen: state.aboutOpen,
+    pickerOpen: picker !== null,
     evidence: state.evidence,
     activityMode: state.activityMode,
     interval: state.interval,

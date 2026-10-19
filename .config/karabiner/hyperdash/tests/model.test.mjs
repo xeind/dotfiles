@@ -698,6 +698,94 @@ test("dates: stepping, labels and clamping", () => {
   assert.equal(M.isValidDate("2026-10-16T00:00:00"), false);
 });
 
+test("date picker: typed dates are exact civil dates inside the recorded range", () => {
+  const first = "2026-08-03";
+  const today = "2026-10-19";
+  const entry = (text, from = first, to = today) => plain(M.parseDateEntry(text, from, to));
+  assert.deepEqual(entry("2026-09-14"), { date: "2026-09-14" });
+  assert.deepEqual(entry("  2026-09-14\t"), { date: "2026-09-14" }, "surrounding space is trimmed");
+  assert.deepEqual(entry("2026-08-03"), { date: "2026-08-03" }, "the first recorded day");
+  assert.deepEqual(entry("2026-10-19"), { date: "2026-10-19" }, "today");
+  assert.deepEqual(entry("2024-02-29", "2024-01-01", today), { date: "2024-02-29" }, "a leap day");
+  for (const text of ["", "   ", "2026-9-14", "2026/09/14", "14-09-2026", "10/11/26", "yesterday", "2026-09-14x", "20260914", "2026-09"]) {
+    assert.deepEqual(entry(text), { error: "Use YYYY-MM-DD" }, JSON.stringify(text));
+  }
+  for (const text of ["2026-02-29", "2026-04-31", "2026-13-01", "2026-00-10", "2026-10-00", "2026-10-32"]) {
+    assert.deepEqual(entry(text), { error: "That date does not exist" }, text);
+  }
+  const range = { error: "Choose a date from Aug 3, 2026 through Oct 19, 2026" };
+  assert.deepEqual(entry("2026-08-02"), range, "one day before the first");
+  assert.deepEqual(entry("2026-10-20"), range, "tomorrow");
+  // With no recorded day, or a first day after today, today alone is open, as clampDay has it.
+  assert.deepEqual(entry("2026-10-19", null), { date: "2026-10-19" });
+  assert.deepEqual(entry("2026-10-18", null), { error: "Choose Oct 19, 2026" });
+  assert.deepEqual(plain(M.dateBounds(null, today)), { first: today, last: today });
+  assert.deepEqual(plain(M.dateBounds(first, today)), { first, last: today });
+});
+
+test("date picker: six Sunday-first weeks, whatever the month's shape", () => {
+  const grid = (month) => plain(M.monthGrid(month));
+  for (const month of ["2026-02", "2015-02", "2026-08", "2026-10", "2024-02", "2026-05"]) assert.equal(grid(month).length, 42, month);
+  // February 2015 starts on a Sunday and fills four rows exactly; the other two stay blank.
+  assert.deepEqual(grid("2015-02").slice(0, 2), ["2015-02-01", "2015-02-02"]);
+  assert.equal(grid("2015-02")[27], "2015-02-28");
+  assert.deepEqual(grid("2015-02").slice(28), new Array(14).fill(null));
+  // August 2026 starts on a Saturday and needs all six rows.
+  assert.deepEqual(grid("2026-08").slice(0, 7), [null, null, null, null, null, null, "2026-08-01"]);
+  assert.equal(grid("2026-08")[36], "2026-08-31");
+  // October 2026 starts on a Thursday.
+  assert.equal(grid("2026-10").indexOf("2026-10-01"), 4);
+  assert.equal(grid("2024-02").filter(Boolean).at(-1), "2024-02-29");
+  assert.equal(M.fullDateLabel("2026-10-19"), "Monday, October 19, 2026");
+  assert.equal(M.fullDateLabel("2024-02-29"), "Thursday, February 29, 2024");
+});
+
+test("date picker: grid keys move the focused day and stop at the range", () => {
+  const first = "2026-08-03";
+  const last = "2026-10-19";
+  const move = (date, key) => M.moveDate(date, key, first, last);
+  assert.equal(move("2026-09-14", "ArrowLeft"), "2026-09-13");
+  assert.equal(move("2026-09-30", "ArrowRight"), "2026-10-01");
+  assert.equal(move("2026-09-14", "ArrowUp"), "2026-09-07");
+  assert.equal(move("2026-09-14", "ArrowDown"), "2026-09-21");
+  // Home and End: the first and last day of the grid row (Sunday to Saturday, inside the month) inside the range.
+  assert.equal(move("2026-09-16", "Home"), "2026-09-13");
+  assert.equal(move("2026-09-16", "End"), "2026-09-19");
+  assert.equal(move("2026-10-02", "Home"), "2026-10-01", "the row's earlier cells are blank");
+  assert.equal(move("2026-09-29", "End"), "2026-09-30");
+  assert.equal(move("2026-08-04", "Home"), first);
+  assert.equal(move("2026-10-18", "End"), last);
+  // PageUp and PageDown keep the day of the month, or the month's last day when it is shorter.
+  assert.equal(move("2026-09-14", "PageUp"), "2026-08-14");
+  assert.equal(move("2026-09-14", "PageDown"), "2026-10-14");
+  assert.equal(move("2026-08-31", "PageDown"), "2026-09-30");
+  assert.equal(move("2026-09-30", "PageDown"), "2026-10-19", "past the range: the last day");
+  assert.equal(move("2026-09-01", "PageUp"), first, "before the range: the first day");
+  // At the bounds nothing moves.
+  assert.equal(move(first, "ArrowLeft"), first);
+  assert.equal(move(first, "ArrowUp"), first);
+  assert.equal(move(last, "ArrowRight"), last);
+  assert.equal(move(last, "ArrowDown"), last);
+  assert.equal(move("2026-09-14", "x"), null, "other keys are not grid keys");
+  // The day of a month the picker or the month view opens on: the same day number, clamped to the month.
+  assert.equal(M.dayInMonth("2026-09", "2026-10-31"), "2026-09-30");
+  assert.equal(M.dayInMonth("2024-02", "2026-03-31"), "2024-02-29");
+  assert.equal(M.dayInMonth("2026-08", "2026-10-12"), "2026-08-12");
+});
+
+test("routeKey: while the date picker is open only Escape routes, and it closes the picker first", () => {
+  const open = { page: "activity", layer: null, highlight: "w", selected: null, aboutOpen: false, layers: ["w", "v"], heatHas: () => false,
+    activityMode: "day", interval: 26, pickerOpen: true };
+  assert.deepEqual(plain(M.routeKey(open, { key: "Escape" })), { type: "closePicker" });
+  for (const key of ["Enter", " ", "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "w", "v", "?", "2", "-", "Tab", "Backspace"]) {
+    assert.equal(M.routeKey(open, { key }), null, `${JSON.stringify(key)} went to the page behind the picker`);
+    assert.equal(M.routeKey(open, { key, shiftKey: true }), null);
+  }
+  assert.equal(M.routeKey({ ...open, controlFocused: true }, { key: "Enter" }), null);
+  // Closed, the same keys act as before.
+  assert.deepEqual(plain(M.routeKey({ ...open, pickerOpen: false }, { key: "Escape" })), { type: "highlight", layer: "w" });
+});
+
 test("context log: valid lines, rejected lines, and the value rules", () => {
   const store = M.createContextStore();
   store.reset([

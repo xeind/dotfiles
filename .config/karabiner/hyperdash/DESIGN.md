@@ -19,6 +19,7 @@ before these rules (v1, 2026-10-17) and where each one went.
 | A rule for every state of every control | `tests/states.test.mjs` |
 | Keyboard and pointer do the same thing; footer hints | `tests/interaction.test.mjs` |
 | One height per page, fades, tooltips | `tests/height.test.mjs` with `height_probe.js` |
+| The Activity date picker: modal keys, cancel, commit, its fixed height | `tests/picker.test.mjs` |
 | The page-change motion and its host handshake, in WebKit | `tests/motion.test.mjs`; the host side in `hammerspoon/tests/hyperdash_host_test.lua` |
 | Token parity across themes | `tests/model.test.mjs` ("every theme defines every colour token") |
 | What each insight claims, what fails and recovers, how the data ages | [`docs/`](docs/): `CLAIMS.md`, `RECOVERY.md`, `LIFECYCLE.md` |
@@ -88,7 +89,10 @@ It sits at the same place on every page: the title takes the free space, so
 the box and Close share one right edge, and the label has a fixed minimum width
 (10ch) so the box is the same size for every month and day label.
 On Insights the box gives way to the report's age (`.updated`), plain mono
-text in `--faint`: it is not a control, so it has no edge.
+text in `--faint`: it is not a control, so it has no edge. On Activity the
+whole box is one button (`.pill-trigger`) that opens the date picker: a
+calendar icon takes the left arrow's 20 px slot, the right slot stays empty,
+and the label keeps its place.
 
 Steps are about 3 OKLab points apart in Manila and Nightingale. Two are
 short: Kozo's `--card` to `--raised` is 2.1, and Blueprint's `--raised` is
@@ -353,10 +357,10 @@ Six steps, as tokens (before v1: 12 gap values, 6 margins, 17 paddings).
 | `--space-xl` | 20 | Card side padding; the window's shadow margin |
 
 2 and 6 never stack vertically except as a pair that sums to the rhythm.
-`tests/design.test.mjs` fails a raw px gap, margin, padding or radius; 13
+`tests/design.test.mjs` fails a raw px gap, margin, padding or radius; 14
 exceptions, each with its arithmetic, are listed there (card top 14, pill
-2.5, footer rule 7, the square date box, eight radii and the 8 px monogram
-token).
+2.5, footer rule 7, the square date box and its button, eight radii and the
+8 px monogram token).
 
 ### The 4 px rhythm
 
@@ -391,7 +395,19 @@ Layer.
   carry `data-fade`, a 26 px mask on the edge where content continues.
 - The overview list keeps its scroll while a layer shows; another month or a
   reopen starts it at the top.
-- Overlays (the about panel) sit over the card and never change its height.
+- Overlays (the about panel, the date picker) sit over the card and never
+  change its height. One at a time: opening the picker closes About.
+- The date picker (Activity) is a modal dialog, flat on `--raised` with a
+  1 px `--line`, 50 px from the card top (14 + the 28 px header + 8). The
+  layer under it covers the card only, so it adds no click-blocking area to
+  the window; a click there cancels. It holds a field for `YYYY-MM-DD`, one
+  reserved line for a reason, and six fixed Sunday-first rows of 28 px days,
+  so its height is the same for every month and message. A day in the range
+  (first recorded day through today) is a `--hover` tile; a day outside it
+  has no tile and `--dim` ink; today has an `--accent-soft` dot; the
+  Activity day has the selected set. A reason is Geist 12 in `--soft`
+  (`--down` on `--raised` misses the status floor in Manila and
+  Nightingale); the field's edge turns `--down`.
 - Stack order per page: header 28 → totals → page body → status (two lines)
   → footer.
 - The footer holds at most four hints in one line, `--space-sm` (6) apart,
@@ -462,6 +478,14 @@ Layer.
   lines; when they come it shows like any other day, at the same height.
   If they do not come within 5 s, or do not add up to the counts, the day
   stays counts only until the next open.
+- The date picker has no motion: it opens, changes month and closes at once.
+  While it is open the rest of the card is `inert`, Tab cycles inside it,
+  and the page's keys stop: `routeKey` passes every key but Escape, which
+  cancels before anything else. Its draft (shown month, focused day, typed
+  text) is apart from the Activity state, so browsing and typing change
+  nothing; a day opens only through the normal day path (`setDay`), which
+  also asks for an archived day's lines. Data updates redraw the calendar,
+  never the field. `open()` drops the picker.
 - A rebuilt control keeps keyboard focus.
 - A button focused from the keyboard keeps Enter and Space; the footer names
   what Enter and the arrows do for the focused control.

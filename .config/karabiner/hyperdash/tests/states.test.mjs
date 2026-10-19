@@ -32,6 +32,13 @@ const CONTROLS = {
   ".list": { clipped: true, states: ["focus"] },
   ".key": { button: true, states: ["hover", "selected", "disabled"], selected: ".selected" },
   ".bin": { states: ["hover", "focus", "selected"], selected: ".selected" },
+  // The Activity date box and its picker.
+  "button.pill-trigger": { button: true, states: ["hover", "focus", "pressed", "selected"], selected: '[aria-expanded="true"]' },
+  ".picker-close": { button: true, states: ["hover", "focus", "pressed"] },
+  ".picker-input": { states: ["hover", "focus"] },
+  ".picker-open": { button: true, states: ["hover", "focus", "pressed"] },
+  ".picker-step": { button: true, states: ["hover", "focus", "pressed", "disabled"] },
+  ".picker-day": { button: true, states: ["hover", "focus", "pressed", "selected", "disabled"], selected: '[aria-selected="true"]' },
 };
 const MARK = { hover: [":hover"], focus: [":focus-visible", ":focus"], pressed: [":active"], disabled: [":disabled"] };
 
