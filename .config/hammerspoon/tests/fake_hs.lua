@@ -317,7 +317,16 @@ function sandbox.new(options)
       return { frame = function() return { x = f.x, y = f.y, w = f.w, h = f.h } end }
     end },
     focus = function() env.focused = env.focused + 1 end,
-    image = { iconForFile = function() return { setSize = function(self) return self end, encodeAsURLString = function() return "data:image/png;base64,AAAA" end } end },
+    image = {
+      iconForFile = function() return { setSize = function(self) return self end, encodeAsURLString = function() return "data:image/png;base64,AAAA" end } end,
+      -- A real file gives an image whose URL names the file; a missing one gives nil, as hs.image does.
+      imageFromPath = function(path)
+        local file = io.open(path, "rb")
+        if not file then return nil end
+        file:close()
+        return { encodeAsURLString = function() return "data:image/png;base64,site:" .. path:match("[^/]+$") end }
+      end,
+    },
     task = {
       new = function(path, callback, args)
         local task = { path = path, callback = callback, args = args, running = false }

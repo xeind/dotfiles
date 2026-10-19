@@ -3023,10 +3023,12 @@ function iconFor(b) {
   if (!template) {
     const app = b.app && icons.apps[b.app];
     const site = b.site && icons.sites[b.site];
-    if (app) {
+    // An app's icon, or a site's favicon (a PNG data URL from the host): drawn alike, in the app icon's mask.
+    const picture = app || site?.url;
+    if (picture) {
       template = element("span", "icon");
       const image = element("img");
-      image.src = app;
+      image.src = picture;
       template.append(image);
     } else if (site?.svg) {
       template = element("span", "icon site");

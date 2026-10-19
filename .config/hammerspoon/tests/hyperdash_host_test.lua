@@ -776,7 +776,10 @@ end
 do
   local home, p = baseHome("ctx_apps")
   write(p.log, lines(0, 3))
-  write(p.bindings, '[{"layer":"o","key":"f","label":"Finder","app":"Finder"},{"layer":"b","key":"x","label":"x.com","site":"x.com"}]')
+  write(p.bindings, '[{"layer":"o","key":"f","label":"Finder","app":"Finder"},{"layer":"b","key":"x","label":"x.com","site":"x.com"},{"layer":"b","key":"g","label":"github.com","site":"github.com"}]')
+  -- The site icons ship beside the page: x.com has one, github.com has none.
+  os.execute("mkdir -p '" .. home .. "/.config/karabiner/hyperdash/site_icons'")
+  write(home .. "/.config/karabiner/hyperdash/site_icons/x.com.png", "PNG")
   local env = sandbox.new({ moduleDir = MODULE_DIR, home = home, startTime = noon() })
   env.installed = {
     ["/Applications"] = { "Ghostty.app", "Notes.txt", "Safari.app", "Broken.app" },
@@ -808,6 +811,9 @@ do
   check("icons: binding app keyed by name and by bundle ID", icons and icons["Finder"] ~= nil and icons["com.apple.finder"] == icons["Finder"])
   check("icons: running regular app keyed by bundle ID", icons and icons["com.mitchellh.ghostty"] ~= nil)
   check("icons: background app has no icon", icons and icons["com.example.helper"] == nil)
+  local sites = env.page.icons and env.page.icons.sites
+  check("icons: a bound site with an icon file is sent as a PNG data URL", sites and sites["x.com"] and sites["x.com"].url == "data:image/png;base64,site:x.com.png", sites and sites["x.com"] and sites["x.com"].url)
+  check("icons: a bound site without a file is left to the page's monogram", sites and sites["github.com"] == nil)
   check("setApps: sent right after the first usage reset", methods(env):find("^reset,setApps,setIcons") ~= nil, methods(env))
 
   -- Unchanged apps are not resent; a new running app is.

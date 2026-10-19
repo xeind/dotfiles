@@ -796,3 +796,18 @@ test("clock: on a spring-forward day the skipped hour is rejected and Today runs
     await page.close();
   }
 });
+
+test("site icons: a site the host sends as a PNG shows its icon; one it does not send keeps its letter", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  try {
+    const sites = [{ layer: "b", key: "x", label: "x.com", site: "x.com" }, { layer: "b", key: "g", label: "github.com", site: "github.com" }];
+    await load(page, { now: "2026-10-17T12:00:00", bindings: sites, presses: [["2026-10-17T10:00:00", "b", "x"], ["2026-10-17T10:01:00", "b", "g"]] });
+    const url = "data:image/png;base64,iVBORw0KGgo=";
+    await page.eval(`setIcons({ apps: {}, sites: { "x.com": { url: ${JSON.stringify(url)} } } })`);
+    const icon = (key) => page.eval(`(() => { const icon = document.querySelector('.item[data-key="${key}"] .icon'); return { img: icon.querySelector("img")?.getAttribute("src") ?? null, text: icon.textContent }; })()`);
+    assert.deepEqual(await icon("x"), { img: url, text: "" }, "the site's PNG is not shown");
+    assert.deepEqual(await icon("g"), { img: null, text: "G" }, "a site with no icon lost its letter");
+  } finally {
+    await page.close();
+  }
+});

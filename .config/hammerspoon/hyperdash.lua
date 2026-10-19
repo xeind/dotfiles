@@ -409,6 +409,23 @@ local function readAppIcons(running)
   return icons
 end
 
+-- Site icons: 36 px PNGs beside the page, one per bound site, named after it
+-- (site_icons/x.com.png). A site with no file keeps the page's monogram.
+local SITE_ICONS = HOME .. "/.config/karabiner/hyperdash/site_icons/"
+local siteIconCache = {} -- site -> data URL, or false when there is no file
+local function readSiteIcons()
+  local icons = {}
+  for _, binding in ipairs(bindingsCache.list) do
+    local site = binding.site
+    if type(site) == "string" and site:match("^[%w.-]+$") and siteIconCache[site] == nil then
+      local image = hs.image.imageFromPath(SITE_ICONS .. site .. ".png")
+      siteIconCache[site] = image and image:encodeAsURLString(true, "PNG") or false
+    end
+    if site and siteIconCache[site] then icons[site] = { url = siteIconCache[site] } end
+  end
+  return icons
+end
+
 -- An empty Lua table encodes as a JSON array; the page expects an object.
 local function encodeMap(map)
   if next(map) == nil then return "{}" end
@@ -419,9 +436,10 @@ end
 local sentApps = { names = nil, icons = nil }
 local function sendApps()
   local running = hs.application.runningApplications() -- listed once per sync
-  local names, icons = collectAppNames(running), readAppIcons(running)
+  local names, icons, sites = collectAppNames(running), readAppIcons(running), readSiteIcons()
   local iconKeys = {}
   for key in pairs(icons) do iconKeys[key] = 1 end
+  for key in pairs(sites) do iconKeys["site " .. key] = 1 end
   local namesSignature, iconsSignature = reader.mapSignature(names), reader.mapSignature(iconKeys)
   if sentApps.names ~= namesSignature then
     sentApps.names = namesSignature
@@ -429,7 +447,7 @@ local function sendApps()
   end
   if sentApps.icons ~= iconsSignature then
     sentApps.icons = iconsSignature
-    send("setIcons({\"apps\":" .. encodeMap(icons) .. "})")
+    send("setIcons({\"apps\":" .. encodeMap(icons) .. ",\"sites\":" .. encodeMap(sites) .. "})")
   end
 end
 
