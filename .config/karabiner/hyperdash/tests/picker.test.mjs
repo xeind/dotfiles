@@ -165,6 +165,16 @@ test("picker: the date box opens a dialog over Activity at the same height; Esca
     assert.equal(await page.height(), height, "the picker never changes the page height");
     assert.equal(await page.eval(`document.querySelector('.picker-day[data-date="2026-10-12"]').getAttribute("aria-selected")`), "true");
     assert.match(await page.eval(`document.querySelector('.picker-day[data-date="2026-10-17"]').getAttribute("aria-label")`), /^Saturday, October 17, 2026, today/);
+    // Today carries a dot, unless it is the selected day: the selected fill already marks it.
+    const dot = (date) => page.eval(`getComputedStyle(document.querySelector('.picker-day[data-date="${date}"]'), "::after").content`);
+    assert.notEqual(await dot("2026-10-17"), "none", "today lost its dot");
+    await page.key("Escape");
+    await page.eval(`openDay("2026-10-17"), document.activeElement.blur()`);
+    await page.click("#date-trigger");
+    assert.equal(await dot("2026-10-17"), "none", "the selected day still shows today's dot");
+    await page.key("Escape");
+    await page.eval(`openDay("2026-10-12"), document.activeElement.blur()`);
+    await page.click("#date-trigger");
     assert.equal(await page.eval(`document.querySelector('.picker-day[data-date="2026-10-18"]').disabled`), true, "tomorrow is unavailable");
     assert.equal(shown.help, "AVAILABLE JUL 20, 2026 – OCT 17, 2026", "the bottom line shows the range until there is a reason");
 

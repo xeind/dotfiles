@@ -996,7 +996,8 @@
   }
   .picker-grid { display: grid; grid-template-rows: repeat(6, var(--control-lg)); gap: var(--space-xs); margin-top: var(--space-xs); }
 
-  /* An open day is a tile; a day outside the range has none, and dim ink. Today carries a dot under its number. */
+  /* An open day is a tile; a day outside the range has none, and dim ink. Today carries a dot under its number,
+     except when selected: the selected fill already marks it. */
   .picker-day {
     position: relative;
     justify-self: center;
@@ -1013,7 +1014,7 @@
   .picker-day:active:not(:disabled) { background: var(--line); color: var(--text); }
   .picker-day[aria-selected="true"] { background: var(--accent-bg); color: var(--accent-soft); border: 1px solid var(--accent-edge); }
   .picker-day:disabled { background: none; color: var(--dim); cursor: default; }
-  .picker-day.today::after {
+  .picker-day.today:not([aria-selected="true"])::after {
     content: "";
     position: absolute;
     left: calc(50% - var(--space-2xs));

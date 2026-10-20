@@ -45,7 +45,7 @@ const RAW = [
   [".picker-day:active:not(:disabled)", "value", "--text", [["active", "--line"]], "mono", 11, 400],
   ['.picker-day[aria-selected="true"]', "value", "--accent-soft", [["selected", "--accent-bg"]], "mono", 11, 400],
   [".picker-day:disabled", "absent", "--dim", [["disabled", "--raised"]], "mono", 11, 400],
-  [".picker-day.today::after", "dot", "--accent-soft", [["rest", "--hover"], ["selected", "--accent-bg"]], "dot", 4, 500],
+  ['.picker-day.today:not([aria-selected="true"])::after', "dot", "--accent-soft", [["rest", "--hover"]], "dot", 4, 500],
   ["picker buttons: the shared focus ring", "focus", "--accent-soft", [["focus", "--raised"]], "ring", 2, 500, "button:focus-visible, .list:focus-visible"],
 
   // Total

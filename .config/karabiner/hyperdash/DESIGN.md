@@ -405,10 +405,10 @@ Layer.
   that shows the range or the reason a typed date cannot open, so its height
   is the same for every month and message. The month arrows centre on the
   Sunday and Saturday tiles. A digit typed on the calendar starts a date in
-  the field. A day in the range
-  (first recorded day through today) is a `--hover` tile; a day outside it
-  has no tile and `--dim` ink; today has an `--accent-soft` dot; the
-  Activity day has the selected set. A reason is Geist 12 in `--soft`
+  the field. A day in the range (first recorded day through today) is a
+  `--hover` tile; a day outside it has no tile and `--dim` ink; the Activity
+  day has the selected set; today has an `--accent-soft` dot, except when it
+  is the selected day, whose fill already marks it. A reason is Geist 12 in `--soft`
   (`--down` on `--raised` misses the status floor in Manila and
   Nightingale); the field's edge turns `--down`.
 - Stack order per page: header 28 → totals → page body → status (two lines)
