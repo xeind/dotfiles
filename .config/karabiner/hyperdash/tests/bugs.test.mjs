@@ -346,6 +346,39 @@ test("insight evidence: Escape returns to the same card and scroll; a live updat
   }
 });
 
+test("held findings: a row after the cards reveals them in the same list; each opens its evidence; the height stays", options, async () => {
+  const page = await open("2026-10-17T12:00:00");
+  const held = ["unused", "unbound"].map((kind, i) => ({ ...INSIGHTS.insights[0], kind, title: `Held finding ${i + 1}` }));
+  try {
+    await load(page, { now: "2026-10-17T12:00:00", bindings: BINDINGS, insights: { ...INSIGHTS, held }, presses: [["2026-10-17T09:00:00", "v", "j"]] });
+    await page.press("i");
+    const height = await page.height();
+    await page.tabTo(".insight-reveal");
+    assert.equal(await page.eval(`document.activeElement.textContent`), "2 MORE FINDINGS");
+    assert.equal(await page.eval(`document.querySelectorAll(".insight").length`), 5, "held findings show before they are asked for");
+    // Enter shows them after the five, moves focus to the first, and drops the row.
+    await page.press("Enter");
+    assert.deepEqual(await page.eval(`[...document.querySelectorAll(".insight-title")].map((n) => n.textContent).slice(5)`), ["Held finding 1", "Held finding 2"]);
+    assert.equal(await focused(page), "Held finding 1", "focus did not move to the first held finding");
+    assert.equal(await page.eval(`document.querySelectorAll(".insight-reveal").length`), 0);
+    assert.equal(await page.height(), height, "revealing held findings changed the page height");
+    // A held card opens its evidence, and Escape comes back to it with the held findings still shown.
+    await page.press("Enter");
+    assert.equal(await page.eval(`document.querySelector(".evidence-title")?.textContent`), "Held finding 1");
+    await page.press("Escape");
+    assert.equal(await focused(page), "Held finding 1", "focus did not return to the held card");
+    assert.equal(await page.eval(`document.querySelectorAll(".insight").length`), 7);
+    // A new open hides them again; a report with none held has no row.
+    await page.eval(`hyperdash.open({ now: "2026-10-17T12:00:00" })`);
+    await page.press("i");
+    assert.equal(await page.eval(`document.querySelectorAll(".insight").length`), 5);
+    await page.eval(`hyperdash.setInsights(${JSON.stringify(INSIGHTS)}, fixture.health)`);
+    assert.equal(await page.eval(`document.querySelectorAll(".insight-reveal").length`), 0);
+  } finally {
+    await page.close();
+  }
+});
+
 test("bug 3: the About theme button keeps keyboard focus through a health update and a log append", options, async () => {
   const page = await open("2026-10-17T12:00:00");
   try {

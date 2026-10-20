@@ -22,6 +22,12 @@ import Foundation
 ///     `no-pattern`) and, unless shown, a reason with the counts behind it.
 ///   - `insights` holds at most five cards, ordered by `cardPriority`; `held` holds the
 ///     findings past those five, whole.
+///   - Unused needs 14 recorded days in its 30, not 3, and its detail splits never-pressed
+///     bindings from those last pressed before the window. Unbound counts a combo only
+///     with 3 or more presses on 2 or more days.
+///   - New kinds `pair`, `double`, `undone` and `uptake`, with rules of the same names.
+///     They count `pairs`, `doubles`, `presses` and `days`. A reader that does not know a
+///     kind draws it with a neutral icon.
 public struct InsightsFile: Encodable, Sendable {
     public let version = 3
     public let generated: String

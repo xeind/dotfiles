@@ -553,7 +553,7 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         // Window: 10 of 32 unused (31%). System: 3 of 4 unused (75%).
         let bindings = layer("w", 32) + layer("s", 4)
         let found = insight(.unused, in: report(used("w", 22) + used("s", 1), bindings: bindings))
-        #expect(found?.title == "3 of 4 System shortcuts unused")
+        #expect(found?.title == "3 of 4 System shortcuts unused in 30 days")
         #expect(found?.value == 3)
         #expect(found?.keys == [["s", "k1"], ["s", "k2"], ["s", "k3"]])
     }
@@ -561,11 +561,39 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
     @Test func reportsRecordedDays() {
         let bindings = layer("w", 5)
         let found = insight(.unused, in: report(used("w", 1), bindings: bindings))
-        #expect(found?.title == "4 of 5 Window shortcuts unused")
-        #expect(found?.detail == "No presses on 30 recorded days")
+        #expect(found?.title == "4 of 5 Window shortcuts unused in 30 days")
+        #expect(found?.detail == "4 never pressed since Aug 1 · 30 of 30 days recorded")
         #expect(found?.measure == Measure(count: 4, total: 5, baseline: nil, unit: "bindings"))
         #expect(found?.dates.count == 30)
         #expect(found?.dates.last == oct(14))
+    }
+
+    @Test func separatesNeverPressedFromLapsed() {
+        let bindings = layer("w", 5)
+        let lines = used("w", 1) + presses(1, "w", "k1", day: "2026-09-01") + presses(1, "w", "k2", day: "2026-09-05")
+        let found = insight(.unused, in: report(lines, bindings: bindings))
+        #expect(found?.title == "4 of 5 Window shortcuts unused in 30 days")
+        #expect(found?.detail == "2 never pressed since Aug 1 · 2 last pressed Sep 5 or earlier · 30 of 30 days recorded")
+        // Never pressed first, then lapsed, each in binding order.
+        #expect(found?.keys == [["w", "k3"], ["w", "k4"], ["w", "k1"], ["w", "k2"]])
+    }
+
+    @Test func oneLapsedNamesItsDay() {
+        let lines = used("w", 4) + presses(1, "w", "k4", day: "2026-09-05")
+        let found = insight(.unused, in: report(lines, bindings: layer("w", 8)))
+        #expect(found?.detail == "3 never pressed since Aug 1 · 1 last pressed Sep 5 · 30 of 30 days recorded")
+    }
+
+    @Test func archivedPressIsNotNeverPressed() {
+        let bindings = layer("w", 5)
+        let archive = ArchivedHistory(
+            first: date("2026-07-01T00:00:00"), rejected: 0,
+            comboDays: [Combo(layer: "w", key: "k1"): ["2026-07-10": 2]])
+        let result = computeReport(
+            events: log(used("w", 1)), bindings: bindings, now: now, archive: archive, calendar: calendar)
+        let found = insight(.unused, in: result)
+        #expect(found?.detail == "3 never pressed since Jul 1 · 1 last pressed Jul 10 · 30 of 30 days recorded")
+        #expect(found?.keys.last == ["w", "k1"])
     }
 
     @Test func ignoresLayersWithFewerThanFourBindings() {
@@ -578,16 +606,17 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
         #expect(insight(.unused, in: report(used("w", 3), bindings: bindings)) == nil)
     }
 
-    @Test func needsThreeFullyRecordedDays() {
+    @Test func needsFourteenFullyRecordedDays() {
         let bindings = layer("w", 5)
-        // First press on 2026-10-12: days 13 and 14 are fully recorded.
-        let two = daily("w", "k0", from: 12, [1, 1, 1], hour: 8)
-        #expect(insight(.unused, in: report(two, bindings: bindings, anchored: false)) == nil)
-        // First press on 2026-10-11: days 12, 13 and 14.
-        let three = daily("w", "k0", from: 11, [1, 1, 1, 1], hour: 8)
-        let found = insight(.unused, in: report(three, bindings: bindings, anchored: false))
-        #expect(found?.detail == "No presses on 3 recorded days")
-        #expect(found?.dates == [oct(12), oct(13), oct(14)])
+        // First press on 2026-10-01: 2 to 14 October, 13 days, are fully recorded.
+        let thirteen = presses(1, "w", "k0", day: oct(1))
+        #expect(insight(.unused, in: report(thirteen, bindings: bindings, anchored: false)) == nil)
+        // First press on 2026-09-30: 1 to 14 October.
+        let fourteen = presses(1, "w", "k0", day: "2026-09-30")
+        let found = insight(.unused, in: report(fourteen, bindings: bindings, anchored: false))
+        #expect(found?.detail == "4 never pressed since Sep 30 · 14 of 30 days recorded")
+        #expect(found?.dates.count == 14)
+        #expect(found?.dates.first == oct(1))
     }
 
     @Test func emptyLogMakesNoClaim() {
@@ -596,49 +625,52 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
 
     @Test func daysWithContextGapsAreNotCounted() {
         let bindings = layer("w", 5)
-        let lines = daily("w", "k0", from: 10, [1, 1, 1, 1, 1], hour: 8)
+        let lines = presses(1, "w", "k0", day: "2026-09-30", hour: 8) + daily("w", "k0", from: 1, Array(repeating: 1, count: 14), hour: 8)
+        #expect(insight(.unused, in: report(lines, bindings: bindings, anchored: false)) != nil)
         let result = report(
             lines, bindings: bindings, anchored: false,
             context: [
-                context("\(oct(10))T00:00:00.000", "start"),
+                context("2026-09-30T00:00:00.000", "start"),
                 context("\(oct(12))T07:00:00.000", "app", "com.a.one"),
                 context("\(oct(14))T00:00:00.000", "start"),
             ])
-        // Presses on 12 and 13 fall in the gap, leaving only day 11 and day 14.
+        // Presses on 12 and 13 fall in the gap, leaving 1 to 11 October and 14 October.
         #expect(insight(.unused, in: result) == nil)
+        #expect(result.rules.first { $0.rule == "unused" }?.reason
+                == "The unused check needs 14 recorded days in the last 30; 12 qualify.")
     }
 
     @Test func unobservedEmptyDaysAreNotCounted() {
         let bindings = layer("w", 5)
         let result = report(
-            presses(1, "w", "k0", day: oct(1)), bindings: bindings, anchored: false,
-            context: [context("\(oct(12))T00:00:00.000", "start")])
-        // 2 to 11 October have no session, so only 12, 13 and 14 October count.
+            presses(1, "w", "k0", day: "2026-09-20"), bindings: bindings, anchored: false,
+            context: [context("\(oct(1))T00:00:00.000", "start")])
+        // 21 to 30 September have no session, so only 1 to 14 October count.
         let found = insight(.unused, in: result)
-        #expect(found?.detail == "No presses on 3 recorded days")
-        #expect(found?.dates == [oct(12), oct(13), oct(14)])
+        #expect(found?.detail == "4 never pressed since Sep 20 · 14 of 30 days recorded")
+        #expect(found?.dates.first == oct(1))
     }
 
     @Test func pressOlderThan30DaysDoesNotCount() {
         let bindings = layer("w", 5)
         let lines = presses(1, "w", "k0", day: "2026-09-01")
         let found = insight(.unused, in: report(lines, bindings: bindings))
-        #expect(found?.title == "5 of 5 Window shortcuts unused")
+        #expect(found?.title == "5 of 5 Window shortcuts unused in 30 days")
     }
 
     @Test func keepsEveryUnusedKey() {
         let found = insight(.unused, in: report([], bindings: layer("s", 7)))
-        #expect(found?.title == "7 of 7 System shortcuts unused")
+        #expect(found?.title == "7 of 7 System shortcuts unused in 30 days")
         #expect(found?.keys.count == 7)
         #expect(found?.windowStart == "2026-09-15")
         #expect(found?.windowEnd == oct(15))
     }
 
     @Test func explainsTooFewRecordedDays() {
-        let two = daily("w", "k0", from: 12, [1, 1, 1], hour: 8)
-        let status = report(two, bindings: layer("w", 5), anchored: false).rules.first { $0.rule == "unused" }
+        let thirteen = presses(1, "w", "k0", day: oct(1))
+        let status = report(thirteen, bindings: layer("w", 5), anchored: false).rules.first { $0.rule == "unused" }
         #expect(status?.status == .notReady)
-        #expect(status?.reason == "The unused check needs 3 recorded days in the last 30; 2 qualify.")
+        #expect(status?.reason == "The unused check needs 14 recorded days in the last 30; 13 qualify.")
     }
 }
 
@@ -766,6 +798,190 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
     }
 }
 
+// MARK: - Pair
+
+@Suite struct PairTests {
+    let bindings = [
+        Binding(layer: "o", key: "t", label: "Ghostty", category: "app-launch"),
+        Binding(layer: "w", key: "h", label: "Left half", category: "window-arrangement"),
+        Binding(layer: "s", key: "a", label: "Lock", category: "system"),
+        Binding(layer: "v", key: "q", label: "Left Click", category: "pointer"),
+        Binding(layer: "t", key: "j", label: "Word left", category: "text-navigation"),
+        Binding(layer: "t", key: "k", label: "Word right", category: "text-navigation"),
+    ]
+
+    /// One press of `first`, then one of `second` `gap` seconds later, at 10:`minute` on `day`.
+    func pair(
+        day: Int, minute: Int = 0, gap: Int = 5, _ first: (String, String) = ("o", "t"),
+        _ second: (String, String) = ("w", "h")
+    ) -> [String] {
+        let time = "\(oct(day))T10:\(String(format: "%02d", minute))"
+        return [
+            line("\(time):00", first.0, first.1),
+            line("\(time):\(String(format: "%02d", gap))", second.0, second.1),
+        ]
+    }
+
+    /// 5 pairs on 4 days, 2 on the busiest: the smallest set the rule accepts.
+    func threshold(gap: Int = 5) -> [String] {
+        pair(day: 3, gap: gap) + pair(day: 3, minute: 30, gap: gap) + pair(day: 4, gap: gap)
+            + pair(day: 5, gap: gap) + pair(day: 6, gap: gap)
+    }
+
+    @Test func reportsRecurringPair() {
+        let found = insight(.pair, in: report(threshold(), bindings: bindings))
+        #expect(found?.title == "Ghostty then Left half: 5 times")
+        #expect(found?.detail == "O T · then W H within 5 s · on 4 of the last 14 days")
+        #expect(found?.keys == [["o", "t"], ["w", "h"]])
+        #expect(found?.value == 5)
+        #expect(found?.dates == [oct(3), oct(4), oct(5), oct(6)])
+        #expect(found?.windowStart == oct(2))
+        #expect(found?.windowEnd == oct(15))
+        #expect(found?.comparisonStart == nil)
+        #expect(found?.measure == Measure(count: 5, total: nil, baseline: nil, unit: "pairs"))
+    }
+
+    @Test func needsFivePairs() {
+        let lines = pair(day: 3) + pair(day: 4) + pair(day: 5) + pair(day: 6)
+        let result = report(lines, bindings: bindings)
+        #expect(insight(.pair, in: result) == nil)
+        let status = result.rules.first { $0.rule == "pair" }
+        #expect(status?.status == .noPattern)
+        #expect(
+            status?.reason
+                == "No two shortcuts came one right after the other (within 5 s) 5+ times on 4+ of the last 14 days.")
+    }
+
+    @Test func needsThreeDaysWithoutTheBusiestDay() {
+        // 6 pairs on 3 days: dropping the busiest leaves 2 days.
+        let lines = pair(day: 3) + pair(day: 3, minute: 30) + pair(day: 3, minute: 40) + pair(day: 4)
+            + pair(day: 5) + pair(day: 5, minute: 30)
+        #expect(insight(.pair, in: report(lines, bindings: bindings)) == nil)
+        #expect(insight(.pair, in: report(lines + pair(day: 6), bindings: bindings)) != nil)
+    }
+
+    @Test func gapOverFiveSecondsIsNoPair() {
+        #expect(insight(.pair, in: report(threshold(gap: 5), bindings: bindings)) != nil)
+        #expect(insight(.pair, in: report(threshold(gap: 6), bindings: bindings)) == nil)
+    }
+
+    @Test func pressBetweenBreaksPair() {
+        let lines = threshold().enumerated().flatMap { index, text in
+            // A Lock press one second after each Ghostty press.
+            index % 2 == 0 ? [text, line(String(text.prefix(17)) + "01", "s", "a")] : [text]
+        }
+        // Ghostty then Lock, and Lock then Left half, take its place; the first sorts first.
+        #expect(insight(.pair, in: report(lines, bindings: bindings))?.keys == [["o", "t"], ["s", "a"]])
+    }
+
+    @Test func sameComboTwiceIsNoPair() {
+        let lines = [3, 4, 5, 6, 7].flatMap { pair(day: $0, ("o", "t"), ("o", "t")) }
+        let result = report(lines, bindings: bindings)
+        #expect(insight(.pair, in: result) == nil)
+        #expect(result.rules.first { $0.rule == "pair" }?.status == .noPattern)
+    }
+
+    @Test func ignoresPointerAndTextNavigation() {
+        let days = [3, 4, 5, 6, 7]
+        let pointer = days.flatMap { pair(day: $0, ("o", "t"), ("v", "q")) }
+        #expect(insight(.pair, in: report(pointer, bindings: bindings)) == nil)
+        let text = days.flatMap { pair(day: $0, ("t", "j"), ("t", "k")) }
+        #expect(insight(.pair, in: report(text, bindings: bindings)) == nil)
+        let window = days.flatMap { pair(day: $0, ("o", "t"), ("w", "h")) }
+        #expect(insight(.pair, in: report(window, bindings: bindings)) != nil)
+    }
+
+    @Test func countsOnlyTheLastFourteenDays() {
+        // October 1 is 14 days before today, one day out.
+        let lines = pair(day: 3) + pair(day: 3, minute: 30) + pair(day: 4) + pair(day: 5)
+        #expect(insight(.pair, in: report(pair(day: 1) + lines, bindings: bindings)) == nil)
+        #expect(insight(.pair, in: report(pair(day: 2) + lines, bindings: bindings)) != nil)
+    }
+}
+
+// MARK: - Double
+
+@Suite struct DoubleTests {
+    let bindings = [
+        Binding(layer: "o", key: "d", label: "Discord", category: "app-launch"),
+        Binding(layer: "b", key: "y", label: "youtube.com", category: "site-open"),
+        Binding(layer: "w", key: "h", label: "Left half", category: "window-arrangement"),
+        Binding(layer: "s", key: "a", label: "Lock", category: "system"),
+    ]
+
+    /// `count` presses of one combo, each `gap` seconds after the last, at `hour`:00 on `day`.
+    func run(
+        _ count: Int, _ layer: String = "o", _ key: String = "d", day: Int, hour: Int = 11, gap: Int = 2
+    ) -> [String] {
+        (0..<count).map {
+            line("\(oct(day))T\(hour):00:\(String(format: "%02d", $0 * gap))", layer, key)
+        }
+    }
+
+    /// One double on each of `days`.
+    func doubles(_ days: [Int], _ layer: String = "o", _ key: String = "d", gap: Int = 2) -> [String] {
+        days.flatMap { run(2, layer, key, day: $0, gap: gap) }
+    }
+
+    @Test func reportsDoubles() {
+        let found = insight(.double, in: report(doubles([3, 4, 5, 6, 7]), bindings: bindings))
+        #expect(found?.title == "Discord pressed twice in 2 s: 5 times")
+        #expect(found?.detail == "O D · on 5 of the last 14 days")
+        #expect(found?.keys == [["o", "d"]])
+        #expect(found?.value == 5)
+        #expect(found?.dates == [oct(3), oct(4), oct(5), oct(6), oct(7)])
+        #expect(found?.windowStart == oct(2))
+        #expect(found?.windowEnd == oct(15))
+        #expect(found?.measure == Measure(count: 5, total: nil, baseline: nil, unit: "doubles"))
+    }
+
+    @Test func countsSiteOpen() {
+        #expect(insight(.double, in: report(doubles([3, 4, 5, 6, 7], "b", "y"), bindings: bindings)) != nil)
+    }
+
+    @Test func needsFiveDoubles() {
+        let result = report(doubles([3, 4, 5, 6]), bindings: bindings)
+        #expect(insight(.double, in: result) == nil)
+        let status = result.rules.first { $0.rule == "double" }
+        #expect(status?.status == .noPattern)
+        #expect(
+            status?.reason
+                == "No app, site or capture shortcut was pressed twice within 2 s 5+ times on 3+ of the last 14 days.")
+    }
+
+    @Test func needsThreeDays() {
+        // 6 doubles on 2 days.
+        let lines = [11, 12, 13].flatMap { hour in [3, 4].flatMap { run(2, day: $0, hour: hour) } }
+        #expect(insight(.double, in: report(lines, bindings: bindings)) == nil)
+        #expect(insight(.double, in: report(lines + run(2, day: 5), bindings: bindings)) != nil)
+    }
+
+    @Test func gapOverTwoSecondsIsNoDouble() {
+        #expect(insight(.double, in: report(doubles([3, 4, 5, 6, 7], gap: 2), bindings: bindings)) != nil)
+        #expect(insight(.double, in: report(doubles([3, 4, 5, 6, 7], gap: 3), bindings: bindings)) == nil)
+    }
+
+    @Test func burstIsNoDouble() {
+        let days = [3, 4, 5, 6, 7]
+        #expect(insight(.double, in: report(days.flatMap { run(2, day: $0, gap: 1) }, bindings: bindings)) != nil)
+        #expect(insight(.double, in: report(days.flatMap { run(5, day: $0, gap: 1) }, bindings: bindings)) == nil)
+        // Three or four in a row are not "twice" either.
+        #expect(insight(.double, in: report(days.flatMap { run(3, day: $0, gap: 1) }, bindings: bindings)) == nil)
+        // A third press 3 s after a double joins the run, as a burst would count it.
+        let joined = days.flatMap {
+            run(2, day: $0, gap: 1) + [line("\(oct($0))T11:00:04", "o", "d")]
+        }
+        #expect(insight(.double, in: report(joined, bindings: bindings)) == nil)
+    }
+
+    @Test func otherCategoriesAreNotChecked() {
+        #expect(insight(.double, in: report(doubles([3, 4, 5, 6, 7], "w", "h"), bindings: bindings)) == nil)
+        let result = report(doubles([3, 4, 5, 6, 7], "s", "a"), bindings: bindings)
+        #expect(insight(.double, in: result) == nil)
+        #expect(result.rules.first { $0.rule == "double" }?.status == .noPattern)
+    }
+}
+
 // MARK: - Peak
 
 @Suite struct PeakTests {
@@ -826,40 +1042,69 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
     let bindings = [Binding(layer: "w", key: "u", label: "Previous Tab")]
 
     @Test func reportsLoggedCombosWithoutBinding() {
-        let lines = presses(3, "w", "u", day: oct(14)) + presses(5, "o", "t", day: oct(14), hour: 10)
-            + presses(2, "o", "f", day: "2026-09-01")
+        let lines = presses(3, "w", "u", day: oct(14)) + presses(4, "o", "t", day: oct(13))
+            + presses(1, "o", "t", day: oct(14), hour: 10)
+            + presses(2, "o", "f", day: "2026-09-01") + presses(1, "o", "f", day: "2026-09-02")
         let found = insight(.unbound, in: report(lines, bindings: bindings, anchored: false))
         #expect(found?.title == "2 logged combos no longer bound")
-        #expect(found?.detail == "7 presses logged with no current binding")
-        #expect(found?.measure == Measure(count: 7, total: nil, baseline: nil, unit: "presses"))
+        #expect(found?.detail == "8 presses logged with no current binding")
+        #expect(found?.measure == Measure(count: 8, total: nil, baseline: nil, unit: "presses"))
         #expect(found?.keys == [["o", "t"], ["o", "f"]])
         #expect(found?.value == 2)
-        #expect(found?.dates == ["2026-09-01", oct(14)])
+        #expect(found?.dates == ["2026-09-01", "2026-09-02", oct(13), oct(14)])
     }
 
     @Test func singularTitle() {
-        let found = insight(.unbound, in: report(presses(1, "o", "t", day: oct(14)), bindings: bindings, anchored: false))
+        let lines = presses(2, "o", "t", day: oct(13)) + presses(1, "o", "t", day: oct(14))
+        let found = insight(.unbound, in: report(lines, bindings: bindings, anchored: false))
         #expect(found?.title == "1 logged combo no longer bound")
-        #expect(found?.detail == "1 press logged with no current binding")
+        #expect(found?.detail == "3 presses logged with no current binding")
     }
 
     @Test func keepsEveryKeyMostPressedFirst() {
-        let lines = presses(1, "o", "a", day: oct(14)) + presses(4, "o", "b", day: oct(14), hour: 10)
-            + presses(3, "o", "c", day: oct(14), hour: 11) + presses(2, "o", "d", day: oct(14), hour: 12)
+        let lines = ["a", "b", "c", "d"].enumerated().flatMap { index, key in
+            presses([1, 4, 3, 2][index] + 1, "o", key, day: oct(13), hour: 9 + index)
+                + presses(1, "o", key, day: oct(14), hour: 9 + index)
+        }
         let found = insight(.unbound, in: report(lines, bindings: bindings, anchored: false))
         #expect(found?.keys == [["o", "b"], ["o", "c"], ["o", "d"], ["o", "a"]])
         #expect(found?.value == 4)
-        #expect(found?.windowStart == oct(14))
+        #expect(found?.windowStart == oct(13))
         #expect(found?.windowEnd == oct(15))
+    }
+
+    @Test func needsThreePressesOnTwoDays() {
+        // Two presses on two days, and five on one day: neither is past a stray.
+        let lines = presses(1, "o", "t", day: oct(13)) + presses(1, "o", "t", day: oct(14))
+            + presses(5, "o", "f", day: oct(14), hour: 10)
+        let result = report(lines, bindings: bindings, anchored: false)
+        #expect(insight(.unbound, in: result) == nil)
+        let status = result.rules.first { $0.rule == "unbound" }
+        #expect(status?.status == .noPattern)
+        #expect(status?.reason == "2 logged combos have no binding, none pressed 3+ times on 2+ days.")
+    }
+
+    @Test func countsArchivedPresses() {
+        let archive = ArchivedHistory(
+            first: date("2026-09-01T00:00:00"), rejected: 0,
+            comboDays: [Combo(layer: "o", key: "t"): ["2026-09-01": 2]])
+        let result = computeReport(
+            events: log(presses(1, "o", "t", day: oct(14))), bindings: bindings, now: now,
+            archive: archive, calendar: calendar)
+        let found = insight(.unbound, in: result)
+        #expect(found?.detail == "3 presses logged with no current binding")
+        #expect(found?.dates == ["2026-09-01", oct(14)])
     }
 
     @Test func absentWhenAllBound() {
         let result = report(presses(3, "w", "u", day: oct(14)), bindings: bindings, anchored: false)
         #expect(insight(.unbound, in: result) == nil)
+        #expect(result.rules.first { $0.rule == "unbound" }?.reason == "Every logged shortcut is still bound.")
     }
 
     @Test func ignoresFutureEvents() {
-        let result = report(presses(3, "o", "t", day: oct(16)), bindings: bindings, anchored: false)
+        let lines = presses(3, "o", "t", day: oct(14)) + presses(3, "o", "t", day: oct(16))
+        let result = report(lines, bindings: bindings, anchored: false)
         #expect(insight(.unbound, in: result) == nil)
     }
 }
@@ -978,6 +1223,205 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
     }
 }
 
+// MARK: - Undone
+
+@Suite struct UndoneTests {
+    let bindings = [
+        Binding(layer: "w", key: "f", label: "Maximize"),
+        Binding(layer: "w", key: "delete_or_backspace", label: "Restore"),
+        Binding(layer: "w", key: "h", label: "Left half"),
+        Binding(layer: "w", key: "l", label: "Right half"),
+    ]
+
+    /// `first` at 10:`minute`:00 on `day`, then `second` `gap` seconds later, both in layer w.
+    func pair(_ first: String, _ second: String, day: Int, minute: Int = 0, gap: Int = 2) -> [String] {
+        let time = "\(oct(day))T10:\(String(format: "%02d", minute))"
+        return [line("\(time):00", "w", first), line("\(time):\(String(format: "%02d", gap))", "w", second)]
+    }
+
+    /// Maximize then Restore on 10 to 13 October, twice on the 13th: 5 times on 4 days.
+    func fiveOnFourDays(gap: Int = 2, days: [Int] = [10, 11, 12, 13, 13]) -> [String] {
+        days.enumerated().flatMap { pair("f", "delete_or_backspace", day: $0.element, minute: $0.offset, gap: gap) }
+    }
+
+    @Test func reportsMostUndoneCombo() {
+        let lines = fiveOnFourDays(gap: 3) + presses(3, "w", "f", day: oct(14)) + pair("l", "h", day: 10, minute: 20)
+        let found = insight(.undone, in: report(lines, bindings: bindings))
+        #expect(found?.title == "Maximize undone 5 times")
+        #expect(found?.detail == "W F · then Restore within 3 s · on 4 of the last 14 days")
+        #expect(found?.keys == [["w", "f"], ["w", "delete_or_backspace"]])
+        #expect(found?.value == 5)
+        #expect(found?.dates == [oct(10), oct(11), oct(12), oct(13)])
+        #expect(found?.measure == Measure(count: 5, total: 8, baseline: nil, unit: "presses"))
+        #expect(found?.windowStart == oct(2))
+        #expect(found?.windowEnd == oct(15))
+    }
+
+    @Test func needsFiveTimes() {
+        let result = report(fiveOnFourDays(days: [10, 11, 12, 13]), bindings: bindings)
+        #expect(insight(.undone, in: result) == nil)
+        #expect(result.rules.first { $0.rule == "undone" }?.reason
+                == "Maximize was undone 4 times on 4 days in the last 14; the card needs 5 times on 4+ days.")
+    }
+
+    @Test func needsFourDaysSoTheBusiestDayCanBeDropped() {
+        // 5 times on 3 days leaves 2 days without the busiest one.
+        let lines = fiveOnFourDays(days: [11, 12, 13, 13, 13])
+        #expect(insight(.undone, in: report(lines, bindings: bindings)) == nil)
+        // One of the 13th's moved to the 10th makes 4 days.
+        let fourDays = fiveOnFourDays(days: [10, 11, 12, 13, 13])
+        #expect(insight(.undone, in: report(fourDays, bindings: bindings)) != nil)
+    }
+
+    @Test func threeSecondsCountsFourDoNot() {
+        #expect(insight(.undone, in: report(fiveOnFourDays(gap: 3), bindings: bindings)) != nil)
+        #expect(insight(.undone, in: report(fiveOnFourDays(gap: 4), bindings: bindings)) == nil)
+    }
+
+    @Test func pressBetweenBreaksThePair() {
+        let lines = fiveOnFourDays() + [line("\(oct(10))T10:00:01", "w", "s")]
+        #expect(insight(.undone, in: report(lines, bindings: bindings)) == nil)
+        // The same press after the pair leaves it whole.
+        let after = fiveOnFourDays() + [line("\(oct(10))T10:00:03", "w", "s")]
+        #expect(insight(.undone, in: report(after, bindings: bindings)) != nil)
+    }
+
+    @Test func sameSecondFollowsFileOrder() {
+        let forward = insight(.undone, in: report(fiveOnFourDays(gap: 0), bindings: bindings))
+        #expect(forward?.title == "Maximize undone 5 times")
+        let backward = [10, 11, 12, 13, 13].enumerated().flatMap {
+            pair("delete_or_backspace", "f", day: $0.element, minute: $0.offset, gap: 0)
+        }
+        #expect(insight(.undone, in: report(backward, bindings: bindings))?.title == "Restore undone 5 times")
+    }
+
+    @Test func eitherOrderOfAPairCounts() {
+        let lines = [10, 11, 12, 13, 13].enumerated().flatMap { pair("l", "h", day: $0.element, minute: $0.offset) }
+        let found = insight(.undone, in: report(lines, bindings: bindings))
+        #expect(found?.title == "Right half undone 5 times")
+        #expect(found?.detail == "W L · then Left half within 3 s · on 4 of the last 14 days")
+    }
+
+    @Test func undoingPressIsUsedOnce() {
+        // Maximize, Restore, Maximize: one Maximize undone, not also one Restore.
+        let lines = fiveOnFourDays() + [10, 11, 12, 13, 13].enumerated().map {
+            line("\(oct($0.element))T10:\(String(format: "%02d", $0.offset)):04", "w", "f")
+        }
+        #expect(insight(.undone, in: report(lines, bindings: bindings))?.title == "Maximize undone 5 times")
+    }
+
+    @Test func skipsPairNoLongerBound() {
+        let result = report(fiveOnFourDays(), bindings: bindings.filter { $0.label != "Restore" })
+        #expect(insight(.undone, in: result) == nil)
+        #expect(insight(.undone, in: report(fiveOnFourDays(), bindings: bindings)) != nil)
+    }
+
+    @Test func onlyCountsLastFourteenDays() {
+        // Window: 2 to 15 October. The 1 October pair falls outside it, leaving 4.
+        let lines = fiveOnFourDays(days: [1, 10, 11, 12, 13])
+        #expect(insight(.undone, in: report(lines, bindings: bindings)) == nil)
+        // On the 2nd, the first day of the window, it counts.
+        let inside = fiveOnFourDays(days: [2, 10, 11, 12, 13])
+        #expect(insight(.undone, in: report(inside, bindings: bindings)) != nil)
+    }
+}
+
+// MARK: - Uptake
+
+@Suite struct UptakeTests {
+    let bindings = [
+        Binding(layer: "f", key: "p", label: "Copy Path"),
+        Binding(layer: "f", key: "o", label: "Open in Finder"),
+    ]
+
+    /// One press of the combo at 09:00 on each listed October day.
+    func on(_ layer: String, _ key: String, _ days: [Int]) -> [String] {
+        days.flatMap { presses(1, layer, key, day: oct($0)) }
+    }
+
+    @Test func reportsWeakestNewShortcut() {
+        // Copy Path misses 5 of 9 days; Open in Finder misses none; z q is unbound.
+        let lines = on("f", "p", [6, 7, 9, 11]) + on("f", "o", Array(5...14)) + on("z", "q", [6])
+        let found = insight(.uptake, in: report(lines, bindings: bindings))
+        #expect(found?.title == "Copy Path used on 4 of 9 days")
+        #expect(found?.detail == "F P · first used Oct 6 · last used Oct 11")
+        #expect(found?.keys == [["f", "p"]])
+        #expect(found?.value == 4)
+        #expect(found?.dates == [oct(6), oct(7), oct(9), oct(11)])
+        #expect(found?.measure == Measure(count: 4, total: 9, baseline: nil, unit: "days"))
+        #expect(found?.windowStart == oct(6))
+        #expect(found?.windowEnd == oct(15))
+    }
+
+    @Test func strongUptakeGivesNoCard() {
+        // Used on 5 of 9 days, 2 of them among 12 to 14 October: half or more, and used in the last 3.
+        let result = report(on("f", "p", [6, 8, 10, 12, 14]), bindings: bindings)
+        #expect(insight(.uptake, in: result) == nil)
+        let status = result.rules.first { $0.rule == "uptake" }
+        #expect(status?.status == .noPattern)
+        #expect(status?.reason
+                == "Copy Path was used on 5 of 9 days since its first use, 2 of the last 3; "
+                + "the card needs fewer than half, or none in the last 3.")
+    }
+
+    @Test func noneInTheLastThreeDaysIsWeak() {
+        // Used on 6 of 9 days, but none on 12, 13 and 14 October.
+        let found = insight(.uptake, in: report(on("f", "p", [6, 7, 8, 9, 10, 11]), bindings: bindings))
+        #expect(found?.title == "Copy Path used on 6 of 9 days")
+    }
+
+    @Test func todaysPressIsLastUseButNotADay() {
+        let found = insight(.uptake, in: report(on("f", "p", [6, 15]), bindings: bindings))
+        #expect(found?.title == "Copy Path used on 1 of 9 days")
+        #expect(found?.detail == "F P · first used Oct 6 · last used Oct 15")
+    }
+
+    @Test func needsSevenRecordedDaysSinceFirstUse() {
+        let six = report(on("f", "p", [9]), bindings: bindings)
+        #expect(insight(.uptake, in: six) == nil)
+        let status = six.rules.first { $0.rule == "uptake" }
+        #expect(status?.status == .notReady)
+        #expect(status?.reason == "The uptake check needs 7 recorded days since a first use; Copy Path has 6.")
+        #expect(insight(.uptake, in: report(on("f", "p", [8]), bindings: bindings))?.title
+                == "Copy Path used on 1 of 7 days")
+    }
+
+    @Test func needsSevenDaysOfLogBeforeFirstUse() {
+        // The log begins on 1 October, so a first use before the 8th may only be the start of logging.
+        let start = presses(1, "w", "u", day: oct(1))
+        #expect(insight(.uptake, in: report(start + on("f", "p", [7]), bindings: bindings, anchored: false)) == nil)
+        #expect(insight(.uptake, in: report(start + on("f", "p", [8]), bindings: bindings, anchored: false))?.title
+                == "Copy Path used on 1 of 7 days")
+    }
+
+    @Test func explainsAYoungLog() {
+        let result = report(on("f", "p", [10, 11]), bindings: bindings, anchored: false)
+        let status = result.rules.first { $0.rule == "uptake" }
+        #expect(status?.status == .notReady)
+        #expect(status?.reason
+                == "The uptake check needs 14 days of log, 7 before a first use and 7 after; recording began Oct 10.")
+    }
+
+    @Test func firstUseOlderThanTwentyOneDaysIsNotNew() {
+        // 21 days before 15 October is 24 September.
+        #expect(insight(.uptake, in: report(presses(1, "f", "p", day: "2026-09-23"), bindings: bindings)) == nil)
+        #expect(insight(.uptake, in: report(presses(1, "f", "p", day: "2026-09-24"), bindings: bindings))?.title
+                == "Copy Path used on 1 of 21 days")
+    }
+
+    @Test func countsOnlyRecordedDays() {
+        // One session to 9 October 23:00 and one from 11 October: the 10th is not recorded.
+        let result = report(
+            on("f", "p", [6, 7, 8, 9, 11]), bindings: bindings,
+            context: [
+                context("2026-09-01T00:00:00.000", "start"),
+                context("\(oct(9))T23:00:00.000", "app", "com.a.one"),
+                context("\(oct(11))T00:00:00.000", "start"),
+            ])
+        #expect(insight(.uptake, in: result)?.title == "Copy Path used on 5 of 8 days")
+    }
+}
+
 // MARK: - Report
 
 @Suite struct ReportTests {
@@ -994,7 +1438,9 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
 
     @Test func everyRuleReportsItsStatus() {
         let result = report([], bindings: [Binding(layer: "w", key: "u", label: "x")], anchored: false)
-        #expect(result.rules.map(\.rule) == ["focus", "trend", "unused", "dormant", "unbound", "burst", "peak"])
+        #expect(
+            result.rules.map(\.rule)
+                == ["focus", "trend", "unused", "dormant", "unbound", "burst", "peak", "pair", "double", "undone", "uptake"])
         #expect(result.rules.allSatisfy { $0.status != .shown && $0.reason != nil })
     }
 
@@ -1032,19 +1478,36 @@ private func insight(_ kind: InsightKind, in report: InsightReport) -> Insight? 
             + presses(6, "o", "t", day: "2026-09-20") + presses(6, "o", "t", day: "2026-09-21")
             + (0..<5).map { line("\(oct(10))T08:01:0\($0)", "v", "q") }
             + (0..<5).map { line("\(oct(11))T08:01:0\($0)", "v", "q") }
+            + presses(2, "x", "q", day: "2026-08-02") + presses(1, "x", "q", day: "2026-08-03")
         let result = report(lines, bindings: bindings)
-        // All seven rules fire. Changes come first, then patterns, timing and absences; five are shown.
+        // Seven of eleven rules fire: this log has no pairs, doubles or reversals, and Previous Tab
+        // is used every day, so uptake does not. Changes come first, then patterns, timing and
+        // absences; five are shown.
         #expect(result.insights.map(\.kind) == [.rising, .focus, .burst, .peak, .dormant])
         #expect(
             result.rules.map(\.status)
-                == [.shown, .shown, .held, .shown, .held, .shown, .shown])
+                == [.shown, .shown, .held, .shown, .held, .shown, .shown, .noPattern, .noPattern, .noPattern, .noPattern])
         #expect(result.rules.first { $0.rule == "unused" }?.reason
-                == "4 of 4 System shortcuts unused. Held back: 5 cards rank higher.")
+                == "4 of 4 System shortcuts unused in 30 days. Held back: 5 cards rank higher.")
         // Held findings keep their full text and evidence.
         #expect(result.held.map(\.kind) == [.unused, .unbound])
         #expect(result.held[0].keys.count == 4)
         // The same input gives the same cards in the same order.
         #expect(report(lines, bindings: bindings).insights == result.insights)
+    }
+
+    @Test func pairAndDoubleRankAfterBurst() {
+        let pairs = PairTests()
+        let doubles = DoubleTests()
+        let lines = pairs.threshold() + doubles.doubles([3, 4, 5, 6, 7])
+            + (0..<5).map { line("\(oct(10))T08:01:0\($0)", "v", "q") }
+            + (0..<5).map { line("\(oct(11))T08:01:0\($0)", "v", "q") }
+            + [7, 8, 9].flatMap { presses(3, "s", "a", day: oct($0), hour: 10) }
+        let result = report(lines, bindings: pairs.bindings + doubles.bindings)
+        #expect(result.insights.map(\.kind) == [.falling, .burst, .pair, .double, .peak])
+        // The stray unbound combo has presses on one day only, so unbound gives no card; Ghostty
+        // (O T, used on 4 of 12 days since its first use) is held as weak uptake.
+        #expect(result.held.map(\.kind) == [.uptake])
     }
 
     @Test func everyInsightCarriesDates() {

@@ -101,6 +101,8 @@ const RAW = [
   // Icons are neutral: a rise is not good news and an unused binding is not a warning. Shape carries the kind.
   [".insight-icon, .insight-open", "icon", "--muted", [["rest", "--raised"], ["hover", "--hover"]], "svg", 16, 400],
   [".insight-more", "label", "--muted", [["rest", "--raised"], ["hover", "--hover"]], "sans", 12, 400],
+  [".insight-reveal", "value", "--soft", [["rest", "--hover"], ["hover", "--line"]], "mono", 10, 500],
+  [".insight-reveal:active", "value", "--text", [["active", "--line"]], "mono", 10, 500],
 
   // Activity
   [".chart text", "label", "--muted", [["rest", "--card"]], "mono", 10, 500],

@@ -1260,6 +1260,10 @@ test("evidenceFacts: period, comparison, count with its whole, baseline, all fro
     [["Period", "Oct 12–18"], ["Count", "3,861 of 14,301 presses"]]);
   assert.deepEqual(plain(M.evidenceFacts({ windowStart: "2026-10-01", windowEnd: "2026-10-18", measure: { count: 1, total: null, baseline: null, unit: "bursts" } })),
     [["Period", "Oct 1–18"], ["Count", "1 burst"]]);
+  for (const [unit, one] of [["pairs", "1 pair"], ["doubles", "1 double"]]) {
+    assert.deepEqual(plain(M.evidenceFacts({ windowStart: "2026-10-05", windowEnd: "2026-10-18", measure: { count: 1, total: null, baseline: null, unit } })),
+      [["Period", "Oct 5–18"], ["Count", one]]);
+  }
   // An older report has neither: no facts, and nothing made up.
   assert.deepEqual(plain(M.evidenceFacts({ windowStart: null, windowEnd: null, measure: null })), []);
 });

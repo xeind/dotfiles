@@ -26,6 +26,7 @@ const CONTROLS = {
   ".panel-back": { button: true, clipped: true, states: ["hover", "focus", "pressed"] },
   ".time-chip": { button: true, states: ["hover", "focus", "pressed"] },
   "button.insight": { button: true, clipped: true, states: ["hover", "focus"] },
+  ".insight-reveal": { button: true, clipped: true, states: ["hover", "focus", "pressed"] },
   ".evidence-back": { button: true, clipped: true, states: ["hover", "focus", "pressed"] },
   ".evidence-link": { button: true, clipped: true, states: ["hover", "focus", "pressed"] },
   ".item": { button: true, clipped: true, states: ["hover", "focus", "pressed", "selected"], selected: ".selected" },

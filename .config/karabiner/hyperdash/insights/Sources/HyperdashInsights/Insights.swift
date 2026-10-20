@@ -1,7 +1,7 @@
 import Foundation
 
 public enum InsightKind: String, Codable, Sendable {
-    case focus, rising, falling, unused, dormant, unbound, burst, peak
+    case focus, rising, falling, unused, dormant, unbound, burst, peak, pair, double, undone, uptake
 }
 
 /// The number a card rests on, with what it is part of and what it is compared with.
@@ -11,7 +11,7 @@ public struct Measure: Codable, Equatable, Sendable {
     public let total: Int?
     /// The same count in the comparison period; nil without one.
     public let baseline: Int?
-    /// "presses", "bindings" or "bursts".
+    /// "presses", "bindings", "bursts", "pairs", "doubles" or "days".
     public let unit: String
 
     public init(count: Int, total: Int? = nil, baseline: Int? = nil, unit: String) {
@@ -126,10 +126,14 @@ public struct RuleStatus: Codable, Equatable, Sendable {
     }
 }
 
-/// Card order, highest first: changes, repeated patterns, timing, absences, then combos no
-/// longer bound. Each rule gives at most one card and rising never appears with falling, so
-/// the order is total: the same input always gives the same cards.
-let cardPriority: [InsightKind] = [.rising, .falling, .focus, .burst, .peak, .dormant, .unused, .unbound]
+/// Card order, highest first: changes, repeated patterns, timing, reversals and uptake,
+/// absences, then combos no longer bound. Each rule gives at most one card and rising never
+/// appears with falling, so the order is total: the same input always gives the same cards.
+/// A pair or a double is a repeated pattern that one macro or binding could change, so both
+/// rank after bursts.
+let cardPriority: [InsightKind] = [
+    .rising, .falling, .focus, .burst, .pair, .double, .peak, .undone, .uptake, .dormant, .unused, .unbound,
+]
 public let maxCards = 5
 
 public struct InsightReport: Sendable {
@@ -255,6 +259,10 @@ public func computeReport(
         ("unbound", unbound(analysis)),
         ("burst", burst(thisMonth, analysis)),
         ("peak", peak(thisMonth, analysis)),
+        ("pair", pair(analysis)),
+        ("double", double(analysis)),
+        ("undone", undone(analysis)),
+        ("uptake", uptake(analysis)),
     ]
 
     var found: [Insight] = []
@@ -434,13 +442,20 @@ private func trend(_ a: Analysis) -> Outcome {
 
 // MARK: - unused
 
+/// "2026-09-05" becomes "Sep 5".
+private func shortDay(_ key: String) -> String {
+    let parts = key.split(separator: "-").compactMap { Int($0) }
+    return "\(shortMonthNames[parts[1] - 1]) \(parts[2])"
+}
+
 /// The layer with the highest share of unused bindings over the last 30 days. Needs at
-/// least 3 fully recorded days in that window, a layer of 4 or more bindings, and 3 or
-/// more unused.
+/// least 14 fully recorded days in that window, a layer of 4 or more bindings, and 3 or
+/// more unused. A just-added binding has had no time to be pressed, so a few days of
+/// history would call it unused.
 private func unused(_ a: Analysis) -> Outcome {
     let windowDays = (1...30).map { a.keyDaysAgo($0) }.filter { a.recorded.contains($0) }
-    guard windowDays.count >= 3 else {
-        return .notReady("The unused check needs 3 recorded days in the last 30; \(windowDays.count) qualify.")
+    guard windowDays.count >= 14 else {
+        return .notReady("The unused check needs 14 recorded days in the last 30; \(windowDays.count) qualify.")
     }
     let windowStart = a.day(30)
     let pressed = Set(a.history.filter { $0.date >= windowStart }.map(\.combo))
@@ -467,12 +482,29 @@ private func unused(_ a: Analysis) -> Outcome {
     }
     guard let best else { return .noPattern("No layer of 4+ bindings has 3+ unused in the last 30 days.") }
     let layerName = layerNames[best.layer] ?? "Hyper \(best.layer.uppercased())"
+
+    // The last day each unused binding was pressed, in the archive or the log; none means
+    // never pressed since recording began.
+    var lastDay: [Combo: String] = [:]
+    for (combo, perDay) in a.archive?.comboDays ?? [:] { lastDay[combo] = perDay.keys.max() }
+    for press in a.history { lastDay[press.combo] = a.key(press.date) }
+    let never = best.unused.filter { lastDay[$0] == nil }
+    let lapsed = best.unused.filter { lastDay[$0] != nil }
+    var parts: [String] = []
+    if !never.isEmpty {
+        let first = ([a.archive?.first].compactMap { $0 } + a.history.prefix(1).map(\.date)).min()!
+        parts.append("\(never.count) never pressed since \(shortDay(a.key(first)))")
+    }
+    if let latest = lapsed.compactMap({ lastDay[$0] }).max() {
+        parts.append("\(lapsed.count) last pressed \(shortDay(latest))\(lapsed.count > 1 ? " or earlier" : "")")
+    }
+    parts.append("\(windowDays.count) of 30 days recorded")
     return .found(
         Insight(
             kind: .unused,
-            title: "\(best.unused.count) of \(best.total) \(layerName) shortcuts unused",
-            detail: "No presses on \(windowDays.count) recorded days",
-            keys: best.unused, value: best.unused.count, dates: windowDays,
+            title: "\(best.unused.count) of \(best.total) \(layerName) shortcuts unused in 30 days",
+            detail: parts.joined(separator: " · "),
+            keys: never + lapsed, value: best.unused.count, dates: windowDays,
             window: (a.key(windowStart), a.key(a.today)),
             measure: Measure(count: best.unused.count, total: best.total, unit: "bindings")))
 }
@@ -513,19 +545,29 @@ private func dormant(_ a: Analysis, monthStart: Date, previousMonthStart: Date) 
 
 // MARK: - unbound
 
+/// Combos in the log with no binding now. A combo counts only with 3 or more presses on 2
+/// or more days, so one stray press does not keep the card alive for as long as the log
+/// keeps it.
 private func unbound(_ a: Analysis) -> Outcome {
     let bound = Set(a.bindings.map(\.combo))
-    var counts: [Combo: Int] = [:]
-    var days = Set<String>()
+    var perCombo: [Combo: [String: Int]] = [:]
     for event in a.history where !bound.contains(event.combo) {
-        counts[event.combo, default: 0] += 1
-        days.insert(a.key(event.date))
+        perCombo[event.combo, default: [:]][a.key(event.date), default: 0] += 1
     }
     for (combo, perDay) in a.archive?.comboDays ?? [:] where !bound.contains(combo) {
-        counts[combo, default: 0] += perDay.values.reduce(0, +)
-        days.formUnion(perDay.keys)
+        perCombo[combo, default: [:]].merge(perDay, uniquingKeysWith: +)
     }
-    guard !counts.isEmpty else { return .noPattern("Every logged shortcut is still bound.") }
+    guard !perCombo.isEmpty else { return .noPattern("Every logged shortcut is still bound.") }
+    let counts = perCombo.compactMapValues { days -> Int? in
+        let total = days.values.reduce(0, +)
+        return total >= 3 && days.count >= 2 ? total : nil
+    }
+    guard !counts.isEmpty else {
+        return .noPattern(
+            "\(perCombo.count) logged \(perCombo.count == 1 ? "combo has" : "combos have") no binding, "
+                + "none pressed 3+ times on 2+ days.")
+    }
+    let days = Set(counts.keys.flatMap { perCombo[$0]!.keys })
     let first = ([a.archive?.first].compactMap { $0 } + a.history.prefix(1).map(\.date)).min()!
     let ranked = counts.sorted { ($1.value, $0.key) < ($0.value, $1.key) }
     let presses = counts.values.reduce(0, +)
@@ -533,7 +575,7 @@ private func unbound(_ a: Analysis) -> Outcome {
         Insight(
             kind: .unbound,
             title: "\(counts.count) logged \(counts.count == 1 ? "combo" : "combos") no longer bound",
-            detail: "\(grouped(presses)) \(presses == 1 ? "press" : "presses") logged with no current binding",
+            detail: "\(grouped(presses)) presses logged with no current binding",
             keys: ranked.map(\.key), value: counts.count, dates: Array(days),
             window: (a.key(first), a.key(a.today)),
             measure: Measure(count: presses, unit: "presses")))
@@ -581,6 +623,101 @@ private func burst(_ thisMonth: [PressEvent], _ a: Analysis) -> Outcome {
             measure: Measure(count: best.value, unit: "bursts")))
 }
 
+// MARK: - pair
+
+/// Categories whose shortcuts come in runs by nature, so a pair there is no habit.
+private let runCategories: Set<String> = ["pointer", "text-navigation"]
+
+/// One combo, then a different one as the very next press within 5 s, over today and the 13
+/// days before. A pair belongs to the day of its first press. Reports the most frequent pair
+/// with 5 or more on 4 or more days, so 3 days remain after dropping its busiest.
+private func pair(_ a: Analysis) -> Outcome {
+    var categoryOf: [Combo: String] = [:]
+    for binding in a.bindings { if let category = binding.category { categoryOf[binding.combo] = category } }
+    let windowStart = a.day(13)
+    let window = a.history.filter { $0.date >= windowStart }
+    var perDay: [[Combo]: [String: Int]] = [:]
+    for (first, second) in zip(window, window.dropFirst())
+    where first.combo != second.combo && second.date.timeIntervalSince(first.date) <= 5
+        && !runCategories.contains(categoryOf[first.combo] ?? "")
+        && !runCategories.contains(categoryOf[second.combo] ?? "")
+    {
+        perDay[[first.combo, second.combo], default: [:]][a.key(first.date), default: 0] += 1
+    }
+    var best: (combos: [Combo], count: Int, days: [String: Int])?
+    for (combos, days) in perDay.sorted(by: { $0.key.lexicographicallyPrecedes($1.key) }) {
+        let count = days.values.reduce(0, +)
+        guard count >= 5, days.count - 1 >= 3 else { continue }
+        if let current = best, (count, days.count) <= (current.count, current.days.count) { continue }
+        best = (combos, count, days)
+    }
+    guard let best else {
+        return .noPattern(
+            "No two shortcuts came one right after the other (within 5 s) 5+ times on 4+ of the last 14 days.")
+    }
+    let (first, second) = (best.combos[0], best.combos[1])
+    return .found(
+        Insight(
+            kind: .pair,
+            title: "\(a.name(first)) then \(a.name(second)): \(grouped(best.count)) times",
+            detail: "\(first.shortName) · then \(second.shortName) within 5 s · on \(best.days.count) of the last 14 days",
+            keys: best.combos, value: best.count, dates: Array(best.days.keys),
+            window: (a.key(windowStart), a.key(a.today)),
+            measure: Measure(count: best.count, unit: "pairs")))
+}
+
+// MARK: - double
+
+/// Categories where a second press opens or captures the same thing again.
+private let doubleCategories: Set<String> = ["app-launch", "site-open", "capture"]
+
+/// Two presses of one combo in a row, the second within 2 s, over today and the 13 days
+/// before. Runs chain as in `burst` (each press within 3 s of the last); only a run of
+/// exactly 2 counts, so a burst never does. Reports the combo with the most doubles, if it
+/// has 5 or more on 3 or more days. It makes no claim about why the second press came.
+private func double(_ a: Analysis) -> Outcome {
+    var categoryOf: [Combo: String] = [:]
+    for binding in a.bindings { if let category = binding.category { categoryOf[binding.combo] = category } }
+    guard !categoryOf.isEmpty else { return .notReady("The pressed-twice check needs bindings with categories.") }
+    let windowStart = a.day(13)
+    var perDay: [Combo: [String: Int]] = [:]
+    var run: [PressEvent] = []
+    func closeRun() {
+        if run.count == 2, run[1].date.timeIntervalSince(run[0].date) <= 2,
+           doubleCategories.contains(categoryOf[run[0].combo] ?? "")
+        {
+            perDay[run[0].combo, default: [:]][a.key(run[0].date), default: 0] += 1
+        }
+    }
+    for event in a.history where event.date >= windowStart {
+        if let previous = run.last, previous.combo == event.combo,
+           event.date.timeIntervalSince(previous.date) <= 3 {
+            run.append(event)
+        } else {
+            closeRun()
+            run = [event]
+        }
+    }
+    closeRun()
+    let counts = perDay.compactMapValues { days -> Int? in
+        let total = days.values.reduce(0, +)
+        return total >= 5 && days.count >= 3 ? total : nil
+    }
+    guard let best = counts.min(by: { ($1.value, $0.key) < ($0.value, $1.key) }) else {
+        return .noPattern(
+            "No app, site or capture shortcut was pressed twice within 2 s 5+ times on 3+ of the last 14 days.")
+    }
+    let days = perDay[best.key]!
+    return .found(
+        Insight(
+            kind: .double,
+            title: "\(a.name(best.key)) pressed twice in 2 s: \(grouped(best.value)) times",
+            detail: "\(best.key.shortName) · on \(days.count) of the last 14 days",
+            keys: [best.key], value: best.value, dates: Array(days.keys),
+            window: (a.key(windowStart), a.key(a.today)),
+            measure: Measure(count: best.value, unit: "doubles")))
+}
+
 // MARK: - peak
 
 /// The hour with the most presses this month, if it has presses on 3 or more days.
@@ -610,4 +747,171 @@ private func peak(_ thisMonth: [PressEvent], _ a: Analysis) -> Outcome {
             detail: "\(share)% of this month's presses · on \(days[hour].count) days",
             keys: [], value: hour, dates: Array(days[hour]), window: a.monthToDate,
             measure: Measure(count: counts[hour], total: thisMonth.count, unit: "presses")))
+}
+
+// MARK: - undone
+
+/// Bindings in rules.ts whose commands reverse each other. Either order counts. Tab, page and
+/// text navigation are left out: going back and forth there is ordinary use.
+let oppositePairs: [(Combo, Combo)] = [
+    // Maximize, Restore
+    (Combo(layer: "w", key: "f"), Combo(layer: "w", key: "delete_or_backspace")),
+    // Almost maximize, Restore
+    (Combo(layer: "w", key: "return_or_enter"), Combo(layer: "w", key: "delete_or_backspace")),
+    // Left half, Right half
+    (Combo(layer: "w", key: "h"), Combo(layer: "w", key: "l")),
+    // Top half, Bottom half
+    (Combo(layer: "w", key: "k"), Combo(layer: "w", key: "j")),
+    // Previous display, Next display
+    (Combo(layer: "w", key: "y"), Combo(layer: "w", key: "o")),
+    // Larger, Smaller
+    (Combo(layer: "w", key: "equal_sign"), Combo(layer: "w", key: "hyphen")),
+    // Move left, Move right
+    (Combo(layer: "w", key: "left_arrow"), Combo(layer: "w", key: "right_arrow")),
+    // Move up, Move down
+    (Combo(layer: "w", key: "up_arrow"), Combo(layer: "w", key: "down_arrow")),
+    // Volume increment, Volume decrement
+    (Combo(layer: "s", key: "u"), Combo(layer: "s", key: "j")),
+    // Display brightness increment, Display brightness decrement
+    (Combo(layer: "s", key: "i"), Combo(layer: "s", key: "k")),
+    // Recording Mode, Undo Recording Mode
+    (Combo(layer: "s", key: "r"), Combo(layer: "s", key: "t")),
+]
+
+/// A press reversed by the very next press, its opposite in `oppositePairs`, within 3 s.
+/// Counts today and the 13 days before. Needs 5 reversals of one combo on 4 or more days,
+/// so 3 days remain without the busiest one. The most reversed combo wins.
+private func undone(_ a: Analysis) -> Outcome {
+    // A pair counts only while both of its combos are bound.
+    let bound = Set(a.bindings.map(\.combo))
+    var opposites: [Combo: Set<Combo>] = [:]
+    for (first, second) in oppositePairs where bound.contains(first) && bound.contains(second) {
+        opposites[first, default: []].insert(second)
+        opposites[second, default: []].insert(first)
+    }
+    guard !opposites.isEmpty else { return .noPattern("No pair of opposite shortcuts is bound.") }
+
+    let windowStart = a.day(13)
+    let window = a.history.filter { $0.date >= windowStart }
+    // Per reversed combo and the combo that reversed it, reversals per day.
+    var reversals: [[Combo]: [String: Int]] = [:]
+    var index = 0
+    while index + 1 < window.count {
+        let press = window[index]
+        let next = window[index + 1]
+        if opposites[press.combo]?.contains(next.combo) == true, next.date.timeIntervalSince(press.date) <= 3 {
+            reversals[[press.combo, next.combo], default: [:]][a.key(press.date), default: 0] += 1
+            // The undoing press is used up: it does not start a reversal of its own.
+            index += 2
+        } else {
+            index += 1
+        }
+    }
+
+    var top: (pair: [Combo], count: Int, days: Int)?
+    var best: (pair: [Combo], count: Int, days: Int)?
+    for pair in reversals.keys.sorted(by: { ($0[0], $0[1]) < ($1[0], $1[1]) }) {
+        let days = reversals[pair]!
+        let candidate = (pair: pair, count: days.values.reduce(0, +), days: days.count)
+        if top.map({ (candidate.count, candidate.days) > ($0.count, $0.days) }) ?? true { top = candidate }
+        guard candidate.count >= 5, candidate.days >= 4 else { continue }
+        if best.map({ candidate.count > $0.count }) ?? true { best = candidate }
+    }
+    guard let best else {
+        guard let top else {
+            return .noPattern("No shortcut was undone by its opposite within 3 s in the last 14 days.")
+        }
+        return .noPattern(
+            "\(a.name(top.pair[0])) was undone \(top.count) \(top.count == 1 ? "time" : "times") "
+                + "on \(top.days) \(top.days == 1 ? "day" : "days") in the last 14; "
+                + "the card needs 5 times on 4+ days.")
+    }
+    let (combo, inverse) = (best.pair[0], best.pair[1])
+    let pressed = window.filter { $0.combo == combo }.count
+    return .found(
+        Insight(
+            kind: .undone,
+            title: "\(a.name(combo)) undone \(grouped(best.count)) times",
+            detail: "\(combo.shortName) · then \(a.name(inverse)) within 3 s · on \(best.days) of the last 14 days",
+            keys: [combo, inverse], value: best.count, dates: Array(reversals[best.pair]!.keys),
+            window: (a.key(windowStart), a.key(a.today)),
+            measure: Measure(count: best.count, total: pressed, unit: "presses")))
+}
+
+// MARK: - uptake
+
+/// A shortcut first used in the last 21 days, and how many recorded days since have a press.
+/// The engine does not know when a binding was added, so the first press in the history
+/// stands in, and the log must have run 7 days before it. Counts recorded days from the
+/// first use through yesterday and needs 7. Reports only weak uptake: presses on fewer than
+/// half of those days, or on none of the last 3. The combo with the most days without a
+/// press wins.
+private func uptake(_ a: Analysis) -> Outcome {
+    func shortDate(_ date: Date) -> String {
+        "\(shortMonthNames[a.calendar.component(.month, from: date) - 1]) \(a.calendar.component(.day, from: date))"
+    }
+    guard let start = ([a.archive?.first].compactMap { $0 } + a.history.prefix(1).map(\.date)).min() else {
+        return .notReady("The uptake check needs a log; nothing is recorded yet.")
+    }
+    // 7 days of log before a first use, and 7 recorded days after it.
+    let startDay = a.calendar.startOfDay(for: start)
+    guard startDay <= a.day(14) else {
+        return .notReady(
+            "The uptake check needs 14 days of log, 7 before a first use and 7 after; "
+                + "recording began \(shortDate(start)).")
+    }
+    let earliest = max(a.day(21), a.calendar.date(byAdding: .day, value: 7, to: startDay)!)
+
+    var first: [Combo: Date] = [:]
+    var last: [Combo: Date] = [:]
+    var pressDays: [Combo: Set<String>] = [:]
+    for press in a.history {
+        if first[press.combo] == nil { first[press.combo] = press.date }
+        last[press.combo] = press.date
+        pressDays[press.combo, default: []].insert(a.key(press.date))
+    }
+    // A combo in the archive was first used before the retention cut, so it is not new.
+    let archived = Set((a.archive?.comboDays ?? [:]).keys)
+
+    var longest: (combo: Combo, days: Int)?
+    var weakest: (combo: Combo, days: [String], used: Int, recent: Int)?
+    var best: (combo: Combo, days: [String], used: Int)?
+    for combo in Set(a.bindings.map(\.combo)).sorted() {
+        guard !archived.contains(combo), let date = first[combo] else { continue }
+        let firstDay = a.calendar.startOfDay(for: date)
+        guard firstDay >= earliest else { continue }
+        let offset = a.calendar.dateComponents([.day], from: firstDay, to: a.today).day!
+        let days = stride(from: offset, through: 1, by: -1).map { a.keyDaysAgo($0) }.filter { a.recorded.contains($0) }
+        if longest.map({ days.count > $0.days }) ?? true { longest = (combo, days.count) }
+        guard days.count >= 7 else { continue }
+        let used = days.filter { pressDays[combo]!.contains($0) }.count
+        let recent = days.suffix(3).filter { pressDays[combo]!.contains($0) }.count
+        if weakest.map({ days.count - used > $0.days.count - $0.used }) ?? true {
+            weakest = (combo, days, used, recent)
+        }
+        // Uptake is weak when fewer than half the days have a press, or none of the last 3.
+        guard used * 2 < days.count || recent == 0 else { continue }
+        if best.map({ days.count - used > $0.days.count - $0.used }) ?? true { best = (combo, days, used) }
+    }
+    guard let best else {
+        if let weakest {
+            return .noPattern(
+                "\(a.name(weakest.combo)) was used on \(weakest.used) of \(weakest.days.count) days since its "
+                    + "first use, \(weakest.recent) of the last 3; the card needs fewer than half, or none in the last 3.")
+        }
+        guard let longest else {
+            return .noPattern("No shortcut was first used in the last 21 days, 7+ days after recording began.")
+        }
+        return .notReady(
+            "The uptake check needs 7 recorded days since a first use; \(a.name(longest.combo)) has \(longest.days).")
+    }
+    let combo = best.combo
+    return .found(
+        Insight(
+            kind: .uptake,
+            title: "\(a.name(combo)) used on \(best.used) of \(best.days.count) days",
+            detail: "\(combo.shortName) · first used \(shortDate(first[combo]!)) · last used \(shortDate(last[combo]!))",
+            keys: [combo], value: best.used, dates: Array(pressDays[combo]!),
+            window: (a.key(first[combo]!), a.key(a.today)),
+            measure: Measure(count: best.used, total: best.days.count, unit: "days")))
 }

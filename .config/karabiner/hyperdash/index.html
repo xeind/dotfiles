@@ -737,6 +737,24 @@
   .insight-refs { display: flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-xs); }
   .insight-more { font-size: var(--text-secondary); color: var(--muted); }
 
+  /* The findings past the five cards, on request: the list's last row, then the cards themselves. */
+  .insight-reveal {
+    display: flex;
+    align-items: center;
+    height: var(--control-sm);
+    margin-top: var(--space-xs);
+    padding: 0 var(--space-sm);
+    border-radius: var(--radius-sm);
+    background: var(--hover);
+    font: var(--mono-label) var(--mono);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--soft);
+  }
+  .insight-reveal:hover { background: var(--line); }
+  .insight-reveal:active { color: var(--text); }
+  .insight-reveal:focus-visible { outline-offset: -2px; }
+
   /* Below the cards: why the other rules have none, and how the page works */
   .insight-notes { margin-top: var(--space-lg); }
   .insight-heading { font: var(--mono-caption) var(--mono); line-height: var(--leading-note); letter-spacing: 0.04em; color: var(--faint); }
@@ -1973,7 +1991,7 @@ var HyperdashModel = (() => {
     return comparisonStart && comparisonEnd ? `${label} vs ${span(comparisonStart, comparisonEnd)}` : label;
   }
   // The numbers behind one finding, as [label, value] rows, only from fields the report carries.
-  const SINGULAR = { presses: "press", bindings: "binding", bursts: "burst" };
+  const SINGULAR = { presses: "press", bindings: "binding", bursts: "burst", pairs: "pair", doubles: "double" };
   function evidenceFacts(item) {
     const facts = [];
     const period = windowLabel({ windowStart: item.windowStart, windowEnd: item.windowEnd });
@@ -2007,6 +2025,14 @@ var HyperdashModel = (() => {
     burst: insightGlyph('<path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M17 3l3 3-3 3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/><path d="M7 21l-3-3 3-3"/>'),
     // A clock face with one hour filled.
     peak: insightGlyph('<circle cx="12" cy="12" r="9"/><path d="M12 12V3a9 9 0 0 1 7.8 4.5z" fill="currentColor"/>'),
+    // Two keys joined by an arrow: one shortcut, then another.
+    pair: insightGlyph('<rect x="3" y="4" width="7" height="7" rx="2"/><rect x="14" y="13" width="7" height="7" rx="2"/><path d="M6.5 11v3.5a2 2 0 0 0 2 2H14"/><path d="M11.5 14l2.5 2.5-2.5 2.5"/>'),
+    // A key with a second outline behind it: the same shortcut twice.
+    double: insightGlyph('<rect x="3" y="7" width="12" height="12" rx="3"/><path d="M9 3h9a3 3 0 0 1 3 3v9"/>'),
+    // An arrow that turns back: a command reversed by the next one.
+    undone: insightGlyph('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'),
+    // A sprout: a new shortcut taking root, or not.
+    uptake: insightGlyph('<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>'),
   };
   // A kind this page does not know yet: a plain ring with a dot, never another kind's icon.
   const INSIGHT_ICON_UNKNOWN = insightGlyph('<circle cx="12" cy="12" r="8"/><path d="M12 12h.01"/>');
@@ -2583,6 +2609,7 @@ const state = {
   monthId: null, layer: null, selected: null, page: null, highlight: null, aboutOpen: false,
   activityMode: "day", day: null, interval: null, focusSec: null, appFilter: null, group: null,
   evidence: null, // the open Insights finding, by its card key
+  heldShown: false, // the findings past the five cards, shown on request until the next open
 };
 let classify = HyperdashModel.classifier([]);
 let labelByCombo = {};
@@ -3301,7 +3328,8 @@ function renderInsights() {
   }
   // A refresh can drop the open finding; then the list comes back. Like reconcileNavigation for a layer
   // that is gone, this is the one data update that changes navigation.
-  const opened = state.evidence && insightsData.insights.find((item) => insightKey(item) === state.evidence);
+  const findings = [...insightsData.insights, ...insightsData.held];
+  const opened = state.evidence && findings.find((item) => insightKey(item) === state.evidence);
   if (state.evidence && !opened) state.evidence = null;
   if (opened) {
     renderEvidence(root, opened);
@@ -3316,7 +3344,7 @@ function renderInsights() {
   // A card: icon and title on one row, then the explanation, its period and its shortcuts at full width.
   // The icon is decoration; the title says what the card is about.
   const list = element("div", "insight-list");
-  for (const item of insightsData.insights) {
+  for (const item of state.heldShown ? findings : insightsData.insights) {
     const keys = item.keys;
     // Every card opens its evidence.
     const card = element("button", "insight");
@@ -3346,6 +3374,18 @@ function renderInsights() {
     list.append(card);
   }
   if (list.childElementCount) root.append(list);
+  // The report ranks every finding and keeps those past the five in `held`; one row offers them.
+  if (!state.heldShown && insightsData.held.length) {
+    const count = insightsData.held.length;
+    const reveal = element("button", "insight-reveal", count === 1 ? "1 MORE FINDING" : `${count} MORE FINDINGS`);
+    reveal.addEventListener("click", () => {
+      const keyboard = keyboardFocused(reveal);
+      state.heldShown = true;
+      render();
+      if (keyboard) $("insights").querySelector(`.insight[data-key="${CSS.escape(insightKey(insightsData.held[0]))}"]`)?.focus();
+    });
+    root.append(reveal);
+  }
   // One plain line for the rules still waiting on history. Rules that found nothing, or were outranked, say
   // nothing here: the report keeps every reason, but on the page they were rule jargon about cards nobody sees.
   const waiting = quiet.filter((rule) => rule.status === "not-ready").length;
@@ -4186,7 +4226,7 @@ const hyperdash = {
     Object.assign(state, {
       layer: null, selected: null, page: null, highlight: null, aboutOpen: false, monthId: months[months.length - 1],
       activityMode: "day", day: HyperdashModel.dateOf(now), interval: null, focusSec: null, appFilter: null, group: null,
-      evidence: null,
+      evidence: null, heldShown: false,
     });
     insightsReturn = null;
     picker = null; // a closed panel keeps no draft
