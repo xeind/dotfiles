@@ -68,8 +68,8 @@ async function scene(browser, run, arg, { reducedMotion = "no-preference" } = {}
   }
 }
 
-// Window heights (body padding included) on the fixture: overview 660, insights 500, activity 720.
-const OVERVIEW = 660, INSIGHTS = 500, ACTIVITY = 720;
+// Window heights (body padding included) on the fixture: overview 660, insights 592, activity 720.
+const OVERVIEW = 660, INSIGHTS = 592, ACTIVITY = 720;
 
 test("page-size motion (WebKit)", { timeout: 120000 }, async (t) => {
   const browser = await webkit();

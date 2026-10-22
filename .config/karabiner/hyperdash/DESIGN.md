@@ -391,7 +391,7 @@ Layer.
 - One fixed height per page. Reserve a row, never remove it: `visibility:
   hidden` on the app bar in month view, an empty legend row, two status lines
   always.
-- Scroll areas have fixed heights (list 240, insights 328, panel body 132) and
+- Scroll areas have fixed heights (list 240, insights 420, panel body 132) and
   carry `data-fade`, a 26 px mask on the edge where content continues.
 - The overview list keeps its scroll while a layer shows; another month or a
   reopen starts it at the top.
