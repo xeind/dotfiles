@@ -1,0 +1,13 @@
+{
+  "theme": "Dark",
+  "theme_dark": "nightingale",
+  "cursor": {
+    "shape": "block",
+    "blink": false
+  },
+  "font_size": 16,
+  "font_family": "DX-02 Condensed",
+  "code_font": "DX-02 Condensed",
+  "prefs_width": 461,
+  "option_as_alt": "left"
+}

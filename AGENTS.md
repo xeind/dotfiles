@@ -29,8 +29,11 @@ of git.
 **Folder links.** atuin, Karabiner, LinearMouse, mise, nushell,
 OpenLogi and Zed are linked as whole folders (`~/.config/<app>`)
 because each rewrites its own files, which turns a file link back into
-a plain file. Their state (backups, history, sockets, conversations)
-lives in the repo folder and is gitignored.
+a plain file. Tern is linked the same way at
+`~/Library/Application Support/Tern`; only its `settings.json` is
+tracked. Their state (backups, history, sockets, conversations, Tern's
+session daemon and omp builds) lives in the repo folder and is
+gitignored.
 
 ## Adding a config
 
@@ -107,6 +110,10 @@ herdr integration install claude && herdr integration install codex && herdr int
   exist, or git writes there instead.
 - Karabiner's `karabiner.json` is built from `rules.ts` (`yarn build`
   in `.config/karabiner`). Edit the TypeScript, then rebuild.
+- Tern's colors are an omp theme: `.omp/agent/themes/nightingale.json`,
+  selected by `theme_dark` in Tern's `settings.json`. Tern reads its
+  settings only at launch or on Reload, and writes them back from memory
+  when any setting changes: quit Tern before editing the file by hand.
 
 ## Installing tools
 

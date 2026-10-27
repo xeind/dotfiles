@@ -32,3 +32,5 @@ __pycache__/
 !.config/linearmouse/linearmouse.json
 .config/openlogi/*
 !.config/openlogi/config.toml
+Library/Application Support/Tern/*
+!Library/Application Support/Tern/settings.json
