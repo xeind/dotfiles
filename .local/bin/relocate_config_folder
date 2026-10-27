@@ -1,0 +1,74 @@
+#!/bin/zsh
+# Move an app's config folder into ~/.dotfiles and link it back with stow.
+# For apps that rewrite their own files, which turns a file link into a
+# plain file (see AGENTS.md, "Folder links").
+#
+# usage: relocate_config_folder [--quit APP] [--stop PATTERN]... [--reopen] PATH
+#   PATH        folder under ~, e.g. "Library/Application Support/Tern"
+#   --quit APP  quit this macOS app first
+#   --stop PAT  stop processes whose command line matches PAT (pkill -f)
+#   --reopen    open APP again once the folder is linked
+# The app must not run during the move: it would recreate a default
+# folder within seconds and stow would conflict with it.
+set -euo pipefail
+
+app="" reopen=0
+stops=()
+while (( $# > 1 )); do
+  case "$1" in
+    --quit) app="$2"; shift 2 ;;
+    --stop) stops+=("$2"); shift 2 ;;
+    --reopen) reopen=1; shift ;;
+    *) break ;;
+  esac
+done
+(( $# == 1 )) || { sed -n '6,10p' "$0" >&2; exit 2; }
+
+relative="${1#$HOME/}"
+source_dir="$HOME/$relative"
+repo="$HOME/.dotfiles"
+target_dir="$repo/$relative"
+
+[[ -L "$source_dir" ]] && { echo "Already a link: $source_dir -> $(readlink "$source_dir")"; exit 0; }
+[[ -d "$source_dir" ]] || { echo "Not a folder: $source_dir" >&2; exit 1; }
+[[ -e "$target_dir" ]] && { echo "Repo already has $target_dir" >&2; exit 1; }
+
+# pgrep misses some app processes on macOS; ps lists them all.
+matching_pids() {
+  local pattern
+  for pattern in "${stops[@]}"; do
+    ps -axo pid=,command= | awk -v re="$pattern" '{ pid = $1; sub(/^ *[0-9]+ /, ""); if ($0 ~ re) print pid }'
+  done
+}
+running() { [[ -n "$(matching_pids)" ]]; }
+
+if [[ -n "$app" ]]; then
+  osascript -e "quit app \"$app\"" || true
+fi
+matching_pids | xargs kill -TERM 2>/dev/null || true
+for _ in {1..30}; do
+  running || break
+  sleep 0.5
+done
+if running; then
+  echo "Still running; quit it and try again: ${stops[*]}" >&2
+  exit 1
+fi
+
+mkdir -p "${target_dir:h}"
+mv "$source_dir" "$target_dir"
+
+cd "$repo"
+plan="$(stow -n -v . 2>&1)"
+print -r -- "$plan"
+if print -r -- "$plan" | grep -q -i -E 'conflict|cannot|existing target'; then
+  echo "stow reports a conflict; moving the folder back." >&2
+  mv "$target_dir" "$source_dir"
+  exit 1
+fi
+stow -v .
+ls -ld "$source_dir"
+
+if (( reopen )) && [[ -n "$app" ]]; then
+  open -a "$app"
+fi

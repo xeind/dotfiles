@@ -42,6 +42,18 @@ For an app that rewrites its own config, move the whole folder and
 link it the same way. Quit the app first and stow in the same command:
 a running app recreates a default folder within seconds, and
 `stow --adopt` would then pull that default over the real config.
+`relocate_config_folder` (`.local/bin`) does this: it quits the app,
+stops the processes you name, moves the folder, and stows, moving the
+folder back if stow reports a conflict. Tern, for example:
+
+```sh
+relocate_config_folder --quit Tern \
+  --stop '^/Applications/Tern.app/Contents/MacOS/tern$' \
+  --stop '^/Applications/Tern.app/Contents/MacOS/tern daemon' \
+  --reopen "Library/Application Support/Tern"
+```
+
+Run it from a terminal other than the app being moved.
 
 ## New Mac
 
