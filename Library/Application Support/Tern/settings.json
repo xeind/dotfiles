@@ -6,7 +6,7 @@
     "blink": false
   },
   "font_size": 16,
-  "font_family": "DX-02 Condensed",
+  "font_family": "DX-02 Condensed, JetBrains Mono, Iosevka Term",
   "code_font": "DX-02 Condensed",
   "prefs_width": 461,
   "option_as_alt": "left"
