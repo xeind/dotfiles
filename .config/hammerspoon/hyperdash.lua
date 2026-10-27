@@ -36,7 +36,7 @@ local COMPACT_TIMEOUT = 300 -- seconds; a compaction still going after this is s
 -- Context recording is OFF until the user approves it. When true, this module
 -- appends the frontmost app (bundle ID only) and lock, unlock, sleep and wake
 -- events to CONTEXT_LOG. No window titles, URLs or keys are recorded.
-local RECORD_CONTEXT = false
+local RECORD_CONTEXT = true
 local CONTEXT_LOG = HOME .. "/.local/state/hyperdash/context.log"
 local CALL_TIMEOUT = 5 -- seconds to wait for the page to answer one call
 local WIDTH = 408 -- card width plus the shadow margin on both sides
