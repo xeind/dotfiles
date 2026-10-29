@@ -1,32 +1,44 @@
 #!/bin/zsh
-# Rex keeps its settings in macOS defaults, not a file. Write the chosen
-# ones here and restart Rex. The font family is picked in Rex's Settings.
+# Rex keeps its settings in macOS defaults, not a file. Quit Rex first:
+# it writes its own copy back when it quits. The font family is picked
+# in Rex's Settings.
 set -e
 d=com.superlogical.rex
 
 # Terminal
 defaults write $d Workspace.terminalFontPointSize -int 14
+defaults write $d Workspace.terminalFallbackFontNames -array "JetBrains Mono"
 defaults write $d Workspace.terminalFontSmoothing -bool false
 defaults write $d Workspace.terminalAllowsLigatures -bool true
-defaults write $d Workspace.terminalOptionKeyBehavior -string left
+defaults write $d Workspace.terminalOptionKeyBehavior -string leftActsAsAlt
 defaults write $d Workspace.terminalCursorStyle -string block
 defaults write $d Workspace.terminalCursorStyleForced -bool false
 defaults write $d Workspace.terminalCopyOnSelect -bool true
 defaults write $d Workspace.terminalSelectionRoundedCorners -bool true
 defaults write $d Workspace.terminalSmoothScrolling -bool true
-defaults write $d Workspace.terminalPaddingColor -string extend
+defaults write $d Workspace.terminalPaddingColor -string background
 defaults write $d Workspace.terminalUseThemePalette -bool false
 defaults write $d Workspace.darkUsesExtendedThemePalette -bool false
 
-# Panes and tabs
-defaults write $d Workspace.paneDensity -string compact
-defaults write $d Workspace.showsPaneHeaders -bool false
+# Panes
+defaults write $d Workspace.paneDensity -string comfortable
+defaults write $d Workspace.showsPaneHeaders -bool true
+defaults write $d Workspace.showsActivePaneBorder -bool true
+defaults write $d Workspace.activePaneBorderColor -string accent
+defaults write $d Workspace.activePaneBorderOpacity -float 0.6
+defaults write $d Workspace.inactivePaneFadeMode -string both
+defaults write $d Workspace.usesPaneGlass -bool true
 defaults write $d Workspace.tintsPanesWithProgramBackground -bool true
-defaults write $d Workspace.activePaneBorderColor -string green
-defaults write $d Workspace.inactivePaneFadeMode -string styling
 defaults write $d Workspace.balancesSplitsOnCreation -bool true
 defaults write $d Workspace.focusFollowsMouse -bool false
+
+# Tabs, sidebar, look
 defaults write $d Workspace.tabStyle -string horizontal
+defaults write $d Workspace.tabIconColorMode -string always
+defaults write $d Workspace.tabsFillAvailableSpace -bool false
 defaults write $d Workspace.sidebarPosition -string left
+defaults write $d Workspace.sidebarWidth -int 167
+defaults write $d Workspace.sidebarShowsActivity -bool false
+defaults write $d Workspace.interfaceStyle -string useTheme
 defaults write $d Workspace.animationStyle -string snappy
 defaults write $d Workspace.appearance -string dark
