@@ -40,12 +40,6 @@ rex.action{
   run   = function(ctx) return popup("lazygit", { "lazygit" }, large, pane_dir(ctx)) end,
 }
 
-rex.action{
-  name  = "vallow",
-  title = "Open vallow",
-  run   = function(ctx) return popup("vallow", { "vallow" }, large, pane_dir(ctx)) end,
-}
-
 -- Pick a folder zoxide knows and go to its session; see rex_session_finder.
 rex.action{
   name  = "finder",
@@ -161,7 +155,6 @@ rex.bind("alt+h", "session.previous")
 rex.bind("alt+l", "session.next")
 
 rex.bind(p .. "g", "lazygit")
-rex.bind(p .. "shift+f", "vallow")
 rex.bind(p .. "f", "finder")
 rex.bind(p .. "b", "client.sidebar.toggle")
 rex.bind(p .. "shift+;", "client.palette.toggle")
