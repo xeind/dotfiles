@@ -9,6 +9,8 @@ App settings are macOS defaults; see `apply_rex_defaults` in `.local/bin`.
 2. `rex config check` loads it and counts bindings and actions.
 3. `rex config reload`. The server reads it again; no restart.
 4. `rex do NAME -b "$REX_BLOCK"` runs an action as if from this pane.
+   `rex do ~/.config/rex/init.lua --action NAME` tries one without
+   reloading.
    Actions that open a pane return its `layer_id`; close it after the
    test with `rex api call session.close_layer`.
 5. `rex server logs` shows Lua errors the check misses.
