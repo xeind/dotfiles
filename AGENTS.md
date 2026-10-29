@@ -71,6 +71,8 @@ git clone https://github.com/zsh-users/zsh-autosuggestions ~/.oh-my-zsh/custom/p
 git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
 # herdr agent-state hooks: prefix+a and the tab bar's blocked count need them
 herdr integration install claude && herdr integration install codex && herdr integration install pi
+# Rex settings live in macOS defaults; pick the font in Rex itself
+apply_rex_defaults
 ```
 
 ## Recovery
@@ -94,6 +96,9 @@ herdr integration install claude && herdr integration install codex && herdr int
   login shell and the shell agents run commands in.
 - Rex has no shell setting and starts a login zsh, so the top of
   `.zshrc` execs nu when `REX_BLOCK` is set and no `-c` was given.
+  Its other settings are macOS defaults, not a file: `apply_rex_defaults`
+  (`.local/bin`) writes them. Change a setting in Rex, then add the key
+  there (`defaults read com.superlogical.rex` shows them).
 - nu writes its tool init scripts (mise, starship, carapace, atuin,
   zoxide) to `~/Library/Application Support/nushell/vendor/autoload`
   only when missing; `update_tools` deletes them after upgrades. Its
