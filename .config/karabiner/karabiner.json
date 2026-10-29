@@ -532,6 +532,30 @@
               {
                 "to": [
                   {
+                    "shell_command": "printf '%s\\to\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Rex Beta.app'"
+                  }
+                ],
+                "description": "Open -a 'Rex Beta.app'",
+                "type": "basic",
+                "from": {
+                  "key_code": "r",
+                  "modifiers": {
+                    "optional": [
+                      "any"
+                    ]
+                  }
+                },
+                "conditions": [
+                  {
+                    "type": "variable_if",
+                    "name": "hyper_sublayer_o",
+                    "value": 1
+                  }
+                ]
+              },
+              {
+                "to": [
+                  {
                     "shell_command": "printf '%s\\to\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Obsidian.app'"
                   }
                 ],

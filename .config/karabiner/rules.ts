@@ -77,6 +77,7 @@ const rules: KarabinerRules[] = [
       z: app("Zen Browser"),
       d: app("Discord"),
       t: app("Ghostty"),
+      r: app("Rex Beta"),
       m: app("Obsidian"),
       f: app("Finder"),
       n: app("Things3"),

@@ -99,6 +99,13 @@
   },
   {
     "layer": "o",
+    "key": "r",
+    "label": "Rex Beta",
+    "category": "app-launch",
+    "app": "Rex Beta"
+  },
+  {
+    "layer": "o",
     "key": "m",
     "label": "Obsidian",
     "category": "app-launch",
