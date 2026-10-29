@@ -12,9 +12,11 @@ HEAD=/usr/bin/head
 MDLS=/usr/bin/mdls
 JQ=/usr/bin/jq
 HERDR=/Users/xein/.local/bin/herdr
+REX=/Users/xein/.local/bin/rex
 
 FINDER_ID=com.apple.finder
 GHOSTTY_ID=com.mitchellh.ghostty
+REX_ID=com.superlogical.rex
 
 mode=$1
 
@@ -47,6 +49,26 @@ APPLESCRIPT
 # The focused herdr pane's folder; foreground_cwd wins over cwd.
 herdr_pane_dir() {
   "$HERDR" pane list | "$JQ" -r '[.result.panes[] | select(.focused)][0] | (.foreground_cwd // .cwd) // empty'
+}
+
+# The focused Rex pane's folder. Rex titles its front window
+# "<tab> - <session>", and its saved last-focused session goes stale, so
+# the title names the session; Rex's API then gives that session's active
+# tab, its focused pane, and the folder the pane's shell reported.
+rex_pane_dir() {
+  local title session block pwd
+  title=$("$OSASCRIPT" -e 'tell application "System Events" to tell process "Rex" to get name of window 1') || return
+  session=$("$REX" ls --json | "$JQ" -r --arg l "${title##* - }" 'first(.sessions[] | select(.label == $l) | .session_id) // empty')
+  [ -n "$session" ] || return
+  block=$("$REX" api call session.view "{\"session_id\":\"$session\"}" | "$JQ" -r '.active_window_id as $w | first(.windows[] | select(.window_id == $w) | .focused_block_id) // empty')
+  [ -n "$block" ] || return
+  pwd=$("$REX" block call -s "$session" -b "$block" pwd | "$JQ" -r '.pwd // empty')
+  if [[ $pwd == file://* ]]; then
+    pwd=/${pwd#file://*/}
+    printf '%b' "${pwd//%/\\x}"
+  else
+    "$REX" block call -s "$session" -b "$block" process | "$JQ" -r '.foreground.cwd // empty'
+  fi
 }
 
 # Trims leading and trailing whitespace from $1.
@@ -156,6 +178,18 @@ case $front:$mode in
       printf '%s' "$folder" | "$PBCOPY"
       echo "Copied $(tilde "$folder")"
     fi
+    ;;
+  "$REX_ID":copy)
+    dir=$(rex_pane_dir)
+    [ -n "$dir" ] || { echo "No folder in this pane"; exit 1; }
+    printf '%s' "$dir" | "$PBCOPY"
+    echo "Copied $(tilde "$dir")"
+    ;;
+  "$REX_ID":reveal)
+    dir=$(rex_pane_dir)
+    [ -n "$dir" ] || { echo "No folder in this pane"; exit 1; }
+    "$OPEN" "$dir"
+    echo "Opened $(tilde "$dir") in Finder"
     ;;
   "$GHOSTTY_ID":copy)
     dir=$(herdr_pane_dir)
