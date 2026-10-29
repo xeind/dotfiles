@@ -1,10 +1,6 @@
 theme = nightingale
-# theme = Kanagawa Dragon
-# background-opacity = .96
-# background-blur-radius = 22
 
 font-family = DX-02 Condensed
-# font-family = BerkeleyMono Nerd Font
 font-size = 12
 font-thicken = false
 
@@ -14,14 +10,10 @@ window-padding-color = extend-always
 window-title-font-family = TX-02
 window-inherit-font-size = false
 window-save-state = always
-# window-padding-x = 8
-# window-padding-y = 8
 
 macos-option-as-alt = left
 macos-titlebar-style = hidden
 macos-titlebar-proxy-icon = hidden
-# macos-non-native-fullscreen = true
-#title = " "
 
 alpha-blending = linear-corrected
 cursor-invert-fg-bg = true

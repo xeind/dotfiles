@@ -71,10 +71,8 @@ default_shell = "/Users/xein/.local/bin/terminal_shell"
 # resurrect-style: keep pane screen history across server restarts
 pane_history = false  # saved history came back re-escaped on each restart
 
-# Nightingale for Herdr
-# Herdr has no custom theme files: pick the closest built-in, then override
-# every token. Append this to ~/.config/herdr/config.toml.
-
+# Nightingale. herdr has no theme files: take the closest built-in and
+# override every token.
 [theme]
 name = "kanagawa"
 

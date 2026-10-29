@@ -9,7 +9,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 DISABLE_AUTO_UPDATE="true"
 plugins=(sudo zsh-autosuggestions zsh-syntax-highlighting)
 
-# Ensure p10k instant prompt is disabled early to avoid double-rendering prompt
+# Instant prompt renders the prompt twice.
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=off
 
 source $ZSH/oh-my-zsh.sh
@@ -34,11 +34,10 @@ if [[ -z $CLAUDECODE ]]; then
   alias la='eza -a --colour=always --icons=always'
 fi
 
-# Keybinds
-bindkey '^E' end-of-line                # Ctrl + E: Move cursor to the end of the line
-bindkey '^A' beginning-of-line          # Ctrl + A: Move cursor to the start of the line
-bindkey '^N' menu-complete              # Ctrl + N: Move to the next suggestion
-bindkey '^P' reverse-menu-complete      # Ctrl + P: Move to the previous suggestion
+bindkey '^E' end-of-line
+bindkey '^A' beginning-of-line
+bindkey '^N' menu-complete
+bindkey '^P' reverse-menu-complete
 
 # fzf: Ctrl + T files, Alt + C cd
 source <(fzf --zsh)
@@ -53,7 +52,6 @@ eval "$(zoxide init zsh)"
 alias skim='/Applications/Skim.app/Contents/MacOS/Skim'
 alias vi="$EDITOR"
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 eval "$(mise activate zsh)"

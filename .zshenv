@@ -5,19 +5,17 @@ typeset -U path fpath
 # ~/Library/Application Support, outside this repo.
 export XDG_CONFIG_HOME="$HOME/.config"
 
-# GITHUB_TOKEN for Codex/OpenCode's github MCP server: pulled fresh from gh's
-# keychain-backed credential on every shell start (login, interactive, non-interactive,
-# scripts) rather than a static secret sitting in a file. Sourced here (not .zshrc)
-# so it's set even when codex/opencode are launched outside an interactive shell.
-# Full path: .zshenv runs before .zprofile puts Homebrew on PATH.
-# A shell that inherited the token skips the lookup (gh auth token costs ~30 ms).
+# GITHUB_TOKEN for the github MCP server (Codex, OpenCode), read from gh's
+# keychain credential so no secret sits in a file. Here, not .zshrc, so
+# agents started outside an interactive shell get it too. Full path:
+# Homebrew joins PATH later, in .zprofile. An inherited token skips the
+# lookup (~30 ms).
 if [[ -z $GITHUB_TOKEN && -x /opt/homebrew/bin/gh ]]; then
   export GITHUB_TOKEN="$(/opt/homebrew/bin/gh auth token 2>/dev/null)"
 fi
 
-# CONTEXT7_API_KEY for the context7 MCP server: pulled fresh from macOS Keychain
-# on every shell start, never a static secret sitting in a file.
-# A shell that inherited the key skips the lookup (security costs ~14 ms).
+# CONTEXT7_API_KEY for the context7 MCP server, read from the Keychain.
+# An inherited key skips the lookup (~14 ms).
 [[ -n $CONTEXT7_API_KEY ]] ||
   export CONTEXT7_API_KEY="$(security find-generic-password -a "$USER" -s "context7-api-key" -w 2>/dev/null)"
 
