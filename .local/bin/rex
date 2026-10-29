@@ -1,0 +1,4 @@
+#!/bin/zsh
+# The rex CLI ships inside the Rex app and is on PATH only in Rex's own
+# terminals (REX_BIN_DIR). Reach it from Ghostty, herdr and scripts too.
+exec "${REX_BIN_DIR:-$HOME/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app/Contents/MacOS}/rex" "$@"
