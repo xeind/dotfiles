@@ -92,6 +92,8 @@ herdr integration install claude && herdr integration install codex && herdr int
   a login zsh (PATH, XDG, keys) that execs nu, so `.zshrc` never runs
   there. Put env vars every shell needs in `.zshenv`. zsh stays the
   login shell and the shell agents run commands in.
+- Rex has no shell setting and starts a login zsh, so the top of
+  `.zshrc` execs nu when `REX_BLOCK` is set and no `-c` was given.
 - nu writes its tool init scripts (mise, starship, carapace, atuin,
   zoxide) to `~/Library/Application Support/nushell/vendor/autoload`
   only when missing; `update_tools` deletes them after upgrades. Its

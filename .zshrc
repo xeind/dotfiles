@@ -1,3 +1,9 @@
+# Rex has no shell setting and starts a login zsh, so hand its tabs to nu
+# here, as terminal_shell does for Ghostty and herdr. `-c` calls stay in zsh.
+if [[ -n $REX_BLOCK && -o login && -o interactive && -z $ZSH_EXECUTION_STRING ]] && command -v nu >/dev/null; then
+  exec nu
+fi
+
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="powerlevel10k/powerlevel10k"
 DISABLE_AUTO_UPDATE="true"
