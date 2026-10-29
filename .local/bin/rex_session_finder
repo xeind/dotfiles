@@ -1,0 +1,11 @@
+#!/bin/zsh
+# Pick a folder zoxide knows and go to its Rex session, created if missing.
+# Runs in a floating pane (init.lua "finder") that closes when this exits.
+# Sessions match by label; `rex ls` reports no folder.
+# `rex do session.select` needs Remote Control on (Rex Settings > Rex Server).
+set -e
+dir=$(zoxide query -l | fzf --layout=reverse --height=100% --delimiter=/ --with-nth=-2,-1 --prompt='session > ') || exit 0
+label=${dir:t}
+id=$(rex ls --json | jq -r --arg l "$label" 'first(.sessions[] | select(.label == $l) | .session_id) // empty')
+[[ -n $id ]] || id=$(rex new "$label" --cwd "$dir" --json | jq -r '.session_id')
+rex do session.select session_id="$id"
