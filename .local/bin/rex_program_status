@@ -1,0 +1,26 @@
+#!/bin/zsh
+# Reports an agent's state to Rex as a program status (OSC 7501), so Rex
+# shows it working, blocked or done. The OpenCode rex-status plugin calls
+# it with one of: working done permission question error idle.
+# Does nothing outside Rex.
+[[ -n $REX_BLOCK ]] || exit 0
+
+case $1 in
+  working)    state=working ;;
+  done)       state=done ;;
+  permission) state=blocked:kind=permission ;;
+  question)   state=blocked:kind=question ;;
+  error)      state=error ;;
+  idle)       state=idle ;;
+  *)          exit 0 ;;
+esac
+
+# Plugins run without a terminal: write to the nearest ancestor's.
+pid=$PPID
+while (( pid > 1 )); do
+  tty=$(ps -o tty= -p $pid | tr -d ' ')
+  [[ $tty == ttys* ]] && break
+  pid=$(ps -o ppid= -p $pid | tr -d ' ')
+done
+[[ $tty == ttys* ]] || exit 0
+printf '\e]7501;state=%s:app=opencode\e\\' $state > /dev/$tty
