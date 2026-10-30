@@ -1,6 +1,6 @@
 #!/bin/bash
 # System actions run by Tinycast custom commands.
-# Usage: system_action.sh awake
+# Usage: system_action.sh awake|screen-on|screen-off
 # The last line on stdout is the confirmation text Tinycast shows.
 # Absolute binary paths: Tinycast may start this without the user's PATH.
 
@@ -8,6 +8,13 @@ OSASCRIPT=/usr/bin/osascript
 PMSET=/usr/bin/pmset
 
 mode=$1
+
+# Runs AppleScript lines against Amphetamine.
+amphetamine() {
+  local args=(-e 'tell application "Amphetamine"')
+  for line in "$@"; do args+=(-e "$line"); done
+  "$OSASCRIPT" "${args[@]}" -e 'end tell'
+}
 
 # True while Mole holds its Keep Screen On sleep block.
 mole_awake() {
@@ -21,6 +28,22 @@ press_mole_shortcut() {
 
 case $mode in
   awake)
+    # An Amphetamine session with no end that lets the screen sleep and keeps
+    # the Mac running with the lid closed; closed-display mode is set for this
+    # session only, so Amphetamine's own default stays as it is.
+    pgrep -xq Amphetamine || { echo "Amphetamine isn't running"; exit 1; }
+    if [ "$(amphetamine 'session is active')" = true ]; then
+      amphetamine 'end session' >/dev/null
+      # Tinycast shows a line led by "~ " in its neutral gray instead of success green.
+      echo "~ Amphetamine OFF"
+    else
+      amphetamine 'start new session with options {duration:0, interval:0, displaySleepAllowed:true}' \
+        'enable closed display mode' >/dev/null || { echo "Amphetamine didn't start"; exit 1; }
+      # Tinycast's HUD gives a trailing ON or OFF one width, so toggling doesn't shift it.
+      echo "Amphetamine ON"
+    fi
+    ;;
+  screen-on)
     pgrep -xq Mole || { echo "Mole isn't running"; exit 1; }
     if mole_awake; then before=1; else before=0; fi
     press_mole_shortcut
@@ -31,13 +54,18 @@ case $mode in
       sleep 0.1
     done
     if [ "$now" = "$before" ]; then
-      echo "Awake didn't change"
+      echo "Screen Hold didn't change"
     elif [ "$now" = 1 ]; then
-      echo "Awake on"
+      echo "Screen Hold ON"
     else
-      # Tinycast shows a line led by "~ " in its neutral gray instead of success green.
-      echo "~ Awake off"
+      echo "~ Screen Hold OFF"
     fi
+    ;;
+  screen-off)
+    # Waits for the hotkey's own key releases first; they would wake the
+    # screen straight back up. Detached, so Tinycast can show its message.
+    nohup /bin/sh -c "sleep 1.5; $PMSET displaysleepnow" >/dev/null 2>&1 &
+    echo "Screen OFF"
     ;;
   *)
     echo "Unknown action: $mode"

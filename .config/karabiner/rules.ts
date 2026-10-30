@@ -319,6 +319,8 @@ const rules: KarabinerRules[] = [
       c: tinycast("c", "Open Camera"),
       v: tinycast("v", "Dictation"),
       a: tinycast("a", "Toggle Awake"),
+      h: tinycast("h", "Hold Screen On"),
+      x: tinycast("x", "Screen Off"),
       r: {
         to: [{ shell_command: "osascript ~/.config/raycast/scripts/recording-mode.applescript" }],
         description: "Recording Mode (hide menu bar)",

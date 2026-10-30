@@ -484,6 +484,18 @@
   },
   {
     "layer": "s",
+    "key": "h",
+    "label": "Hold Screen On",
+    "category": "system"
+  },
+  {
+    "layer": "s",
+    "key": "x",
+    "label": "Screen Off",
+    "category": "system"
+  },
+  {
+    "layer": "s",
     "key": "r",
     "label": "Recording Mode (hide menu bar)",
     "category": "system"
