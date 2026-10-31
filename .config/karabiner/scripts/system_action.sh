@@ -16,6 +16,17 @@ amphetamine() {
   "$OSASCRIPT" "${args[@]}" -e 'end tell'
 }
 
+# Turns the screen off in 1.5 s; the hotkey's own key releases would wake it
+# straight back up. Detached, so Tinycast can show its message.
+sleep_screen_soon() {
+  nohup /bin/sh -c "sleep 1.5; $PMSET displaysleepnow" >/dev/null 2>&1 &
+}
+
+# True while an Amphetamine session holds its sleep block.
+amphetamine_asserting() {
+  "$PMSET" -g assertions | grep -q 'named: "Amphetamine'
+}
+
 # True while Mole holds its Keep Screen On sleep block.
 mole_awake() {
   "$PMSET" -g assertions | grep -q 'named: "Mole Keep Screen On"'
@@ -32,16 +43,38 @@ case $mode in
     # the Mac running with the lid closed; closed-display mode is set for this
     # session only, so Amphetamine's own default stays as it is.
     pgrep -xq Amphetamine || { echo "Amphetamine isn't running"; exit 1; }
-    if [ "$(amphetamine 'session is active')" = true ]; then
+    # A failed query must not read as "no session" and start one over a live one.
+    active=$(amphetamine 'session is active') || { echo "Amphetamine didn't answer"; exit 1; }
+    # A fast off-and-on would otherwise leave the old watcher beside the new one.
+    /usr/bin/pkill -f 'system_action.sh lid-watch'
+    if [ "$active" = true ]; then
       amphetamine 'end session' >/dev/null
       # Tinycast shows a line led by "~ " in its neutral gray instead of success green.
       echo "~ Amphetamine OFF"
     else
       amphetamine 'start new session with options {duration:0, interval:0, displaySleepAllowed:true}' \
         'enable closed display mode' >/dev/null || { echo "Amphetamine didn't start"; exit 1; }
+      nohup /bin/bash "$0" lid-watch >/dev/null 2>&1 &
       # Tinycast's HUD gives a trailing ON or OFF one width, so toggling doesn't shift it.
       echo "Amphetamine ON"
     fi
+    ;;
+  lid-watch)
+    # Amphetamine's closed-lid session sets disablesleep, which also stops macOS
+    # turning the display off when the lid closes, so do that here. Runs for as
+    # long as the session holds its sleep block, which can register just after
+    # the session starts. Repeats while closed, since anything that wakes the
+    # display under a shut lid would otherwise leave it lit.
+    for _ in 1 2 3 4 5; do
+      amphetamine_asserting && break
+      sleep 1
+    done
+    while amphetamine_asserting; do
+      if /usr/sbin/ioreg -r -k AppleClamshellState -d 1 | grep -q '"AppleClamshellState" = Yes'; then
+        "$PMSET" displaysleepnow
+      fi
+      sleep 2
+    done
     ;;
   screen-on)
     pgrep -xq Mole || { echo "Mole isn't running"; exit 1; }
@@ -62,9 +95,7 @@ case $mode in
     fi
     ;;
   screen-off)
-    # Waits for the hotkey's own key releases first; they would wake the
-    # screen straight back up. Detached, so Tinycast can show its message.
-    nohup /bin/sh -c "sleep 1.5; $PMSET displaysleepnow" >/dev/null 2>&1 &
+    sleep_screen_soon
     echo "Screen OFF"
     ;;
   *)
