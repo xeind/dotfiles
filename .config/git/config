@@ -8,12 +8,6 @@
 	process = git-lfs filter-process
 [init]
 	defaultBranch = main
-[credential]
-	helper = 
-	helper = /usr/local/share/gcm-core/git-credential-manager
-[credential "https://dev.azure.com"]
-	useHttpPath = true
-
 [delta]
   minus-style                   = syntax "#43242B"
   minus-non-emph-style          = syntax "#43242B"
@@ -33,3 +27,8 @@
 	diffFilter = delta --color-only
 [merge]
 	conflictStyle = zdiff3
+[credential]
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
+[credential "https://dev.azure.com"]
+	useHttpPath = true
