@@ -303,7 +303,7 @@ const rules: KarabinerRules[] = [
         description: "Lock Screen",
       },
       n: {
-        to: [{ shell_command: "osascript -e 'tell application \"System Events\" to tell process \"MenuBarAgent\"' -e 'repeat with g in every group of menu bar 1' -e 'set mi to menu bar item 1 of g' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'" }],
+        to: [{ shell_command: "if pgrep -qx MenuBarAgent; then osascript -e 'tell application \"System Events\" to tell process \"MenuBarAgent\"' -e 'repeat with g in every group of menu bar 1' -e 'set mi to menu bar item 1 of g' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'; else osascript -e 'tell application \"System Events\" to tell process \"ControlCenter\"' -e 'repeat with mi in every menu bar item of menu bar 1' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'; fi" }],
         description: "Open Notification Center",
       },
       m: {
