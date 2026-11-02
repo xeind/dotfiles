@@ -1,0 +1,13 @@
+#!/bin/zsh
+# Show FILE in nvim at its last line, then delete it and focus the pane the
+# scrollback came from. A yank copies to the clipboard and quits; q quits.
+# Runs in a floating pane (actions/copy_mode.lua) that closes when this exits.
+# Usage: rex_copy_mode FILE SESSION BLOCK
+nvim -R \
+  -c 'set clipboard=unnamedplus' \
+  -c 'normal! G' \
+  -c 'nnoremap <buffer> q <Cmd>qa!<CR>' \
+  -c "autocmd TextYankPost * call timer_start(0, {-> execute('qa!')})" \
+  "$1"
+rm -f "$1"
+rex focus -s "$2" "$3" >/dev/null 2>&1
