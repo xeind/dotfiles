@@ -1,4 +1,3 @@
-tap "morantron/tmux-fingers"
 tap "productdevbook/tap"
 # Automatic configure script builder
 brew "autoconf"
@@ -68,8 +67,6 @@ brew "xcodegen"
 brew "yazi"
 # Feature-rich command-line audio/video downloader
 brew "yt-dlp"
-# mouseless terminal interaction
-brew "morantron/tmux-fingers/tmux-fingers", trusted: true
 # Android SDK component
 cask "android-platform-tools"
 # Application uninstaller
