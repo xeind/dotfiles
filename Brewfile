@@ -5,6 +5,8 @@ brew "autoconf"
 brew "openssl@3"
 # Clone of cat(1) with syntax highlighting and Git integration
 brew "bat"
+# Control and limit battery charging on Apple Silicon MacBooks
+brew "batt"
 # Resource monitor. C++ version and continuation of bashtop and bpytop
 brew "btop"
 # GNU multiple precision arithmetic library
