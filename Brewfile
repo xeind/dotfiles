@@ -45,6 +45,8 @@ brew "mas"
 brew "mole"
 # Remote terminal application
 brew "mosh"
+# Friendly PIL fork (Python Imaging Library)
+brew "pillow"
 # Persistent key-value database, with built-in net interface
 brew "redis"
 # Search tool like grep and The Silver Searcher
