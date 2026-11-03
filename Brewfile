@@ -108,4 +108,3 @@ mas "Sink It for Reddit", id: 6449873635
 mas "uBlock Origin Lite", id: 6745342698
 mas "Video Speed Controller", id: 1588368612
 mas "Wipr", id: 1662217862
-mas "Xcode", id: 497799835
