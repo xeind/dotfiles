@@ -317,7 +317,6 @@ const rules: KarabinerRules[] = [
         description: "Toggle Do Not Disturb",
       },
       c: tinycast("c", "Open Camera"),
-      v: tinycast("v", "Dictation"),
       a: tinycast("a", "Toggle Awake"),
       h: tinycast("h", "Hold Screen On"),
       x: tinycast("x", "Screen Off"),

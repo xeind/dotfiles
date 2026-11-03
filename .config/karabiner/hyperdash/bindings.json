@@ -472,12 +472,6 @@
   },
   {
     "layer": "s",
-    "key": "v",
-    "label": "Dictation",
-    "category": "system"
-  },
-  {
-    "layer": "s",
     "key": "a",
     "label": "Toggle Awake",
     "category": "system"

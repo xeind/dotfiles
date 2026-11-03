@@ -2446,38 +2446,6 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tv\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
-                  },
-                  {
-                    "key_code": "v",
-                    "modifiers": [
-                      "left_control",
-                      "left_option",
-                      "left_shift"
-                    ]
-                  }
-                ],
-                "description": "Tinycast: Dictation",
-                "type": "basic",
-                "from": {
-                  "key_code": "v",
-                  "modifiers": {
-                    "optional": [
-                      "any"
-                    ]
-                  }
-                },
-                "conditions": [
-                  {
-                    "type": "variable_if",
-                    "name": "hyper_sublayer_s",
-                    "value": 1
-                  }
-                ]
-              },
-              {
-                "to": [
-                  {
                     "shell_command": "printf '%s\\ts\\ta\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
                   },
                   {
