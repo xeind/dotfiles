@@ -34,3 +34,4 @@ __pycache__/
 !.config/openlogi/config.toml
 Library/Application Support/Tern/*
 !Library/Application Support/Tern/settings.json
+.omp/natives/
