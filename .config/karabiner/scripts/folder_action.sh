@@ -11,6 +11,8 @@ PBPASTE=/usr/bin/pbpaste
 HEAD=/usr/bin/head
 MDLS=/usr/bin/mdls
 JQ=/usr/bin/jq
+AFPLAY=/usr/bin/afplay
+GIT=/usr/bin/git
 HERDR=/Users/xein/.local/bin/herdr
 REX=/Users/xein/.local/bin/rex
 
@@ -19,6 +21,36 @@ GHOSTTY_ID=com.mitchellh.ghostty
 REX_ID=com.superlogical.rex
 
 mode=$1
+
+# Key sounds from Hex (see sounds/README.md). Each action has its own
+# family and a press picks a random variant; a miss is a deeper key twice.
+SOUNDS=$(dirname "$0")/sounds
+case $mode in
+  copy) OK_FAMILY=$SOUNDS/copy ;;
+  reveal) OK_FAMILY=$SOUNDS/open ;;
+  *) OK_FAMILY=$SOUNDS/reveal ;;
+esac
+FAIL_SOUND=$SOUNDS/fail.wav
+
+# Plays $1 $2 times, detached, so Tinycast doesn't wait on it and the
+# message stays the last line on stdout.
+play() {
+  ( for (( i = 0; i < ${2:-1}; i++ )); do "$AFPLAY" -v 0.8 "$1"; done >/dev/null 2>&1 & )
+}
+
+# Prints a random file from the folder $1. Allows the glob even when the
+# caller turned globbing off (reveal_clipboard does), then restores it.
+random_sound() {
+  local files noglob=0
+  case $- in *f*) noglob=1; set +f ;; esac
+  files=("$1"/*.wav)
+  [ "$noglob" -eq 1 ] && set -f
+  printf '%s' "${files[RANDOM % ${#files[@]}]}"
+}
+
+# Prints the confirmation text, then plays the matching sound.
+ok() { echo "$1"; play "$(random_sound "$OK_FAMILY")"; }
+fail() { echo "$1"; play "$FAIL_SOUND" 2; }
 
 # Shows the home folder as ~ in messages only.
 tilde() {
@@ -69,6 +101,54 @@ rex_pane_dir() {
   else
     "$REX" block call -s "$session" -b "$block" process | "$JQ" -r '.foreground.cwd // empty'
   fi
+}
+
+# The folder of the frontmost window: the focused Rex or herdr pane, or
+# the front Finder window.
+front_pane_dir() {
+  case $front in
+    "$REX_ID") rex_pane_dir ;;
+    "$GHOSTTY_ID") herdr_pane_dir ;;
+    "$FINDER_ID") finder_paths | "$HEAD" -n 1 ;;
+  esac
+}
+
+# Sets BASES, the folders a relative path is tried against, in order:
+# the frontmost pane or Finder window, its git root, then home.
+load_bases() {
+  local pane root
+  BASES=()
+  pane=$(front_pane_dir 2>/dev/null)
+  pane=${pane%/}
+  if [ -n "$pane" ] && [ -d "$pane" ]; then
+    BASES+=("$pane")
+    root=$("$GIT" -C "$pane" rev-parse --show-toplevel 2>/dev/null)
+    if [ -n "$root" ] && [ "$root" != "$pane" ]; then BASES+=("$root"); fi
+  fi
+  BASES+=("$HOME")
+}
+
+# Prints the first existing path under one of BASES that ends in $1.
+# Tries $1 whole, then without its leading folders, up to 8 levels, so
+# a path from another machine or worktree still resolves. A shortened
+# form keeps at least two parts: a lone file name matches only when it
+# was the whole input.
+under_bases() {
+  local parts n i j rest base
+  IFS=/ read -r -a parts <<< "${1#/}"
+  n=${#parts[@]}
+  for (( i = 0; i < n && i <= 8; i++ )); do
+    if [ "$i" -gt 0 ] && [ $((n - i)) -lt 2 ]; then break; fi
+    rest=${parts[i]}
+    for (( j = i + 1; j < n; j++ )); do rest=$rest/${parts[j]}; done
+    for base in "${BASES[@]}"; do
+      if [ -e "$base/$rest" ] || [ -L "$base/$rest" ]; then
+        printf '%s' "$base/$rest"
+        return 0
+      fi
+    done
+  done
+  return 1
 }
 
 # Trims leading and trailing whitespace from $1.
@@ -124,10 +204,10 @@ is_package() {
 # Reveals the first existing path found in the first lines of the clipboard.
 reveal_clipboard() {
   set -f
-  local clip line trimmed cand first="" target="" pane="" pane_read=0 saw_other=0 saw_url=0
+  local clip line trimmed cand first="" target="" bases_read=0 saw_other=0 saw_url=0
   clip=$("$PBPASTE")
   if [ -z "$(trim "$clip")" ] || [ "$(printf '%s' "$clip" | LC_ALL=C wc -c | tr -d ' ')" -gt 4096 ]; then
-    echo "Clipboard isn't a path"
+    fail "Clipboard isn't a path"
     return
   fi
   while IFS= read -r line && [ -z "$target" ]; do
@@ -139,27 +219,24 @@ reveal_clipboard() {
     [ -n "$first" ] || first=$CANDIDATE
     for cand in "$CANDIDATE" "$trimmed"; do
       [ -n "$cand" ] || continue
-      if [ "${cand#/}" != "$cand" ]; then
-        if [ -e "$cand" ] || [ -L "$cand" ]; then target=$cand; break; fi
-      else
-        if [ "$pane_read" -eq 0 ]; then pane=$(herdr_pane_dir 2>/dev/null); pane_read=1; fi
-        if [ -n "$pane" ] && { [ -e "$pane/$cand" ] || [ -L "$pane/$cand" ]; }; then target=$pane/$cand; break; fi
-        if [ -e "$HOME/$cand" ] || [ -L "$HOME/$cand" ]; then target=$HOME/$cand; break; fi
-      fi
+      if [ "${cand#/}" != "$cand" ] && { [ -e "$cand" ] || [ -L "$cand" ]; }; then target=$cand; break; fi
+      if [ "$bases_read" -eq 0 ]; then load_bases; bases_read=1; fi
+      if target=$(under_bases "$cand"); then break; fi
+      target=""
     done
   done < <(printf '%s\n' "$clip" | "$HEAD" -n 20)
   if [ -n "$target" ]; then
     if [ -d "$target" ] && [ ! -L "$target" ] && ! is_package "$target"; then
       "$OPEN" "$target"
-      echo "Opened $(tilde "${target%/}") in Finder"
+      ok "Opened $(tilde "${target%/}") in Finder"
     else
       "$OPEN" -R "$target"
-      echo "Revealed $(tilde "${target%/}")"
+      ok "Revealed $(tilde "${target%/}")"
     fi
   elif [ "$saw_other" -eq 0 ] && [ "$saw_url" -eq 1 ]; then
-    echo "Not a path"
+    fail "Not a path"
   else
-    echo "Not found: $(tilde "${first:0:60}")"
+    fail "Not found: $(tilde "${first:0:60}")"
   fi
 }
 
@@ -172,44 +249,44 @@ case $front:$mode in
     if [ -n "$selection" ]; then
       printf '%s' "$selection" | "$PBCOPY"
       count=$(printf '%s\n' "$selection" | wc -l | tr -d ' ')
-      if [ "$count" -eq 1 ]; then echo "Copied $(tilde "$selection")"; else echo "Copied $count paths"; fi
+      if [ "$count" -eq 1 ]; then ok "Copied $(tilde "$selection")"; else ok "Copied $count paths"; fi
     else
       folder=$(printf '%s\n' "$paths" | head -n 1)
       printf '%s' "$folder" | "$PBCOPY"
-      echo "Copied $(tilde "$folder")"
+      ok "Copied $(tilde "$folder")"
     fi
     ;;
   "$REX_ID":copy)
     dir=$(rex_pane_dir)
-    [ -n "$dir" ] || { echo "No folder in this pane"; exit 1; }
+    [ -n "$dir" ] || { fail "No folder in this pane"; exit 1; }
     printf '%s' "$dir" | "$PBCOPY"
-    echo "Copied $(tilde "$dir")"
+    ok "Copied $(tilde "$dir")"
     ;;
   "$REX_ID":reveal)
     dir=$(rex_pane_dir)
-    [ -n "$dir" ] || { echo "No folder in this pane"; exit 1; }
+    [ -n "$dir" ] || { fail "No folder in this pane"; exit 1; }
     "$OPEN" "$dir"
-    echo "Opened $(tilde "$dir") in Finder"
+    ok "Opened $(tilde "$dir") in Finder"
     ;;
   "$GHOSTTY_ID":copy)
     dir=$(herdr_pane_dir)
-    [ -n "$dir" ] || { echo "No folder in this pane"; exit 1; }
+    [ -n "$dir" ] || { fail "No folder in this pane"; exit 1; }
     printf '%s' "$dir" | "$PBCOPY"
-    echo "Copied $(tilde "$dir")"
+    ok "Copied $(tilde "$dir")"
     ;;
   "$FINDER_ID":reveal)
-    echo "Already in Finder"
+    fail "Already in Finder"
     ;;
   "$GHOSTTY_ID":reveal)
     dir=$(herdr_pane_dir)
-    [ -n "$dir" ] || { echo "No folder in this pane"; exit 1; }
+    [ -n "$dir" ] || { fail "No folder in this pane"; exit 1; }
     "$OPEN" "$dir"
-    echo "Opened $(tilde "$dir") in Finder"
+    ok "Opened $(tilde "$dir") in Finder"
     ;;
   *:reveal-clipboard)
     reveal_clipboard
     ;;
   *)
-    echo "No folder here"
+    fail "No folder here"
     ;;
 esac
