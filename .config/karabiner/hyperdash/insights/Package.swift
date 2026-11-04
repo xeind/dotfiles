@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "hyperdash-insights",
-    platforms: [.macOS("26.0")],
+    platforms: [.macOS(.v15)],
     products: [
         .executable(name: "hyperdash-insights", targets: ["hyperdash-insights"]),
         .library(name: "HyperdashInsights", targets: ["HyperdashInsights"]),

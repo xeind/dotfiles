@@ -365,7 +365,7 @@ public func readManifest(_ path: String, now: Date, calendar: Calendar = .curren
 /// The log as text from `cut` when the cut belongs to this file, else the whole log.
 /// Returns the text and the offset it starts at.
 public func readLog(_ path: String, cut: LogCut?) throws -> (text: String, offset: Int) {
-    let expected = cut.map { Array($0.lastLine.utf8) + [10] } ?? []
+    let expected: [UInt8] = cut.map { Array($0.lastLine.utf8) + [10] } ?? []
     if let cut, cut.offset >= expected.count {
         // The archived line and the byte before it, which must end the line before.
         let lineStart = cut.offset - expected.count
