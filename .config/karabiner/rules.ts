@@ -317,6 +317,12 @@ const rules: KarabinerRules[] = [
         description: "Toggle Do Not Disturb",
       },
       c: tinycast("c", "Open Camera"),
+      // Audio Hijack's "Clean Mic" session has Auto Run: On Launch, so opening the app starts it
+      // and quitting it stops it (the mic indicator turns off)
+      v: {
+        to: [{ shell_command: "if pgrep -xq 'Audio Hijack'; then osascript -e 'quit app \"Audio Hijack\"'; else open -a 'Audio Hijack.app'; fi" }],
+        description: "Toggle Audio Hijack (Clean Mic)",
+      },
       a: tinycast("a", "Toggle Awake"),
       h: tinycast("h", "Hold Screen On"),
       x: tinycast("x", "Screen Off"),

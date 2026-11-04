@@ -122,6 +122,7 @@ The _Hyper Key_, or `Ctrl+Opt+Shift+Cmd`, acts as a universal layer key, unlocki
 | p   | System Preferences | Open macOS System Preferences                   |
 | d   | Toggle DND         | F19 → macOS "Turn Do Not Disturb On/Off" hotkey |
 | c   | Open Camera        | Raycast System → Camera                         |
+| v   | Toggle Audio Hijack | Opens it (Clean Mic auto-runs) or quits it     |
 | r   | Recording Mode On  | `raycast://script-commands/recording-mode`      |
 | t   | Recording Mode Off | `raycast://script-commands/undo-recording-mode` |
 

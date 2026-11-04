@@ -472,6 +472,12 @@
   },
   {
     "layer": "s",
+    "key": "v",
+    "label": "Toggle Audio Hijack (Clean Mic)",
+    "category": "system"
+  },
+  {
+    "layer": "s",
     "key": "a",
     "label": "Toggle Awake",
     "category": "system"
