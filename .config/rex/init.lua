@@ -3,4 +3,5 @@
 require("actions.applications")
 require("actions.copy_mode")
 require("actions.tab_navigation")
+require("actions.fingers")
 require("key_bindings")

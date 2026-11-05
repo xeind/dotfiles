@@ -18,6 +18,7 @@ rex.bind(p .. "-", "pane.split", { direction = "down" })
 rex.bind(p .. "x", "pane.close")
 rex.bind(p .. "z", "pane.zoom")
 rex.bind(p .. "[", "copy_mode")
+rex.bind(p .. "shift+f", "rex_fingers")
 -- Find previous on shift+cmd+g, as in every Mac app; Rex had Go to
 -- Directory there, so it moves to ctrl+b d.
 rex.bind("shift+cmd+g", "client.find.previous")

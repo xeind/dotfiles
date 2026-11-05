@@ -6,6 +6,7 @@ Rex config is Lua 5.1. `init.lua` only loads the other files with `require`:
 - `actions/applications.lua`: lazygit and the session finder.
 - `actions/copy_mode.lua`: the scrollback in nvim, through `rex_copy_mode`.
 - `actions/tab_navigation.lua`: tab steps across sessions.
+- `actions/fingers.lua`: loads the rex-fingers plugin from `~/dev/rex-fingers`.
 - `key_bindings.lua`: every key binding.
 
 Each action file defines its own actions and returns nothing. Shell work
