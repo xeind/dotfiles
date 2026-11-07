@@ -5,8 +5,15 @@ local home = os.getenv("HOME")
 local fingers = dofile(home .. "/dev/rex-fingers/lua/rex-fingers/init.lua")
 fingers.setup{
   binary = home .. "/dev/rex-fingers/bin/rex-fingers",
-  key = false,
-  -- Theme palette slot 13, the bright magenta, follows the Rex theme.
-  hint_style = "1;38;5;0;48;5;13",
-  highlight_style = "1;38;5;13",
+  -- Testing: plain chords beside the ctrl+b ones in key_bindings.lua.
+  key = "alt+f",
+  -- Window scope needs the key mode and its popup; off for now.
+  -- window_key = "alt+shift+f",
+  -- Theme palette slots: hints on bright red (9), the match in red (1).
+  -- Both follow the Rex theme.
+  hint_style = "1;38;5;0;48;5;9",
+  highlight_style = "1;38;5;1",
+  -- A floating pane over the pane: no key list popup, two rows hidden.
+  -- "pane" draws in the pane itself, but Rex shows its key list popup.
+  overlay = "float",
 }

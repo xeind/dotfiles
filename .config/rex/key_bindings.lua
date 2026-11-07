@@ -18,7 +18,10 @@ rex.bind(p .. "-", "split_pane", { direction = "down" })
 rex.bind(p .. "x", "pane.close")
 rex.bind(p .. "z", "pane.zoom")
 rex.bind(p .. "[", "copy_mode")
-rex.bind(p .. "shift+f", "rex_fingers")
+rex.bind(p .. "f", "rex_fingers")
+-- Every pane of the window. Window scope uses the key mode, so Rex shows
+-- its key list popup while the hints are up.
+rex.bind(p .. "shift+f", "rex_fingers", { scope = "window" })
 -- Find previous on shift+cmd+g, as in every Mac app; Rex had Go to
 -- Directory there, so it moves to ctrl+b d.
 rex.bind("shift+cmd+g", "client.find.previous")
@@ -45,7 +48,7 @@ rex.bind("alt+h", "session.previous")
 rex.bind("alt+l", "session.next")
 
 rex.bind(p .. "g", "lazygit")
-rex.bind(p .. "f", "finder")
+rex.bind(p .. "shift+d", "finder")
 rex.bind(p .. "b", "client.sidebar.toggle")
 rex.bind(p .. "shift+;", "client.palette.toggle")
 rex.bind(p .. "shift+r", "client.config.reload")
