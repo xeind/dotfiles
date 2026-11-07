@@ -1,0 +1,21 @@
+#!/bin/zsh
+# Resumes the Claude and Codex conversations that were running in each Rex
+# pane before a restart. Rex keeps sessions, tabs and panes (same IDs) across
+# a restart; the programs inside them do not come back. This types
+# `cd <dir>; <command>` into each recorded pane that is idle at a shell.
+# Snapshot: ~/.local/state/rex_pane_snapshot.tsv
+# Run it from a pane that is not in the snapshot (a plain shell pane).
+SNAP=$HOME/.local/state/rex_pane_snapshot.tsv
+resumed=0; skipped=0
+while IFS=$'\t' read -r label session block dir cmd; do
+  [[ -z $label || $label == \#* ]] && continue
+  if [[ $block == ${REX_BLOCK:-none} ]]; then echo "skip (this pane)  $label  $cmd"; ((skipped++)); continue; fi
+  fg=$(rex block call -s "$session" -b "$block" process 2>/dev/null | jq -r '.foreground.name // empty')
+  if [[ -z $fg ]]; then echo "skip (pane gone) $label  $block"; ((skipped++)); continue; fi
+  case $fg in
+    nu|zsh|bash|-zsh|login) ;;
+    *) echo "skip (busy: $fg) $label  $cmd"; ((skipped++)); continue ;;
+  esac
+  rex send -s "$session" -b "$block" "cd '$dir'; $cmd" && rex send-key -s "$session" -b "$block" enter && { echo "resumed  $label  $cmd"; ((resumed++)); }
+done < "$SNAP"
+echo "done: $resumed resumed, $skipped skipped"

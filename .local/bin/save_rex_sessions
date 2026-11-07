@@ -1,0 +1,48 @@
+#!/bin/zsh
+# Records which Claude or Codex conversation runs in each Rex pane, so
+# resume_rex_sessions can start them again after a restart. Rex keeps
+# sessions, tabs and panes (same IDs) across a restart; the programs
+# inside them do not come back.
+# Run it right before restarting. Writes ~/.local/state/rex_pane_snapshot.tsv
+SNAP=$HOME/.local/state/rex_pane_snapshot.tsv
+mkdir -p ${SNAP:h}
+tmp=$(mktemp)
+print -r -- "# session_label	session_id	block_id	cwd	command	(saved $(date '+%Y-%m-%d %H:%M'))" > $tmp
+saved=0
+for session in $(rex ls --json | jq -r '.sessions[].session_id'); do
+  label=$(rex session inspect $session --json | jq -r '.label')
+  for block in $(rex block ls -s $session --json | jq -r '.blocks[].block_id'); do
+    proc=$(rex block call -s $session -b $block process 2>/dev/null) || continue
+    pid=$(jq -r '.foreground.pid // empty' <<< $proc)
+    name=$(jq -r '.foreground.name // empty' <<< $proc)
+    [[ -n $pid ]] || continue
+    cmd= dir=
+    # Claude Code keeps one record per running process with its conversation ID.
+    if [[ -f $HOME/.claude/sessions/$pid.json ]]; then
+      dir=$(jq -r '.cwd' $HOME/.claude/sessions/$pid.json)
+      cmd="claude --resume $(jq -r '.sessionId' $HOME/.claude/sessions/$pid.json)"
+    # Codex names each conversation file rollout-<start time>-<ID>.jsonl and only
+    # sometimes holds it open, so match the file whose start time follows the
+    # process start by under 2 minutes. The ID is the name's last 36 characters.
+    elif [[ $name == codex ]]; then
+      rollout=$(lsof -p $pid 2>/dev/null | grep -o "$HOME/.codex/sessions/[^ ]*rollout[^ ]*\.jsonl" | head -n 1)
+      if [[ -z $rollout ]]; then
+        started=$(date -j -f "%a %b %d %T %Y" "$(ps -o lstart= -p $pid | xargs)" +%s 2>/dev/null)
+        for f in $HOME/.codex/sessions/$(date -j -r $started +%Y/%m/%d)/rollout-*.jsonl(N); do
+          t=$(date -j -f "%Y-%m-%dT%H-%M-%S" "${${f:t}[9,27]}" +%s 2>/dev/null) || continue
+          if (( t >= started - 5 && t <= started + 120 )); then rollout=$f; break; fi
+        done
+      fi
+      [[ -n $rollout ]] || continue
+      base=${rollout:t:r}
+      dir=$(jq -r '.foreground.cwd // empty' <<< $proc)
+      cmd="codex resume ${base[-36,-1]}"
+    fi
+    [[ -n $cmd ]] || continue
+    print -r -- "$label	$session	$block	$dir	$cmd" >> $tmp
+    print -r -- "saved  $label  $cmd"
+    ((saved++))
+  done
+done
+mv $tmp $SNAP
+print "done: $saved panes saved to $SNAP"
