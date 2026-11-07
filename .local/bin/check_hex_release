@@ -1,0 +1,33 @@
+#!/bin/zsh
+# Notifies once per release when Hex publishes a version newer than the
+# one in /Applications. The installed Hex is a local build with updates
+# off (~/dev/hex), so nothing else says a release is out; sync it with
+# update_local_hex. Run daily by ~/Library/LaunchAgents/com.xein.hex-release-check.plist.
+# HEX_INSTALLED_VERSION=3.2.0 check_hex_release shows the notification
+# without a real release.
+set -euo pipefail
+
+app=/Applications/Hex.app
+state=$HOME/.local/state/hex_release_check
+mkdir -p $state
+
+latest=$(/usr/bin/curl -fsS --max-time 20 -A hex-release-check \
+  -H 'Accept: application/vnd.github+json' \
+  https://api.github.com/repos/anomalyco/hex/releases/latest |
+  /usr/bin/plutil -extract tag_name raw -o - -)
+latest=${latest#v}
+installed=${HEX_INSTALLED_VERSION:-$(/usr/bin/plutil -extract CFBundleShortVersionString raw "$app/Contents/Info.plist")}
+
+newest=$(printf '%s\n%s\n' $installed $latest | sort -V | tail -1)
+if [[ $latest == $installed || $newest != $latest ]]; then
+  print "$(date '+%F %T') up to date: installed $installed, latest $latest"
+  exit 0
+fi
+if [[ -z ${HEX_INSTALLED_VERSION:-} && $(cat $state/notified_version 2>/dev/null) == $latest ]]; then
+  print "$(date '+%F %T') already notified about $latest"
+  exit 0
+fi
+
+/usr/bin/osascript -e "display notification \"You have $installed. Run update_local_hex to sync your build.\" with title \"Hex $latest is out\""
+[[ -n ${HEX_INSTALLED_VERSION:-} ]] || print $latest >$state/notified_version
+print "$(date '+%F %T') notified: installed $installed, latest $latest"

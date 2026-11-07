@@ -1,0 +1,85 @@
+#!/bin/zsh
+# Rebuilds the local Hex on Hex's latest code and installs it after you
+# confirm. The branch hud-appearance-settings in ~/dev/hex carries the
+# HUD appearance changes; this replays it onto origin/dev, runs Hex's
+# checks, builds Hex.app with updates off, and swaps it into /Applications.
+# It stops, changing nothing, on uncommitted changes or a rebase conflict,
+# and before installing on a failed check or build. The official app
+# stays in ~/dev/hex-official-backup.
+set -euo pipefail
+
+repo=$HOME/dev/hex
+branch=hud-appearance-settings
+app=/Applications/Hex.app
+built=$repo/target/app/Hex.app
+tools=/tmp/hex-build-tools
+log=$HOME/Library/Logs/update_local_hex.log
+# These two pass on their own but fail under the full parallel run, on
+# Hex's own code too; they are rerun alone.
+flaky=(
+  rune_ui::capture_capsule::tests::capture_capsule_goldens
+  rune_ui::capture_capsule::tests::the_capsule_moves_inside_its_panel_and_comes_to_rest
+)
+
+step() { print -P "%B==> $1%b"; }
+fail() { print -u2 -P "%F{red}$1%f"; exit 1; }
+
+cd $repo
+[[ $(git branch --show-current) == $branch ]] || fail "switch $repo to $branch first"
+if [[ -n $(git status --porcelain) ]]; then
+  git status --short
+  fail "commit or stash the changes in $repo first: a rebase replays commits only"
+fi
+
+step "fetching Hex"
+before=$(git rev-parse HEAD)
+git fetch --quiet origin
+if [[ $(git merge-base HEAD origin/dev) == $(git rev-parse origin/dev) ]]; then
+  print "already on the latest origin/dev; rebuilding anyway"
+fi
+
+step "replaying $branch onto origin/dev"
+if ! git rebase --quiet origin/dev; then
+  conflicts=$(git diff --name-only --diff-filter=U)
+  git rebase --abort
+  fail "the rebase conflicts in:\n$conflicts\nnothing changed; resolve these by hand"
+fi
+undo="to go back: git -C $repo reset --hard $before"
+
+# cmake builds the speech engine; keep one in /tmp when Homebrew has none.
+if ! command -v cmake >/dev/null; then
+  [[ -x $tools/bin/cmake ]] || { uv venv -q $tools && uv pip install -q --python $tools cmake; }
+  path=($tools/bin $path)
+fi
+
+step "running Hex's checks (log: $log)"
+if ! scripts/check >$log 2>&1; then
+  failed=(${(f)"$(grep -E '\.\.\. FAILED$' $log | sed -E 's/^test (.*) \.\.\. FAILED$/\1/' | sort -u)"})
+  unexpected=(${failed:|flaky})
+  if (( ${#failed} == 0 || ${#unexpected} > 0 )); then
+    print -u2 -l -- $unexpected
+    fail "checks failed; see $log\n$undo"
+  fi
+  step "rerunning ${#failed} test(s) that only fail under load"
+  cargo test --locked --bin hex capture_capsule::tests >>$log 2>&1 || fail "checks failed; see $log\n$undo"
+fi
+
+step "building Hex.app"
+HEX_RELEASE_UNSIGNED=1 HEX_LOCAL_BUILD=1 ./scripts/build-app.sh >>$log 2>&1 ||
+  fail "the build failed; see $log\n$undo"
+version=$(plutil -extract CFBundleShortVersionString raw "$built/Contents/Info.plist")
+
+if ! read -q "?Install Hex $version ($(git rev-parse --short HEAD)) over $app? Hex quits, and macOS asks again for Microphone and Accessibility. [y/N] "; then
+  print "\nbuilt at $built; not installed"
+  exit 0
+fi
+print
+
+step "installing"
+osascript -e 'quit app "Hex"' || true
+for _ in {1..20}; do pgrep -x hex >/dev/null || break; sleep 0.5; done
+pgrep -x hex >/dev/null && fail "Hex did not quit; nothing installed"
+rm -rf $app
+cp -R $built $app
+open -a $app
+print "installed Hex $version; grant Microphone and Accessibility when macOS asks"
