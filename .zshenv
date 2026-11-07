@@ -5,6 +5,11 @@ typeset -U path fpath
 # ~/Library/Application Support, outside this repo.
 export XDG_CONFIG_HOME="$HOME/.config"
 
+# Go: keep the workspace and module cache out of ~/go. Binaries from
+# `go install` land in $GOPATH/bin; the module cache is disposable.
+export GOPATH="$HOME/.local/share/go"
+export GOMODCACHE="$HOME/.cache/go/mod"
+
 # GITHUB_TOKEN for the github MCP server (Codex, OpenCode), read from gh's
 # keychain credential so no secret sits in a file. Here, not .zshrc, so
 # agents started outside an interactive shell get it too. Full path:
