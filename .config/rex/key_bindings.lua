@@ -2,7 +2,7 @@
 local p = "ctrl+b>"
 rex.bind(p .. "ctrl+b", "pane.send_key", { key = "ctrl+b" })
 
-rex.bind(p .. "c", "client.tab.new")
+rex.bind(p .. "c", "new_tab")
 rex.bind(p .. "n", "client.tab.next")
 rex.bind(p .. "p", "client.tab.previous")
 rex.bind(p .. "shift+7", "client.tab.close")
@@ -13,8 +13,8 @@ for i = 1, 9 do
   rex.bind(p .. i, "client.tab.goto", { index = i })
 end
 
-rex.bind(p .. "shift+\\", "pane.split", { direction = "right" })
-rex.bind(p .. "-", "pane.split", { direction = "down" })
+rex.bind(p .. "shift+\\", "split_pane", { direction = "right" })
+rex.bind(p .. "-", "split_pane", { direction = "down" })
 rex.bind(p .. "x", "pane.close")
 rex.bind(p .. "z", "pane.zoom")
 rex.bind(p .. "[", "copy_mode")
