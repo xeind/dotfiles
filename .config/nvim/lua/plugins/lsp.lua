@@ -148,6 +148,8 @@ vim.g.lsp_servers = {
 			json = {},
 		},
 	},
+
+	marksman = {},
 }
 
 vim.g.other_mason_servers = {
