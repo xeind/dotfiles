@@ -35,3 +35,8 @@ __pycache__/
 Library/Application Support/Tern/*
 !Library/Application Support/Tern/settings.json
 .omp/natives/
+.omp/*
+!.omp/agent/
+.omp/agent/*
+!.omp/agent/extensions/
+!.omp/agent/themes/
