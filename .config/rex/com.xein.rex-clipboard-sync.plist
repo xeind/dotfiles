@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.xein.rex-clipboard-sync</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Users/xein/.local/bin/rex</string>
+		<string>do</string>
+		<string>/Users/xein/.config/rex/clipboard_sync.lua</string>
+		<string>--all</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>10</integer>
+	<key>StandardOutPath</key>
+	<string>/Users/xein/Library/Logs/rex-clipboard-sync.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/xein/Library/Logs/rex-clipboard-sync.log</string>
+</dict>
+</plist>
