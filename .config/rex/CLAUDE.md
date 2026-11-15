@@ -10,6 +10,9 @@ Rex config is Lua 5.1. `init.lua` only loads the other files with `require`:
 - `actions/remote_session.lua`: split and tab actions that open ssh in
   sessions labelled after a remote host.
 - `key_bindings.lua`: every key binding.
+- The `-- rex-undo begin/end` block at the end of `init.lua` comes from
+  `~/dev/rex-undo-extension/install.sh`. Rerun the installer to change it,
+  or remove it with `uninstall.sh`. Don't edit the block by hand.
 - `clipboard_sync.lua`: a `rex do --all` script that puts OSC 52 copies on
   the Mac clipboard. `com.xein.rex-clipboard-sync.plist` keeps it running;
   install it with `launchctl bootstrap gui/$(id -u)` from `~/Library/LaunchAgents`.
