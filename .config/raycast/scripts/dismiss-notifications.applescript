@@ -90,7 +90,11 @@ tell application "System Events" to tell process "NotificationCenter"
 			set grp to group 1 of scroll area 1 of group 1 of group 1 of window 1
 			set done to true
 			-- Expanded app groups show a heading row with an X (clear group) button.
-			set xButtons to every button of grp
+			-- Skip the "Show more" button (AXShowHistoryButton) below the banners.
+			set xButtons to {}
+			repeat with b in (every button of grp)
+				if (value of attribute "AXIdentifier" of b) is not "AXShowHistoryButton" then set end of xButtons to contents of b
+			end repeat
 			if (count of xButtons) > 0 then
 				click item 1 of xButtons
 				set done to false
