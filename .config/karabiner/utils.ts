@@ -284,10 +284,16 @@ function categoryOf(
     if (event.pointing_button) return "pointer";
     if (description?.startsWith("Open -a ")) return "app-launch";
     if (description?.match(/^Open https?:\/\//)) return "site-open";
-    if (event.shell_command?.includes("rectangle://")) return "window-arrangement";
     const code = event.key_code;
     const modifiers = event.modifiers ?? [];
     const only = (...allowed: string[]) => modifiers.every((m) => allowed.includes(m));
+    if (
+        code &&
+        modifiers.length === RECTANGLE_MODIFIERS.length &&
+        only(...RECTANGLE_MODIFIERS)
+    ) {
+        return "window-arrangement";
+    }
     if (code === "page_up" || code === "page_down") return "page-navigation";
     if (code && /^(left|right|up|down)_arrow$/.test(code) && only("left_option")) return "text-navigation";
     if (code === "delete_or_backspace" && modifiers.length > 0 && only("left_option")) return "text-navigation";
@@ -386,13 +392,23 @@ export function shell(
 }
 
 /**
- * Shortcut for managing window sizing with Rectangle
+ * Shortcut for managing window sizing with Rectangle. Sends the global
+ * shortcut bound to the action in Rectangle, which is faster than the
+ * rectangle:// URL. The chord is these modifiers plus the same key as the
+ * sublayer leaf; scripts/configure_rectangle_shortcuts.sh sets them in Rectangle.
  */
-export function rectangle(name: string): LayerCommand {
+const RECTANGLE_MODIFIERS = [
+    "left_control",
+    "left_option",
+    "left_command",
+] as const;
+
+export function rectangle(key_code: KeyCode, name: string): LayerCommand {
     return {
         to: [
             {
-                shell_command: `open -g rectangle://execute-action?name=${name}`,
+                key_code,
+                modifiers: [...RECTANGLE_MODIFIERS],
             },
         ],
         description: `Window: ${name}`,
