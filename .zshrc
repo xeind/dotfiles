@@ -55,3 +55,6 @@ alias vi="$EDITOR"
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 eval "$(mise activate zsh)"
+
+# opencode
+export PATH=/Users/xein/.opencode/bin:$PATH
