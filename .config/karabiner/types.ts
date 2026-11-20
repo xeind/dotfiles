@@ -154,6 +154,7 @@ export interface MouseKey {
 
 export interface SoftwareFunction {
   iokit_power_management_sleep_system?: {};
+  open_application?: { file_path: string };
 }
 
 export type KeyCode =

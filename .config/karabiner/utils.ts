@@ -1,3 +1,4 @@
+import fs from "fs";
 import { To, KeyCode, Manipulator, KarabinerRules } from "./types";
 
 /**
@@ -452,9 +453,27 @@ export function tinycast(key_code: KeyCode, name: string): LayerCommand {
     };
 }
 
+const APPLICATION_DIRECTORIES = [
+    "/Applications",
+    "/System/Applications",
+    "/System/Library/CoreServices",
+];
+
 /**
- * Shortcut for "Open an app" command (of which there are a bunch)
+ * Open or focus an app through Karabiner's open_application, which needs no
+ * shell or 'open' process. The path is resolved at build time; a missing app
+ * fails the build. The description keeps the "Open -a " prefix that
+ * categoryOf reads.
  */
 export function app(name: string): LayerCommand {
-    return open(`-a '${name}.app'`);
+    const file_path = APPLICATION_DIRECTORIES.map((dir) => `${dir}/${name}.app`).find(
+        (path) => fs.existsSync(path)
+    );
+    if (!file_path) {
+        throw new Error(`app("${name}"): ${name}.app not found in ${APPLICATION_DIRECTORIES.join(", ")}`);
+    }
+    return {
+        to: [{ software_function: { open_application: { file_path } } }],
+        description: `Open -a '${name}.app'`,
+    };
 }

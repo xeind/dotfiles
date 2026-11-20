@@ -412,7 +412,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\t1\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Bitwarden.app'"
+                    "shell_command": "printf '%s\\to\\t1\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/Applications/Bitwarden.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Bitwarden.app'",
@@ -436,7 +443,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tb\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Firefox.app'"
+                    "shell_command": "printf '%s\\to\\tb\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/Applications/Firefox.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Firefox.app'",
@@ -460,7 +474,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Zen Browser.app'"
+                    "shell_command": "printf '%s\\to\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/Applications/Zen Browser.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Zen Browser.app'",
@@ -484,7 +505,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Discord.app'"
+                    "shell_command": "printf '%s\\to\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/Applications/Discord.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Discord.app'",
@@ -508,7 +536,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tt\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Ghostty.app'"
+                    "shell_command": "printf '%s\\to\\tt\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/Applications/Ghostty.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Ghostty.app'",
@@ -532,7 +567,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Rex.app'"
+                    "shell_command": "printf '%s\\to\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/Applications/Rex.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Rex.app'",
@@ -556,7 +598,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Obsidian.app'"
+                    "shell_command": "printf '%s\\to\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/Applications/Obsidian.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Obsidian.app'",
@@ -580,7 +629,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Finder.app'"
+                    "shell_command": "printf '%s\\to\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/System/Library/CoreServices/Finder.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Finder.app'",
@@ -604,7 +660,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Things3.app'"
+                    "shell_command": "printf '%s\\to\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/Applications/Things3.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Things3.app'",
@@ -628,7 +691,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Skim.app'"
+                    "shell_command": "printf '%s\\to\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/Applications/Skim.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Skim.app'",
@@ -652,7 +722,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Helium.app'"
+                    "shell_command": "printf '%s\\to\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/Applications/Helium.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Helium.app'",
@@ -676,7 +753,14 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -a 'Zed.app'"
+                    "shell_command": "printf '%s\\to\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                  },
+                  {
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/Applications/Zed.app"
+                      }
+                    }
                   }
                 ],
                 "description": "Open -a 'Zed.app'",
