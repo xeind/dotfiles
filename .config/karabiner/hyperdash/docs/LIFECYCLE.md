@@ -7,7 +7,7 @@ and from `bindings.json`.
 
 | File | Written by | Holds | Kept |
 |---|---|---|---|
-| `~/.local/state/karabiner/usage.log` | Karabiner. Each Hyper command runs `printf ... >> usage.log` (`utils.ts`). | One line per press: local time to the second, layer, key. | Until you delete it. |
+| `~/.local/state/karabiner/usage.log` | `hyperdash-usage-receiver` (`hyperdash/receiver`). Each Hyper command sends it a `send_user_command` datagram on `usage.sock` (`utils.ts`). | One line per press: local time to the second, layer, key. | Until you delete it. |
 | `~/.local/state/hyperdash/context.log` | The Hammerspoon recorder, only when `RECORD_CONTEXT` is true. It is false in the repo. | One line per event: local time to the millisecond, and `app` (a bundle ID), `lock`, `unlock`, `sleep`, `wake` or `start`. No window titles, URLs or keys. | Until you delete it. |
 | `~/.local/state/karabiner/retention.json` | `hyperdash-insights --compact`, run by the host after a close, at most once a day. | The cut in each log and the counts before it (`RETENTION.md`). | Replaced by each run. Safe to delete: readers then read the whole logs. |
 | `~/.local/state/karabiner/insights.json` | `hyperdash-insights`, run by the host in the background. | The report: cards, held findings, rule statuses. | Replaced by each run. Safe to delete. |

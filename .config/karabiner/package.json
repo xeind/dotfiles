@@ -13,6 +13,7 @@
   "scripts": {
     "build": "tsm rules.ts",
     "build:insights": "swift build -c release --package-path hyperdash/insights && install -m 755 \"$(swift build -c release --package-path hyperdash/insights --show-bin-path)/hyperdash-insights\" \"$HOME/.local/bin/hyperdash-insights\"",
+    "build:receiver": "swift build -c release --package-path hyperdash/receiver && install -m 755 \"$(swift build -c release --package-path hyperdash/receiver --show-bin-path)/hyperdash-usage-receiver\" \"$HOME/.local/bin/hyperdash-usage-receiver\"",
     "check:build": "bash scripts/check_build.sh",
     "watch": "nodemon --exec yarn build -e ts"
   }

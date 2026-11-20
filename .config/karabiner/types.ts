@@ -130,6 +130,10 @@ export interface To {
   key_code?: KeyCode;
   modifiers?: ModifiersKeys[];
   shell_command?: string;
+  send_user_command?: {
+    endpoint?: string;
+    payload: unknown;
+  };
   set_variable?: {
     name: string;
     value: boolean | number | string;

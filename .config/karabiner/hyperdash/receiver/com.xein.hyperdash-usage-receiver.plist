@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Keeps hyperdash-usage-receiver running. Karabiner sends each Hyper press to its
+  socket with send_user_command; the receiver appends the line to usage.log.
+  Install: yarn build:receiver, then copy this file to ~/Library/LaunchAgents and run
+  launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.xein.hyperdash-usage-receiver.plist
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.xein.hyperdash-usage-receiver</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Users/xein/.local/bin/hyperdash-usage-receiver</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ProcessType</key>
+	<string>Background</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/xein/.local/state/karabiner/usage-receiver.err.log</string>
+</dict>
+</plist>

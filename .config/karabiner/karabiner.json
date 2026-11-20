@@ -121,7 +121,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tx\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://x.com"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "b",
+                        "key": "x"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "open https://x.com"
                   }
                 ],
                 "description": "Open https://x.com",
@@ -145,7 +154,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\ty\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://youtube.com"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "b",
+                        "key": "y"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "open https://youtube.com"
                   }
                 ],
                 "description": "Open https://youtube.com",
@@ -169,7 +187,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://facebook.com"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "b",
+                        "key": "f"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "open https://facebook.com"
                   }
                 ],
                 "description": "Open https://facebook.com",
@@ -193,7 +220,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tg\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://github.com"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "b",
+                        "key": "g"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "open https://github.com"
                   }
                 ],
                 "description": "Open https://github.com",
@@ -217,7 +253,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://reddit.com"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "b",
+                        "key": "r"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "open https://reddit.com"
                   }
                 ],
                 "description": "Open https://reddit.com",
@@ -241,7 +286,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://chatgpt.com"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "b",
+                        "key": "c"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "open https://chatgpt.com"
                   }
                 ],
                 "description": "Open https://chatgpt.com",
@@ -265,7 +319,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://mail.google.com/mail/u/0/#inbox"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "b",
+                        "key": "m"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "open https://mail.google.com/mail/u/0/#inbox"
                   }
                 ],
                 "description": "Open https://mail.google.com/mail/u/0/#inbox",
@@ -289,7 +352,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://photos.google.com/u/3/"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "b",
+                        "key": "p"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "open https://photos.google.com/u/3/"
                   }
                 ],
                 "description": "Open https://photos.google.com/u/3/",
@@ -313,7 +385,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tb\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open https://linkedin.com"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "b",
+                        "key": "l"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "open https://linkedin.com"
                   }
                 ],
                 "description": "Open https://linkedin.com",
@@ -412,7 +493,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\t1\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "1"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -443,7 +530,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tb\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "b"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -474,7 +567,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "z"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -505,7 +604,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "d"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -536,7 +641,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tt\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "t"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -567,7 +678,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "r"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -598,7 +715,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "m"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -629,7 +752,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "f"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -660,7 +789,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "n"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -691,7 +826,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "p"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -722,7 +863,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "h"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -753,7 +900,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\to\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "o",
+                        "key": "c"
+                      }
+                    }
                   },
                   {
                     "software_function": {
@@ -859,7 +1012,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\t1\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "1"
+                      }
+                    }
                   },
                   {
                     "key_code": "1",
@@ -891,7 +1050,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\t3\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "3"
+                      }
+                    }
                   },
                   {
                     "key_code": "3",
@@ -923,7 +1088,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tspacebar\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open -b com.apple.exposelauncher"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "spacebar"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "open -b com.apple.exposelauncher"
                   }
                 ],
                 "description": "Mission Control",
@@ -947,7 +1121,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\ty\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "y"
+                      }
+                    }
                   },
                   {
                     "key_code": "y",
@@ -979,7 +1159,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\to\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "o"
+                      }
+                    }
                   },
                   {
                     "key_code": "o",
@@ -1011,7 +1197,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tk\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "k"
+                      }
+                    }
                   },
                   {
                     "key_code": "k",
@@ -1043,7 +1235,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tj\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "j"
+                      }
+                    }
                   },
                   {
                     "key_code": "j",
@@ -1075,7 +1273,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "h"
+                      }
+                    }
                   },
                   {
                     "key_code": "h",
@@ -1107,7 +1311,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "l"
+                      }
+                    }
                   },
                   {
                     "key_code": "l",
@@ -1139,7 +1349,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "f"
+                      }
+                    }
                   },
                   {
                     "key_code": "f",
@@ -1171,7 +1387,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\te\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "e"
+                      }
+                    }
                   },
                   {
                     "key_code": "e",
@@ -1203,7 +1425,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "q"
+                      }
+                    }
                   },
                   {
                     "key_code": "q",
@@ -1235,7 +1463,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\ta\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "a"
+                      }
+                    }
                   },
                   {
                     "key_code": "a",
@@ -1267,7 +1501,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "d"
+                      }
+                    }
                   },
                   {
                     "key_code": "d",
@@ -1299,7 +1539,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\ts\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "s"
+                      }
+                    }
                   },
                   {
                     "key_code": "s",
@@ -1331,7 +1577,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tx\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "x"
+                      }
+                    }
                   },
                   {
                     "key_code": "x",
@@ -1363,7 +1615,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tup_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "up_arrow"
+                      }
+                    }
                   },
                   {
                     "key_code": "up_arrow",
@@ -1395,7 +1653,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tdown_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "down_arrow"
+                      }
+                    }
                   },
                   {
                     "key_code": "down_arrow",
@@ -1427,7 +1691,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tright_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "right_arrow"
+                      }
+                    }
                   },
                   {
                     "key_code": "right_arrow",
@@ -1459,7 +1729,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tleft_arrow\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "left_arrow"
+                      }
+                    }
                   },
                   {
                     "key_code": "left_arrow",
@@ -1491,7 +1767,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "z"
+                      }
+                    }
                   },
                   {
                     "key_code": "z",
@@ -1523,7 +1805,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "c"
+                      }
+                    }
                   },
                   {
                     "key_code": "c",
@@ -1555,7 +1843,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\treturn_or_enter\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "return_or_enter"
+                      }
+                    }
                   },
                   {
                     "key_code": "return_or_enter",
@@ -1587,7 +1881,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tdelete_or_backspace\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "delete_or_backspace"
+                      }
+                    }
                   },
                   {
                     "key_code": "delete_or_backspace",
@@ -1619,7 +1919,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tequal_sign\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "equal_sign"
+                      }
+                    }
                   },
                   {
                     "key_code": "equal_sign",
@@ -1651,7 +1957,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\thyphen\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "hyphen"
+                      }
+                    }
                   },
                   {
                     "key_code": "hyphen",
@@ -1684,7 +1996,13 @@
                 "description": "Window: Hide",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tsemicolon\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "semicolon"
+                      }
+                    }
                   },
                   {
                     "key_code": "h",
@@ -1714,7 +2032,13 @@
                 "description": "Window: Previous Tab",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tu\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "u"
+                      }
+                    }
                   },
                   {
                     "key_code": "tab",
@@ -1745,7 +2069,13 @@
                 "description": "Window: Next Tab",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\ti\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "i"
+                      }
+                    }
                   },
                   {
                     "key_code": "tab",
@@ -1775,7 +2105,13 @@
                 "description": "Window: Next Window",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "n"
+                      }
+                    }
                   },
                   {
                     "key_code": "grave_accent_and_tilde",
@@ -1805,7 +2141,13 @@
                 "description": "Window: Back",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tb\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "b"
+                      }
+                    }
                   },
                   {
                     "key_code": "open_bracket",
@@ -1835,7 +2177,13 @@
                 "description": "Window: Forward",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tw\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "w",
+                        "key": "m"
+                      }
+                    }
                   },
                   {
                     "key_code": "close_bracket",
@@ -1940,7 +2288,13 @@
                 "description": "Screenshot all-purpose",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tc\\ta\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "c",
+                        "key": "a"
+                      }
+                    }
                   },
                   {
                     "key_code": "f12",
@@ -1971,7 +2325,13 @@
                 "description": "Screenshot area",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tc\\tw\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "c",
+                        "key": "w"
+                      }
+                    }
                   },
                   {
                     "key_code": "f11",
@@ -2002,7 +2362,13 @@
                 "description": "Screenshot window",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tc\\te\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "c",
+                        "key": "e"
+                      }
+                    }
                   },
                   {
                     "key_code": "f10",
@@ -2033,7 +2399,13 @@
                 "description": "Screenshot screen",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tc\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "c",
+                        "key": "q"
+                      }
+                    }
                   },
                   {
                     "key_code": "f9",
@@ -2064,7 +2436,13 @@
                 "description": "Scrollshot",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tc\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "c",
+                        "key": "d"
+                      }
+                    }
                   },
                   {
                     "key_code": "f8",
@@ -2095,7 +2473,13 @@
                 "description": "OCR Text",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tc\\ts\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "c",
+                        "key": "s"
+                      }
+                    }
                   },
                   {
                     "key_code": "f7",
@@ -2126,7 +2510,13 @@
                 "description": "Open Clipboard",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tc\\tk\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "c",
+                        "key": "k"
+                      }
+                    }
                   },
                   {
                     "key_code": "f6",
@@ -2157,7 +2547,13 @@
                 "description": "Close all Overlays",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tc\\tz\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "c",
+                        "key": "z"
+                      }
+                    }
                   },
                   {
                     "key_code": "f5",
@@ -2188,7 +2584,13 @@
                 "description": "Open Clipboard History",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tc\\tdelete_or_backspace\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "c",
+                        "key": "delete_or_backspace"
+                      }
+                    }
                   },
                   {
                     "key_code": "f4",
@@ -2293,7 +2695,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tf\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "f",
+                        "key": "p"
+                      }
+                    }
                   },
                   {
                     "key_code": "p",
@@ -2325,7 +2733,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tf\\to\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "f",
+                        "key": "o"
+                      }
+                    }
                   },
                   {
                     "key_code": "o",
@@ -2357,7 +2771,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tf\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "f",
+                        "key": "r"
+                      }
+                    }
                   },
                   {
                     "key_code": "r",
@@ -2464,7 +2884,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tu\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "u"
+                      }
+                    }
                   },
                   {
                     "key_code": "volume_increment"
@@ -2490,7 +2916,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tj\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "j"
+                      }
+                    }
                   },
                   {
                     "key_code": "volume_decrement"
@@ -2516,7 +2948,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\ti\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "i"
+                      }
+                    }
                   },
                   {
                     "key_code": "display_brightness_increment"
@@ -2542,7 +2980,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tk\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "k"
+                      }
+                    }
                   },
                   {
                     "key_code": "display_brightness_decrement"
@@ -2568,7 +3012,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "l"
+                      }
+                    }
                   },
                   {
                     "key_code": "q",
@@ -2599,7 +3049,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; if pgrep -qx MenuBarAgent; then osascript -e 'tell application \"System Events\" to tell process \"MenuBarAgent\"' -e 'repeat with g in every group of menu bar 1' -e 'set mi to menu bar item 1 of g' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'; else osascript -e 'tell application \"System Events\" to tell process \"ControlCenter\"' -e 'repeat with mi in every menu bar item of menu bar 1' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'; fi"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "n"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "if pgrep -qx MenuBarAgent; then osascript -e 'tell application \"System Events\" to tell process \"MenuBarAgent\"' -e 'repeat with g in every group of menu bar 1' -e 'set mi to menu bar item 1 of g' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'; else osascript -e 'tell application \"System Events\" to tell process \"ControlCenter\"' -e 'repeat with mi in every menu bar item of menu bar 1' -e 'if (value of attribute \"AXIdentifier\" of mi) is \"com.apple.menuextra.clock\" then perform action \"AXPress\" of mi' -e 'end repeat' -e 'end tell'; fi"
                   }
                 ],
                 "description": "Open Notification Center",
@@ -2623,7 +3082,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; osascript ~/.config/raycast/scripts/dismiss-notifications.applescript"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "m"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "osascript ~/.config/raycast/scripts/dismiss-notifications.applescript"
                   }
                 ],
                 "description": "Dismiss Notifications",
@@ -2647,7 +3115,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tp\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; open x-apple.systempreferences:com.apple.preference"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "p"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "open x-apple.systempreferences:com.apple.preference"
                   }
                 ],
                 "description": "System Settings",
@@ -2671,7 +3148,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\td\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "d"
+                      }
+                    }
                   },
                   {
                     "key_code": "f19"
@@ -2698,7 +3181,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tc\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "c"
+                      }
+                    }
                   },
                   {
                     "key_code": "c",
@@ -2730,7 +3219,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tv\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; if pgrep -xq 'Audio Hijack'; then osascript -e 'quit app \"Audio Hijack\"'; osascript -e 'display notification \"Off\" with title \"Clean Mic\"'; else open -a 'Audio Hijack.app'; osascript -e 'display notification \"On\" with title \"Clean Mic\"'; fi"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "v"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "if pgrep -xq 'Audio Hijack'; then osascript -e 'quit app \"Audio Hijack\"'; osascript -e 'display notification \"Off\" with title \"Clean Mic\"'; else open -a 'Audio Hijack.app'; osascript -e 'display notification \"On\" with title \"Clean Mic\"'; fi"
                   }
                 ],
                 "description": "Toggle Audio Hijack (Clean Mic)",
@@ -2754,7 +3252,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\ta\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "a"
+                      }
+                    }
                   },
                   {
                     "key_code": "a",
@@ -2786,7 +3290,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "h"
+                      }
+                    }
                   },
                   {
                     "key_code": "h",
@@ -2818,7 +3328,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tx\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "x"
+                      }
+                    }
                   },
                   {
                     "key_code": "x",
@@ -2850,7 +3366,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tr\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; osascript ~/.config/raycast/scripts/recording-mode.applescript"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "r"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "osascript ~/.config/raycast/scripts/recording-mode.applescript"
                   }
                 ],
                 "description": "Recording Mode (hide menu bar)",
@@ -2874,7 +3399,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tt\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; osascript ~/.config/raycast/scripts/undo-recording-mode.applescript"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "t"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "osascript ~/.config/raycast/scripts/undo-recording-mode.applescript"
                   }
                 ],
                 "description": "Undo Recording Mode (show menu bar)",
@@ -2898,7 +3432,16 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\ts\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log; /opt/homebrew/bin/hs -c 'hyperdash.toggle()'"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "s",
+                        "key": "q"
+                      }
+                    }
+                  },
+                  {
+                    "shell_command": "/opt/homebrew/bin/hs -c 'hyperdash.toggle()'"
                   }
                 ],
                 "description": "hyperdash",
@@ -2997,7 +3540,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\th\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "h"
+                      }
+                    }
                   },
                   {
                     "key_code": "left_arrow"
@@ -3023,7 +3572,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\tj\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "j"
+                      }
+                    }
                   },
                   {
                     "key_code": "down_arrow"
@@ -3049,7 +3604,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\tk\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "k"
+                      }
+                    }
                   },
                   {
                     "key_code": "up_arrow"
@@ -3075,7 +3636,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\tl\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "l"
+                      }
+                    }
                   },
                   {
                     "key_code": "right_arrow"
@@ -3101,7 +3668,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\tu\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "u"
+                      }
+                    }
                   },
                   {
                     "key_code": "page_down"
@@ -3127,7 +3700,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\ti\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "i"
+                      }
+                    }
                   },
                   {
                     "key_code": "page_up"
@@ -3153,7 +3732,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\tq\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "q"
+                      }
+                    }
                   },
                   {
                     "pointing_button": "button1"
@@ -3179,7 +3764,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\te\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "e"
+                      }
+                    }
                   },
                   {
                     "pointing_button": "button2"
@@ -3206,7 +3797,13 @@
                 "description": "Move Word Left",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\tb\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "b"
+                      }
+                    }
                   },
                   {
                     "key_code": "left_arrow",
@@ -3236,7 +3833,13 @@
                 "description": "Move Word Right",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\tm\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "m"
+                      }
+                    }
                   },
                   {
                     "key_code": "right_arrow",
@@ -3266,7 +3869,13 @@
                 "description": "Delete Word",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\tn\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "n"
+                      }
+                    }
                   },
                   {
                     "key_code": "delete_or_backspace",
@@ -3296,7 +3905,13 @@
                 "description": "Doffy: Click",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\tspacebar\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "spacebar"
+                      }
+                    }
                   },
                   {
                     "key_code": "f1",
@@ -3327,7 +3942,13 @@
                 "description": "Doffy: Scroll",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\ts\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "s"
+                      }
+                    }
                   },
                   {
                     "key_code": "f2",
@@ -3358,7 +3979,13 @@
                 "description": "Doffy: Search",
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tv\\tf\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "v",
+                        "key": "f"
+                      }
+                    }
                   },
                   {
                     "key_code": "f3",
@@ -3463,7 +4090,13 @@
               {
                 "to": [
                   {
-                    "shell_command": "printf '%s\\tr\\te\\n' \"$(date +%FT%T)\" >> /Users/xein/.local/state/karabiner/usage.log"
+                    "send_user_command": {
+                      "endpoint": "/Users/xein/.local/state/karabiner/usage.sock",
+                      "payload": {
+                        "layer": "r",
+                        "key": "e"
+                      }
+                    }
                   },
                   {
                     "key_code": "e",

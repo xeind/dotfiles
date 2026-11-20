@@ -164,33 +164,28 @@ function generateSubLayerVariableName(key: KeyCode) {
  */
 export const USAGE_LOG_DIR = `${process.env.HOME}/.local/state/karabiner`;
 
+/**
+ * hyperdash-usage-receiver (hyperdash/receiver) listens here and writes the
+ * line to usage.log. A datagram costs no process, unlike a shell_command.
+ */
+export const USAGE_SOCKET = `${USAGE_LOG_DIR}/usage.sock`;
+
 function logUsage(layer: KeyCode, key: KeyCode): To {
     return {
-        shell_command: `printf '%s\\t${layer}\\t${key}\\n' "$(date +%FT%T)" >> ${USAGE_LOG_DIR}/usage.log`,
+        send_user_command: {
+            endpoint: USAGE_SOCKET,
+            payload: { layer, key },
+        },
     };
 }
 
 /**
- * Put the usage log in front of a command's events. Karabiner kills a running
- * shell_command when the next one starts (it keeps one process slot), so a
- * separate log step followed by a shell action loses the log line. When the
- * command is made of shell_commands, join the log and the actions into ONE
- * shell_command. Other commands keep the log as a separate first event.
+ * Put the usage log in front of a command's events. The log is a datagram,
+ * not a shell_command, so it never competes with a shell action for
+ * Karabiner's single shell process slot.
  */
 function withUsageLog(layer: KeyCode, key: KeyCode, to: To[]): To[] {
-    const log = logUsage(layer, key);
-    const shells = to.filter((event) => event.shell_command !== undefined);
-    if (shells.length === 0) return [log, ...to];
-    if (shells.length !== to.length) {
-        throw new Error(
-            `Hyper ${layer} ${key} mixes shell_command with other events; decide their order before merging the usage log`
-        );
-    }
-    return [
-        {
-            shell_command: [log.shell_command, ...shells.map((event) => event.shell_command)].join("; "),
-        },
-    ];
+    return [logUsage(layer, key), ...to];
 }
 
 /**
