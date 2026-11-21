@@ -311,7 +311,7 @@ const rules: KarabinerRules[] = [
         to: [{ shell_command: "osascript ~/.config/raycast/scripts/dismiss-notifications.applescript" }],
         description: "Dismiss Notifications",
       },
-      p: { ...open("x-apple.systempreferences:com.apple.preference"), description: "System Settings" },
+      p: { ...app("System Settings"), description: "System Settings" },
       d: {
         // F19 is bound to "Turn Do Not Disturb On/Off" in System Settings
         to: [{ key_code: "f19" }],

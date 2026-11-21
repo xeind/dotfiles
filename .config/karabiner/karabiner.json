@@ -3124,7 +3124,11 @@
                     }
                   },
                   {
-                    "shell_command": "open x-apple.systempreferences:com.apple.preference"
+                    "software_function": {
+                      "open_application": {
+                        "file_path": "/System/Applications/System Settings.app"
+                      }
+                    }
                   }
                 ],
                 "description": "System Settings",
