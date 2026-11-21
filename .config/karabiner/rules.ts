@@ -89,7 +89,7 @@ const rules: KarabinerRules[] = [
 
     // w = "Window" via Rectangle.app
     w: {
-      spacebar: { ...open("-b com.apple.exposelauncher"), description: "Mission Control" },
+      spacebar: { to: [{ key_code: "mission_control" }], description: "Mission Control" },
       // Rectangle chords; keep in step with scripts/configure_rectangle_shortcuts.sh
       1: rectangle("1", "top-left-sixth"),
       3: rectangle("3", "top-right-sixth"),

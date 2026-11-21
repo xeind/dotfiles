@@ -1097,7 +1097,7 @@
                     }
                   },
                   {
-                    "shell_command": "open -b com.apple.exposelauncher"
+                    "key_code": "mission_control"
                   }
                 ],
                 "description": "Mission Control",
