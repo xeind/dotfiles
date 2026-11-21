@@ -3232,7 +3232,7 @@
                     }
                   },
                   {
-                    "shell_command": "if pgrep -xq 'Audio Hijack'; then osascript -e 'quit app \"Audio Hijack\"'; osascript -e 'display notification \"Off\" with title \"Clean Mic\"'; else open -a 'Audio Hijack.app'; osascript -e 'display notification \"On\" with title \"Clean Mic\"'; fi"
+                    "shell_command": "~/.config/karabiner/scripts/toggle_clean_mic.sh"
                   }
                 ],
                 "description": "Toggle Audio Hijack (Clean Mic)",

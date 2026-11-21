@@ -1,0 +1,18 @@
+// Toggle Audio Hijack's "Clean Mic" session and report the new state (Hyper s v).
+// toggle_clean_mic.sh opens this file while Audio Hijack runs, so a toggle starts or
+// stops the session instead of launching or quitting the app. Needs Settings >
+// Advanced > "Allow execution of external scripts".
+let session = app.sessionWithName("Clean Mic");
+let message;
+if (session == null) {
+    message = "Failed: no session named Clean Mic";
+} else if (session.running) {
+    session.stop();
+    message = "Off";
+} else {
+    session.start();
+    message = "On";
+}
+app.runShellCommand(
+    "osascript -e " + app.shellEscapeArgument('display notification "' + message + '" with title "Clean Mic"')
+);
