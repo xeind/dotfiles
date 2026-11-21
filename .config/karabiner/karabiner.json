@@ -3906,7 +3906,7 @@
                 ]
               },
               {
-                "description": "Doffy: Click",
+                "description": "Tockpad: Click",
                 "to": [
                   {
                     "send_user_command": {
@@ -3943,7 +3943,7 @@
                 ]
               },
               {
-                "description": "Doffy: Scroll",
+                "description": "Tockpad: Scroll",
                 "to": [
                   {
                     "send_user_command": {
@@ -3980,7 +3980,7 @@
                 ]
               },
               {
-                "description": "Doffy: Search",
+                "description": "Tockpad: Search",
                 "to": [
                   {
                     "send_user_command": {

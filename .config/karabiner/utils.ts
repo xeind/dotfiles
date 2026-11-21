@@ -249,9 +249,9 @@ const CATEGORY_OVERRIDES: Record<string, Category> = {
     "w spacebar": "window-switching", // Mission Control
     "w n": "window-switching", // next window (cmd + `)
     "w semicolon": "window-switching", // hide the app (cmd + h)
-    "v spacebar": "pointer", // Doffy: Click
-    "v s": "page-navigation", // Doffy: Scroll
-    "v f": "pointer", // Doffy: Search, finds an element to click
+    "v spacebar": "pointer", // Tockpad: Click
+    "v s": "page-navigation", // Tockpad: Scroll
+    "v f": "pointer", // Tockpad: Search, finds an element to click
 };
 
 // Layers whose commands all share one meaning, used when nothing more specific matches.
@@ -330,7 +330,7 @@ function describeCommand(description: string | undefined, first: To): string {
         if (appName) return appName[1];
         const url = description.match(/^Open https?:\/\/([^/]+)/);
         if (url) return url[1];
-        return humanize(description.replace(/^(Window Management|Window|Tinycast|Doffy): /, ""));
+        return humanize(description.replace(/^(Window Management|Window|Tinycast|Tockpad): /, ""));
     }
     if (first.pointing_button === "button1") return "Left click";
     if (first.pointing_button === "button2") return "Right click";

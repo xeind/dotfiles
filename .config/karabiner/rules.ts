@@ -396,18 +396,18 @@ const rules: KarabinerRules[] = [
         ],
       },
 
-      // Doffy (mouseless control): click, scroll and search. Assumed to follow the key
-      // letters; the user named the three functions but not which key does which.
+      // Tockpad (mouseless control): its [hotkeys] in ~/.config/tockpad/config.toml bind
+      // ctrl-cmd-f1 to click, f2 to scroll and f3 to search. Keep the two in step.
       spacebar: {
-        description: "Doffy: Click",
+        description: "Tockpad: Click",
         to: [{ key_code: "f1", modifiers: ["left_control", "left_command"] }],
       },
       s: {
-        description: "Doffy: Scroll",
+        description: "Tockpad: Scroll",
         to: [{ key_code: "f2", modifiers: ["left_control", "left_command"] }],
       },
       f: {
-        description: "Doffy: Search",
+        description: "Tockpad: Search",
         to: [{ key_code: "f3", modifiers: ["left_control", "left_command"] }],
       },
     },
