@@ -29,11 +29,8 @@ of git.
 **Folder links.** atuin, Karabiner, LinearMouse, mise, nushell,
 OpenLogi and Zed are linked as whole folders (`~/.config/<app>`)
 because each rewrites its own files, which turns a file link back into
-a plain file. Tern is linked the same way at
-`~/Library/Application Support/Tern`; only its `settings.json` is
-tracked. Their state (backups, history, sockets, conversations, Tern's
-session daemon and omp builds) lives in the repo folder and is
-gitignored.
+a plain file. Their state (backups, history, sockets, conversations)
+lives in the repo folder and is gitignored.
 
 ## Adding a config
 
@@ -47,13 +44,10 @@ a running app recreates a default folder within seconds, and
 `stow --adopt` would then pull that default over the real config.
 `relocate_config_folder` (`.local/bin`) does this: it quits the app,
 stops the processes you name, moves the folder, and stows, moving the
-folder back if stow reports a conflict. Tern, for example:
+folder back if stow reports a conflict. Zed, for example:
 
 ```sh
-relocate_config_folder --quit Tern \
-  --stop '^/Applications/Tern.app/Contents/MacOS/tern$' \
-  --stop '^/Applications/Tern.app/Contents/MacOS/tern daemon' \
-  --reopen "Library/Application Support/Tern"
+relocate_config_folder --quit Zed --reopen .config/zed
 ```
 
 Run it from a terminal other than the app being moved.
@@ -117,10 +111,6 @@ apply_rex_defaults
   exist, or git writes there instead.
 - Karabiner's `karabiner.json` is built from `rules.ts` (`yarn build`
   in `.config/karabiner`). Edit the TypeScript, then rebuild.
-- Tern's colors are an omp theme: `.omp/agent/themes/nightingale.json`,
-  selected by `theme_dark` in Tern's `settings.json`. Tern reads its
-  settings only at launch or on Reload, and writes them back from memory
-  when any setting changes: quit Tern before editing the file by hand.
 
 ## Installing tools
 

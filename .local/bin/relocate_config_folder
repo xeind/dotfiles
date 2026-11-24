@@ -4,7 +4,7 @@
 # plain file (see AGENTS.md, "Folder links").
 #
 # usage: relocate_config_folder [--quit APP] [--stop PATTERN]... [--reopen] PATH
-#   PATH        folder under ~, e.g. "Library/Application Support/Tern"
+#   PATH        folder under ~, e.g. ".config/zed"
 #   --quit APP  quit this macOS app first
 #   --stop PAT  stop processes whose command line matches PAT (pkill -f)
 #   --reopen    open APP again once the folder is linked
