@@ -12,6 +12,7 @@ __pycache__/
 .config/herdr/plugins/
 .config/herdr/*.log
 .config/opencode/node_modules/
+.pi/node_modules/
 .config/opencode/package-lock.json
 .config/opencode/bun.lock
 .config/opencode/temp.json

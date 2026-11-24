@@ -1,0 +1,14 @@
+{
+  "name": "pi-agent-configuration",
+  "private": true,
+  "type": "module",
+  "description": "Type checks and tests for the Pi extensions in agent/extensions. Not linked into ~.",
+  "scripts": {
+    "check": "tsc --noEmit && node --test 'agent/extensions/tests/*.test.ts'"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.6.0",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}

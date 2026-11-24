@@ -8,3 +8,8 @@
 ^/AGENTS\.md
 CLAUDE\.md$
 ^/Brewfile
+^/\.pi/package\.json
+^/\.pi/package-lock\.json
+^/\.pi/tsconfig\.json
+^/\.pi/node_modules
+^/\.pi/agent/extensions/tests
