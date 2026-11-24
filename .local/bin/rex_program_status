@@ -2,6 +2,7 @@
 # Reports an agent's state to Rex as a program status (OSC 7501), so Rex
 # shows it working, blocked or done. The OpenCode rex-status plugin calls
 # it with one of: working done permission question error idle.
+# An optional second argument names the app (default: opencode).
 # Does nothing outside Rex.
 [[ -n $REX_BLOCK ]] || exit 0
 
@@ -23,4 +24,4 @@ while (( pid > 1 )); do
   pid=$(ps -o ppid= -p $pid | tr -d ' ')
 done
 [[ $tty == ttys* ]] || exit 0
-printf '\e]7501;state=%s:app=opencode\e\\' $state > /dev/$tty
+printf '\e]7501;state=%s:app=%s\e\\' $state ${2:-opencode} > /dev/$tty

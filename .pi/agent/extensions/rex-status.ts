@@ -20,7 +20,7 @@ export default function (pi) {
     const state = blocked > 0 ? "question" : active ? "working" : "done";
     if (state === last) return;
     last = state;
-    queue = queue.then(() => new Promise((resolve) => execFile(script, [state], () => resolve())));
+    queue = queue.then(() => new Promise((resolve) => execFile(script, [state, "pi"], () => resolve())));
   }
 
   pi.on("session_start", (_event, ctx) => {
