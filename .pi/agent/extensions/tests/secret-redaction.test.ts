@@ -6,6 +6,8 @@ test("masks env-style assignments and keeps the name", () => {
   assert.equal(redactSecrets("OPENAI_API_KEY=abc123def456"), `OPENAI_API_KEY=${REDACTION_MARK}`);
   assert.equal(redactSecrets('export GH_TOKEN="ghx1234567890"'), `export GH_TOKEN="${REDACTION_MARK}"`);
   assert.equal(redactSecrets("db_password: hunter22hunter"), `db_password: ${REDACTION_MARK}`);
+  assert.equal(redactSecrets("AWS_SECRET_ACCESS_KEY=abcdef123456"), `AWS_SECRET_ACCESS_KEY=${REDACTION_MARK}`);
+  assert.equal(redactSecrets("apiKey: abcdef123456"), `apiKey: ${REDACTION_MARK}`);
 });
 
 test("masks credential fields in JSON", () => {
@@ -34,6 +36,9 @@ test("leaves ordinary text alone", () => {
     "KEY=abc",
     "the password field is required",
     "git log --oneline -5",
+    'rex.bind(P .. "ctrl+;", "pane.send_key", { key = "ctrl+;" })',
+    'key: "shift+command+space"',
+    "monkey = bananas-for-all",
   ]) {
     assert.equal(redactSecrets(text), text);
   }

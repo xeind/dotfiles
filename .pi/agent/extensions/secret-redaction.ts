@@ -7,7 +7,9 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 export const REDACTION_MARK = "[REDACTED]";
 
-const SECRET_NAME = String.raw`[A-Za-z0-9_.-]*(?:KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|AUTH)[A-Za-z0-9_.-]*`;
+// A bare `key` is a keyboard key in Rex, Karabiner and editor configs, so KEY
+// counts only with a qualifier such as API_KEY or SECRET_KEY.
+const SECRET_NAME = String.raw`[A-Za-z0-9_.-]*(?:(?:API|SECRET|PRIVATE|ACCESS|CLIENT|MASTER|LICENSE|ENCRYPTION|SIGNING|AUTH)[_.-]?KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL)[A-Za-z0-9_.-]*`;
 
 const RULES: ReadonlyArray<{ pattern: RegExp; replace: string }> = [
   // -----BEGIN ... PRIVATE KEY----- blocks, whole.
