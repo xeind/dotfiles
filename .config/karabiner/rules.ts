@@ -327,11 +327,11 @@ const rules: KarabinerRules[] = [
       h: tinycast("h", "Hold Screen On"),
       x: tinycast("x", "Screen Off"),
       r: {
-        to: [{ shell_command: "osascript ~/.config/raycast/scripts/recording-mode.applescript" }],
+        to: [{ shell_command: "osascript -e 'tell application \"System Events\" to tell dock preferences to set autohide menu bar to true'" }],
         description: "Recording Mode (hide menu bar)",
       },
       t: {
-        to: [{ shell_command: "osascript ~/.config/raycast/scripts/undo-recording-mode.applescript" }],
+        to: [{ shell_command: "osascript -e 'tell application \"System Events\" to tell dock preferences to set autohide menu bar to false'" }],
         description: "Undo Recording Mode (show menu bar)",
       },
       // hyperdash: shortcut usage dashboard (hammerspoon/hyperdash.lua)

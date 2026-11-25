@@ -3379,7 +3379,7 @@
                     }
                   },
                   {
-                    "shell_command": "osascript ~/.config/raycast/scripts/recording-mode.applescript"
+                    "shell_command": "osascript -e 'tell application \"System Events\" to tell dock preferences to set autohide menu bar to true'"
                   }
                 ],
                 "description": "Recording Mode (hide menu bar)",
@@ -3412,7 +3412,7 @@
                     }
                   },
                   {
-                    "shell_command": "osascript ~/.config/raycast/scripts/undo-recording-mode.applescript"
+                    "shell_command": "osascript -e 'tell application \"System Events\" to tell dock preferences to set autohide menu bar to false'"
                   }
                 ],
                 "description": "Undo Recording Mode (show menu bar)",
