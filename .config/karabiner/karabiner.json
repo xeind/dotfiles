@@ -3091,7 +3091,7 @@
                     }
                   },
                   {
-                    "shell_command": "osascript ~/.config/raycast/scripts/dismiss-notifications.applescript"
+                    "shell_command": "osascript ~/.config/karabiner/scripts/dismiss_notifications.applescript"
                   }
                 ],
                 "description": "Dismiss Notifications",

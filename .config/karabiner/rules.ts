@@ -308,7 +308,7 @@ const rules: KarabinerRules[] = [
         description: "Open Notification Center",
       },
       m: {
-        to: [{ shell_command: "osascript ~/.config/raycast/scripts/dismiss-notifications.applescript" }],
+        to: [{ shell_command: "osascript ~/.config/karabiner/scripts/dismiss_notifications.applescript" }],
         description: "Dismiss Notifications",
       },
       p: { ...app("System Settings"), description: "System Settings" },
