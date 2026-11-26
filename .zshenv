@@ -35,3 +35,6 @@ command_not_found_handler() {
   print -u2 "zsh: command not found: $1"
   return 127
 }
+
+# Secrets live outside this public repo.
+[[ -r ~/.config/secrets/env.zsh ]] && source ~/.config/secrets/env.zsh
