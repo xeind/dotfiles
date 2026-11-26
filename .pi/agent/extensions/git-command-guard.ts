@@ -2,8 +2,9 @@
 // - Asks the user before any command that stages, commits or pushes
 //   (add, stage, rm, mv, commit, push), and blocks it when no one can
 //   answer (print and RPC modes).
-// - Blocks --no-verify, so the agent fixes a failing hook instead of
-//   skipping it.
+// - Blocks git commands that skip the repository's hooks (--no-verify,
+//   commit -n, -c core.hooksPath=...), so the agent fixes a failing hook
+//   instead. Quoted text, such as a commit message, does not count.
 // - Sets GIT_EDITOR and GIT_SEQUENCE_EDITOR to `true`, so git never opens
 //   an editor that would hang the command.
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
@@ -28,8 +29,43 @@ export function subcommandsNeedingApproval(command: string): string[] {
   return found;
 }
 
-export function usesNoVerify(command: string): boolean {
-  return /\bgit\b/.test(command) && /(^|\s)--no-verify\b/.test(command);
+// Hook-skip check. Same rules as ~/.agents/bin/git-skips-hooks (Claude Code, OpenCode); keep in
+// step, test cases in ~/.agents/bin/git-skips-hooks.cases. Only real git invocations count:
+// quoted text is dropped first, so a commit message or an echo that mentions the flag passes.
+const QUOTED = /'[^']*'|"(?:\\.|[^"\\])*"/g;
+const SEPARATORS = /\|\||&&|[;&|\n]|\$\(|`|\)/;
+const WRAPPERS = new Set(["env", "command", "exec", "sudo", "nohup", "time", "xargs", "noglob"]);
+const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
+const GLOBAL_WITH_VALUE = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path"]);
+
+/** Why the command skips git hooks (--no-verify, commit -n, -c core.hooksPath=...), or null. */
+export function hookSkipReason(command: string): string | null {
+  for (const segment of command.replace(QUOTED, " Q ").split(SEPARATORS)) {
+    const tokens = segment.split(/\s+/).filter(Boolean);
+    let i = 0;
+    while (i < tokens.length && (ASSIGNMENT.test(tokens[i]!) || WRAPPERS.has(tokens[i]!))) i++;
+    const program = tokens[i];
+    if (program === undefined || !(program === "git" || program.endsWith("/git"))) continue;
+    i++;
+    while (i < tokens.length && tokens[i]!.startsWith("-")) {
+      let option = tokens[i]!;
+      let value: string | undefined;
+      if (GLOBAL_WITH_VALUE.has(option) && i + 1 < tokens.length) value = tokens[++i];
+      else if (option.includes("=")) [option, value] = [option.slice(0, option.indexOf("=")), option.slice(option.indexOf("=") + 1)];
+      if (option === "-c" && value?.toLowerCase().startsWith("core.hookspath=")) {
+        return "git -c core.hooksPath=... skips the repository's git hooks";
+      }
+      i++;
+    }
+    const subcommand = tokens[i];
+    if (subcommand === undefined) continue;
+    const rest = tokens.slice(i + 1);
+    if (rest.includes("--no-verify")) return `git ${subcommand} --no-verify skips the repository's git hooks`;
+    if (subcommand === "commit" && rest.some((token) => /^-[A-Za-z]*n[A-Za-z]*$/.test(token))) {
+      return "git commit -n (--no-verify) skips the repository's git hooks";
+    }
+  }
+  return null;
 }
 
 function isShellTool(toolName: string): boolean {
@@ -43,11 +79,9 @@ export default function (pi: ExtensionAPI) {
     if (typeof input.command !== "string" || !/\bgit\b/.test(input.command)) return undefined;
     const command = input.command;
 
-    if (usesNoVerify(command)) {
-      return {
-        block: true,
-        reason: "BLOCKED: --no-verify skips the repository's git hooks. Fix what the hook reports, or ask the user.",
-      };
+    const skip = hookSkipReason(command);
+    if (skip) {
+      return { block: true, reason: `BLOCKED: ${skip}. Fix what the hook reports, or ask the user.` };
     }
 
     const subcommands = subcommandsNeedingApproval(command);
