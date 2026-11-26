@@ -19,11 +19,6 @@ if [[ -z $GITHUB_TOKEN && -x /opt/homebrew/bin/gh ]]; then
   export GITHUB_TOKEN="$(/opt/homebrew/bin/gh auth token 2>/dev/null)"
 fi
 
-# CONTEXT7_API_KEY for the context7 MCP server, read from the Keychain.
-# An inherited key skips the lookup (~14 ms).
-[[ -n $CONTEXT7_API_KEY ]] ||
-  export CONTEXT7_API_KEY="$(security find-generic-password -a "$USER" -s "context7-api-key" -w 2>/dev/null)"
-
 # Here, not .zshrc, so nu (started without .zshrc) gets them too.
 export EDITOR=nvim
 export LANG=en_US.UTF-8
